@@ -12,6 +12,11 @@ def service_errors(text):
     return [requirement for requirement in ("User=songstead", "Group=songstead", "StateDirectoryMode=0700", "UMask=0077", "EnvironmentFile=-/etc/songstead/songstead.env", "ExecStart=/usr/local/bin/songstead serve") if requirement not in text]
 
 class PackagingTests(unittest.TestCase):
+    def test_funding_matches_the_companion_projects(self):
+        self.assertEqual((ROOT / ".github/FUNDING.yml").read_text().strip(),
+                         "ko_fi: airencracken")
+        self.assertIn("## Support\n\nYou can [support Songstead on Ko-fi](https://ko-fi.com/airencracken).",
+                      (ROOT / "README.md").read_text())
     def run_openrc_start(self, overrides=None):
         script = '''
 eerror() { printf '%s\\n' "$*" >&2; }

@@ -147,3 +147,7 @@ Read the [architecture notes](docs/architecture.md) for domain and permission
 decisions. The [mascot provenance and prompt](design/mascot.md) document the
 built-in imagegen artwork. HTMX's license is bundled; see
 [THIRD_PARTY.md](THIRD_PARTY.md). Licensed under AGPL-3.0-or-later.
+
+## Support
+
+You can [support Songstead on Ko-fi](https://ko-fi.com/airencracken).
