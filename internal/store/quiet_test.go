@@ -247,3 +247,38 @@ func TestMusicPaginationRetainsAllDuplicateContexts(t *testing.T) {
 		t.Fatal("duplicate listening on next page", len(rows), err)
 	}
 }
+
+func TestListeningPositionsArePrivateBoundedAndAtomic(t *testing.T) {
+	s, u := fixture(t)
+	id := recommend(t, s, u[0], u[1])
+	tracks, _ := s.Recordings(t.Context(), u[0], id)
+	track := tracks[0]
+	if err := s.AddRecording(t.Context(), u[0], id, track.URL, "Track", 200); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetPosition(t.Context(), u[0], id, track.ID, 30); err != nil {
+		t.Fatal(err)
+	}
+	recipient, _ := s.Recordings(t.Context(), u[1], id)
+	if recipient[0].Position != -1 {
+		t.Fatal("position leaked")
+	}
+	if err := s.SetPosition(t.Context(), u[2], id, track.ID, 20); !errors.Is(err, ErrMissing) {
+		t.Fatal("outsider position", err)
+	}
+	for _, seconds := range []int{-1, 201, 86401} {
+		if err := s.SetPosition(t.Context(), u[1], id, track.ID, seconds); !errors.Is(err, ErrInvalid) {
+			t.Fatal("invalid position", seconds, err)
+		}
+	}
+	if _, err := s.db.Exec("CREATE TRIGGER fail_position BEFORE INSERT ON listening_positions BEGIN SELECT RAISE(ABORT,'fail'); END"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetPosition(t.Context(), u[1], id, track.ID, 40); err == nil {
+		t.Fatal("position failure accepted")
+	}
+	recipient, _ = s.Recordings(t.Context(), u[1], id)
+	if recipient[0].Position != -1 {
+		t.Fatal("failed position changed state")
+	}
+}

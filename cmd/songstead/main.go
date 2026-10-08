@@ -50,7 +50,8 @@ Usage:
 With no command, starts the server. Accounts are created locally; registration is closed.
 Password commands read one line from standard input. set-password revokes all sessions.
 Environment: SONGSTEAD_DATA_DIR, SONGSTEAD_ADDR, SONGSTEAD_SECURE_COOKIES,
-SONGSTEAD_TRUSTED_PROXIES (comma-separated proxy IPs or CIDRs).
+SONGSTEAD_TRUSTED_PROXIES (comma-separated proxy IPs or CIDRs),
+SONGSTEAD_BASE_URL, SONGSTEAD_WITMOOT_URL (optional discussion handoffs).
 `
 
 func envDefault(key, fallback string) string {

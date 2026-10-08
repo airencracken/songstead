@@ -221,21 +221,35 @@ func (s *Store) SetPosition(ctx context.Context, viewer, id, track int64, second
 	if seconds < 0 || seconds > 86400 {
 		return ErrInvalid
 	}
-	tracks, err := s.Recordings(ctx, viewer, id)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	found := false
-	for _, t := range tracks {
-		if t.ID == track && (t.Duration == 0 || seconds <= t.Duration) {
-			found = true
-		}
+	defer tx.Rollback()
+	var mid int64
+	err = tx.QueryRowContext(ctx, `SELECT r.media_id FROM recommendations r JOIN recommendation_destinations d ON d.recommendation_id=r.id WHERE r.id=? AND `+visible, id, viewer, viewer, viewer).Scan(&mid)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrMissing
 	}
-	if !found {
+	if err != nil {
+		return err
+	}
+	var duration int
+	err = tx.QueryRowContext(ctx, `SELECT t.duration FROM recordings t JOIN media_recordings m ON m.recording_id=t.id WHERE t.id=? AND m.media_id=?`, track, mid).Scan(&duration)
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrInvalid
 	}
-	_, err = s.db.ExecContext(ctx, "INSERT INTO listening_positions VALUES(?,?,?) ON CONFLICT(user_id,recording_id) DO UPDATE SET seconds=excluded.seconds", viewer, track, seconds)
-	return err
+	if err != nil {
+		return err
+	}
+	if duration > 0 && seconds > duration {
+		return ErrInvalid
+	}
+	_, err = tx.ExecContext(ctx, "INSERT INTO listening_positions VALUES(?,?,?) ON CONFLICT(user_id,recording_id) DO UPDATE SET seconds=excluded.seconds", viewer, track, seconds)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // VisibleComments filters before rendering; concealed prose never enters HTML.

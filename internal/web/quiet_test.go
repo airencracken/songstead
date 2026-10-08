@@ -3,6 +3,7 @@
 package web
 
 import (
+	"fmt"
 	"github.com/airencracken/songstead/internal/store"
 	"net/url"
 	"strconv"
@@ -92,5 +93,36 @@ func TestExplicitHandoffExcludesPrivateContextAndDoesNotPost(t *testing.T) {
 	}
 	if err := a.store.LinkDiscussion(t.Context(), u[1], id, "javascript:alert(1)"); err == nil {
 		t.Fatal("unsafe discussion")
+	}
+}
+
+func TestGroupsWorkWithNativeFormsAndRevokedMembership(t *testing.T) {
+	a, u := fixture(t)
+	alice := login(t, a, "alice")
+	w := alice.request("POST", "/groups", url.Values{"name": {"Quiet room"}, "member_" + strconv.FormatInt(u[1], 10): {"1"}})
+	if w.Code != 303 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	groups, err := a.store.Groups(t.Context(), u[1])
+	if err != nil || len(groups) != 1 {
+		t.Fatal(groups, err)
+	}
+	gid := groups[0].ID
+	w = alice.request("GET", "/groups", nil)
+	if w.Code != 200 || !strings.Contains(w.Body.String(), fmt.Sprintf(`name="member_%d" value="1" checked`, u[1])) {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	bobby := login(t, a, "bobby")
+	w = bobby.request("POST", "/groups", url.Values{"id": {strconv.FormatInt(gid, 10)}, "name": {"Changed"}})
+	if w.Code != 404 {
+		t.Fatal("nonowner membership edit", w.Code)
+	}
+	w = alice.request("POST", "/groups", url.Values{"id": {strconv.FormatInt(gid, 10)}, "name": {"Quiet room"}})
+	if w.Code != 303 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = bobby.request("GET", "/groups", nil)
+	if strings.Contains(w.Body.String(), "Quiet room") {
+		t.Fatal("removed group still disclosed")
 	}
 }
