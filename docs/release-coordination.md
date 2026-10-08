@@ -18,8 +18,9 @@ separate changes; there is no shared database or mandatory runtime service.
    `/api/v1/albums/{ref}/preview` endpoint; older instances simply yield no
    preview and keep the destination links usable.
 4. The public [Songstead repository](https://github.com/airencracken/songstead)
-   was created on 2026-10-08. Push `master`, set its default branch to `master`,
-   and confirm CI after the library dependency is published. Tag `v0.1.0` on that branch.
+   was created on 2026-10-08. Its source is published on `master`, which is also
+   the default branch. Confirm CI after the library dependency is published,
+   then tag `v0.1.0` on that branch.
    The GoReleaser workflow produces static Linux amd64/arm64 archives, source,
    license notices and SHA-256 checksums. Publication requires the tag to be
    on master, match VERSION, and pass the full checks with GOWORK disabled.
@@ -43,11 +44,14 @@ explicitly unpublished and were built using that workspace. They are not a
 substitute for resolving the released module and passing clean release checks.
 
 On 2026-10-08, website and overlay default-branch pulls succeeded. Songstead's
-public GitHub repository was subsequently created under `airencracken`.
+public GitHub repository was subsequently created under `airencracken`, and
+its source was pushed to `master` after explicit publication approval.
 Comfylib's remote has no `v0.1.1` tag; library publication remains a release
 prerequisite. Website HTTP and Chromium checks now pass with local
 sockets enabled; see the validation record. Full companion release checks,
 Portage installation, publication and deployment remain outstanding. Website
-copy labels 0.1.0 as in preparation.
+copy labels 0.1.0 as in preparation. The first GitHub CI run confirms the
+missing Comfylib tag is the dependency-resolution blocker. The prepared
+library candidate at `411cfde` passes `make check` and remains unpublished.
 
 See [validation.md](validation.md) for checks and unresolved release gates.

@@ -22,9 +22,15 @@ URLs, Witmoot rejecting private album metadata, and imvault requiring current
 public-album visibility. This optional development check needs sibling source
 worktrees; ordinary app tests and runtime do not depend on sibling applications.
 
-Comfylib's reference/token/root tests and vet pass, including the exported API
-and license-header checks. Its full existing suite was run; only socket-based
-SMTP tests are blocked by the sandbox's socket prohibition.
+Comfylib's prepared candidate `411cfde` passes `make check` with local sockets
+enabled: formatting, vet, complexity, lint, race tests (including SMTP),
+mutation-engine checks, and all 138 mutations. Its URL validator was refactored
+to meet the existing complexity limit without changing behavior. New tests
+cover valid/invalid port boundaries and generated ports; four new mutations
+cover port limits, credential exclusion, and duplicate handoff fields. The
+handoff fuzz check also passes after 109,030 executions. Exported API and
+license-header checks pass. Optional real Bubblewrap and nginx/Apache checks
+were not run in this continuation; no changes were made to those packages.
 
 Witmoot's new draft, access, escaped preview, private/malformed/unavailable album,
 disconnect and CSRF tests pass under the race detector; imvault's new API,
@@ -61,19 +67,23 @@ wrong service commands, and compressed examples. Dependency publication tests
 cover all three apps and reject inherited development workspaces; resolution
 now explicitly uses `GOWORK=off`.
 
-Songstead's 8 packaging checks also pass, including OpenRC's `serve` command,
+Songstead's 9 packaging checks also pass, including OpenRC's `serve` command,
 private path setup, default settings, rejection of relative/adversarial paths
-before changes, and stopping after failed directory setup. The complete
-`make check build` passed before the service diagnostic and these tests were
-updated; the updated packaging checks and OpenRC shellcheck then passed.
+before changes, stopping after failed directory setup, and CI's standalone
+dependency/checksum checks. The complete `make check build` was rerun and
+passes with the updated local library candidate, producing `songstead 0.1.0`.
+This still uses the development workspace, rather than a published dependency.
 
 Website and overlay default branches were pulled before this continuation.
 Songstead's remote initially returned `Repository not found`; its public
-GitHub repository was subsequently created under `airencracken` on 2026-10-08.
+GitHub repository was subsequently created under `airencracken` on 2026-10-08,
+and the source was pushed to `master` after explicit publication approval.
 Comfylib's remote still has no `v0.1.1` tag. Clean standalone dependency resolution remains a release
-gate. Earlier companion socket-suite limitations above describe the previous
-run; those full suites have not been rerun in this continuation.
+gate. GitHub CI confirms `unknown revision v0.1.1` during dependency resolution.
+The earlier Witmoot/Imvault socket-suite limitations above describe the previous
+run; those full application suites have not been rerun in this continuation.
 
-The public Songstead GitHub repository has been created. No module or
+The public Songstead GitHub repository has been created and its source pushed
+to the `master` default branch. No module or
 application release, overlay dependency bundle, or live website deployment
 has been published from this environment.
