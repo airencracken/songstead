@@ -34,8 +34,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 4 {",
-    "after": "if version > 5 {",
+    "before": "if version > 5 {",
+    "after": "if version > 6 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -160,10 +160,10 @@
     "run": "^TestOwnerSchemaAndAdversarialInputs$"
   },
   {
-    "name": "password prompt confirmation",
+    "name": "prompt validates app password policy",
     "file": "cmd/songstead/password_prompt.go",
-    "before": "if string(password) != string(confirmation) {",
-    "after": "if false && string(password) != string(confirmation) {",
+    "before": "if err := store.ValidatePassword(value); err != nil {",
+    "after": "if err := store.ValidatePassword(value); false && err != nil {",
     "package": "./cmd/songstead",
     "run": "^TestConfirmedPassword$"
   },
@@ -178,7 +178,7 @@
   {
     "name": "favicon page discovery",
     "file": "internal/web/templates/layout.html",
-    "before": "  <link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/static/favicon-32.png\">",
+    "before": "<link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/static/favicon-32.png\">",
     "after": "",
     "package": "./internal/web",
     "run": "^TestFaviconLinksAndHTTPContracts$"
@@ -194,9 +194,81 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 4 {",
-    "after": "if false && currentOnly && version != 4 {",
+    "before": "if currentOnly && version != 5 {",
+    "after": "if false && currentOnly && version != 5 {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
+  },
+  {
+    "name": "last active owner protection",
+    "file": "internal/store/administration.go",
+    "before": "if count <= 1 {",
+    "after": "if count < 1 {",
+    "package": "./internal/store",
+    "run": "^TestLastOwnerSuspensionAndPrivilegeAtomicity$"
+  },
+  {
+    "name": "invitation use bound",
+    "file": "internal/store/administration.go",
+    "before": "(i.max_uses=0 OR i.uses<i.max_uses)",
+    "after": "(i.max_uses=0 OR i.uses<=i.max_uses)",
+    "package": "./internal/store",
+    "run": "^TestInvitationLifecycleAndAtomicJoin$"
+  },
+  {
+    "name": "invitation expiry",
+    "file": "internal/store/administration.go",
+    "before": "(i.expires_at=0 OR i.expires_at>?)",
+    "after": "(i.expires_at=0 OR i.expires_at>=0 OR i.expires_at>?)",
+    "package": "./internal/store",
+    "run": "^TestInvitationExpiryPolicyAndAdversarialInputs$"
+  },
+  {
+    "name": "invitation credential purpose",
+    "file": "internal/store/administration.go",
+    "before": "token.SplitPrefixed(\"sgi\", raw)",
+    "after": "token.SplitPrefixed(\"sgr\", raw)",
+    "package": "./internal/store",
+    "run": "^TestInvitationLifecycleAndAtomicJoin$"
+  },
+  {
+    "name": "password reset expiry",
+    "file": "internal/store/administration.go",
+    "before": "r.expires_at>?",
+    "after": "r.expires_at>=? - 9999999999",
+    "package": "./internal/store",
+    "run": "^TestRecoverySingleUseExpiryAndAtomicity$"
+  },
+  {
+    "name": "suspended session rejection",
+    "file": "internal/store/store.go",
+    "before": "s.expires_at>? AND u.suspended=0",
+    "after": "s.expires_at>?",
+    "package": "./internal/store",
+    "run": "^TestSuspendedStaleSessionRejected$"
+  },
+  {
+    "name": "settings ownership enforcement",
+    "file": "internal/store/settings.go",
+    "before": "if !ok {",
+    "after": "if false && !ok {",
+    "package": "./internal/store",
+    "run": "^TestSettingsPersistenceDefaultsAndPermissions$"
+  },
+  {
+    "name": "owner HTTP authorization",
+    "file": "internal/web/admin.go",
+    "before": "if state(r).User.Role != \"owner\" {",
+    "after": "if false && state(r).User.Role != \"owner\" {",
+    "package": "./internal/web",
+    "run": "^TestAdministrationPermissionAndCSRFContracts$"
+  },
+  {
+    "name": "multipart duplicate file rejection",
+    "file": "internal/web/web.go",
+    "before": "if len(files) != 1 {",
+    "after": "if false && len(files) != 1 {",
+    "package": "./internal/web",
+    "run": "^TestBrandingMultipartRoutesAndAtomicity$"
   }
 ]

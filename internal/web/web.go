@@ -33,9 +33,9 @@ import (
 var assets embed.FS
 
 type Config struct {
-	WitmootURL, BaseURL string
-	SecureCookies       bool
-	TrustedProxies      []netip.Prefix
+	WitmootURL, BaseURL, Version string
+	SecureCookies                bool
+	TrustedProxies               []netip.Prefix
 }
 type App struct {
 	store     *store.Store
@@ -53,6 +53,7 @@ type attempt struct {
 type requestState struct {
 	User          *store.User
 	CSRF, Session string
+	Settings      store.Settings
 }
 type stateKey struct{}
 type recommendationCard struct {
@@ -64,6 +65,10 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
+	Settings                                                                store.Settings
+	SettingsDraft                                                           *store.Settings
+	Invitations                                                             []store.Invitation
+	SecretURL, Notice, Secret, Version                                      string
 	Audience                                                                string
 	Recent                                                                  bool
 	CommentDraft                                                            string
@@ -127,6 +132,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = w.Write([]byte("ok\n"))
 	})
+	a.adminRoutes(mux)
 	mux.HandleFunc("GET /login", a.loginForm)
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("POST /logout", a.signedIn(a.logout))
@@ -185,7 +191,12 @@ func (a *App) middleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		st := requestState{}
+		settings, err := a.store.Settings(r.Context(), store.DefaultSettings(a.config.BaseURL, a.config.WitmootURL))
+		if err != nil {
+			a.fail(w, r, err)
+			return
+		}
+		st := requestState{Settings: settings}
 		if c, err := r.Cookie(a.cookieName(r, "session")); err == nil && secretShape(c.Value) {
 			u, err := a.store.Session(r.Context(), c.Value)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -214,8 +225,26 @@ func (a *App) middleware(next http.Handler) http.Handler {
 		}
 		r = r.WithContext(context.WithValue(r.Context(), stateKey{}, st))
 		if r.Method != "GET" && r.Method != "HEAD" && r.Method != "OPTIONS" && r.Method != "TRACE" {
-			r.Body = http.MaxBytesReader(w, r.Body, 16384)
-			if err := r.ParseForm(); err != nil {
+			limit := int64(16384)
+			multipart := r.URL.Path == "/admin/settings/images" && strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data")
+			if multipart {
+				limit = 5 << 20
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, limit)
+			parseErr := r.ParseForm()
+			if multipart {
+				parseErr = r.ParseMultipartForm(5 << 20)
+				if r.MultipartForm != nil {
+					defer r.MultipartForm.RemoveAll()
+					for _, files := range r.MultipartForm.File {
+						if len(files) != 1 {
+							http.Error(w, "duplicate upload fields", 400)
+							return
+						}
+					}
+				}
+			}
+			if err := parseErr; err != nil {
 				var tooLarge *http.MaxBytesError
 				if errors.As(err, &tooLarge) {
 					http.Error(w, "form too large", 413)
@@ -257,6 +286,11 @@ func (a *App) signedIn(next http.HandlerFunc) http.HandlerFunc {
 func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page) {
 	st := state(r)
 	p.User, p.CSRF = st.User, st.CSRF
+	p.Settings = st.Settings
+	if p.SettingsDraft != nil {
+		p.Settings = *p.SettingsDraft
+	}
+	p.Version = a.config.Version
 	var buf bytes.Buffer
 	if err := a.templates.ExecuteTemplate(&buf, "layout", p); err != nil {
 		a.fail(w, r, err)
@@ -267,6 +301,10 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 	_, _ = w.Write(buf.Bytes())
 }
 func (a *App) fail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, store.ErrForbidden) {
+		http.Error(w, "permission denied", 403)
+		return
+	}
 	if errors.Is(err, store.ErrMissing) {
 		http.NotFound(w, r)
 		return
@@ -322,7 +360,7 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 		hash = string(a.dummyHash)
 	}
 	check := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	if err != nil || check != nil || len(password) > 72 {
+	if err != nil || check != nil || u.Suspended || len(password) > 72 {
 		a.render(w, r, 422, page{View: "login", Title: "Welcome back", Username: name, Error: "That username and password did not match."})
 		return
 	}
@@ -599,7 +637,7 @@ func (a *App) showDetail(w http.ResponseWriter, r *http.Request, id int64, statu
 		a.fail(w, r, err)
 		return
 	}
-	a.render(w, r, status, page{View: "detail", Title: item.Title, Item: item, Comments: comments, Recordings: tracks, AnnotationMode: mode, Reveal: reveal, Discussions: links, Error: message, Handoff: a.config.WitmootURL, CommentDraft: r.PostForm.Get("body")})
+	a.render(w, r, status, page{View: "detail", Title: item.Title, Item: item, Comments: comments, Recordings: tracks, AnnotationMode: mode, Reveal: reveal, Discussions: links, Error: message, Handoff: state(r).Settings.WitmootURL, CommentDraft: r.PostForm.Get("body")})
 }
 func (a *App) react(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)

@@ -1,4 +1,4 @@
-# Release validation (2026-10-08)
+# Earlier integration release validation (2026-10-08)
 
 Comfylib v0.1.1, Songstead v0.1.0, Witmoot v0.14.0 and Imvault v0.16.0
 are published. All three applications
@@ -90,3 +90,16 @@ Real Bubblewrap namespace checks run in GitHub CI rather than
 this Docker container.
 
 Publication changes repositories and release artifacts; host deployment is separate.
+
+## Administration
+
+Store and HTTP tests cover invitation expiry, use limits, creator permissions,
+concurrent joining, failed consumption rollback, owner-only settings and account
+changes, last-owner concurrency, suspension, reset replacement and replay,
+password/session atomicity, schema 4 migration, schema validation, route and CSRF
+contracts, draft escaping, multipart bounds and transactional branding uploads.
+The browser suite exercises the rendered owner settings, invitation/join/recovery
+flows, mobile layout, keyboard navigation and accessibility. Mutation tests
+remove critical guards and require these regressions to fail. Comfylib checks
+its shared normalization and password prompts separately, including API goldens,
+property tests, adversarial images and failures without secret output.

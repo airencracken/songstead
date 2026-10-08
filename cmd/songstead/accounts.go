@@ -23,6 +23,7 @@ var commandDescriptions = map[string]string{
 	"create-owner": "Create a new owner locally. Existing accounts are never promoted or changed.",
 	"create-user":  "Create a new member locally. Existing accounts are never changed.",
 	"set-password": "Replace an account's password and revoke all its sessions.",
+	"set-role":     "Explicitly change an existing account role; keep at least one active owner.",
 	"list-users":   "List local account IDs, usernames, and roles. Password hashes are never shown.",
 	"backup":       "Save a consistent SQLite snapshot to a new file.",
 	"restore":      "Restore a snapshot into a new, empty data directory.",
@@ -30,7 +31,7 @@ var commandDescriptions = map[string]string{
 
 var provisioningCommands = map[string]bool{
 	"create-owner": true, "create-user": true, "set-password": true,
-	"list-users": true, "backup": true,
+	"set-role": true, "list-users": true, "backup": true,
 }
 
 var geteuid = os.Geteuid
@@ -71,16 +72,16 @@ func resolveDataDir(flags *flag.FlagSet, data *string, paths svcconfig.Paths, ma
 }
 
 func printUsers(ctx context.Context, s *store.Store, out io.Writer) error {
-	users, err := s.Users(ctx, 0)
+	users, err := s.Accounts(ctx)
 	if err != nil {
 		return err
 	}
 	w := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	if _, err := fmt.Fprintln(w, "ID\tUSERNAME\tROLE"); err != nil {
+	if _, err := fmt.Fprintln(w, "ID\tUSERNAME\tROLE\tSUSPENDED"); err != nil {
 		return err
 	}
 	for _, user := range users {
-		if _, err := fmt.Fprintf(w, "%d\t%s\t%s\n", user.ID, user.Username, user.Role); err != nil {
+		if _, err := fmt.Fprintf(w, "%d\t%s\t%s\t%t\n", user.ID, user.Username, user.Role, user.Suspended); err != nil {
 			return err
 		}
 	}

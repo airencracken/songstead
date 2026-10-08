@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="htmx-config" content='{"allowEval":false,"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"422","swap":true,"error":false},{"code":"[45]..","swap":false,"error":true}]}'>
-  <title>{{.Title}} · Songstead</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
+  <title>{{.Title}} · {{.Settings.Name}}</title>
+  {{if .Settings.Favicon}}<link rel="icon" type="image/png" href="/branding/favicon">{{else}}<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">{{end}}
   <script src="/static/theme.js"></script>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
@@ -14,14 +14,15 @@
 <body hx-boost="true" hx-history="false">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
-    <a class="brand" href="/shelf"><img src="/static/jukebox.png" alt="" width="42" height="42">Songstead</a>
+    <a class="brand" href="/shelf"><img src="{{if .Settings.Mascot}}/branding/mascot{{else}}/static/jukebox.png{{end}}" alt="" width="42" height="42">{{.Settings.Name}}</a>
     <nav aria-label="Main navigation">
       {{if .User}}<a href="/recent" {{if .Recent}}aria-current="page"{{end}}>Recent</a><a href="/shelf" {{if and (eq .View "list") (not .History) (not .Recent)}}aria-current="page"{{end}}>Shelf</a><a href="/history">History</a><a href="/groups">Groups</a><a class="button" href="/recommendations/new">Share music</a>{{end}}
-      <label class="theme-picker" hidden><span class="sr-only">Color theme</span><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
-      {{if .User}}<span class="muted">{{.User.Username}}</span><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>{{end}}
+      <span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span>
+      {{if .User}}{{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{end}}{{if or (eq .User.Role "owner") .User.CanInvite}}<a href="/invites">Invites</a>{{end}}<a href="/account">{{.User.Username}}</a><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>{{end}}
     </nav>
   </header>
   <main id="main" class="page" tabindex="-1">
+    {{if .Notice}}<p class="notice" role="status">{{.Notice}}</p>{{end}}
     {{if .Error}}<p class="error" role="alert">{{.Error}}</p>{{end}}
     {{if eq .View "login"}}{{template "login" .}}{{end}}
     {{if eq .View "list"}}{{template "list" .}}{{end}}
@@ -29,7 +30,14 @@
     {{if eq .View "groups"}}{{template "groups" .}}{{end}}
  {{if eq .View "handoff"}}{{template "handoff" .}}{{end}}
  {{if eq .View "detail"}}{{template "detail" .}}{{end}}
+    {{if eq .View "settings"}}{{template "settings" .}}{{end}}
+    {{if eq .View "accounts"}}{{template "accounts" .}}{{end}}
+    {{if eq .View "invites"}}{{template "invites" .}}{{end}}
+    {{if eq .View "join"}}{{template "join" .}}{{end}}
+    {{if eq .View "reset"}}{{template "reset" .}}{{end}}
+    {{if eq .View "account"}}{{template "account" .}}{{end}}
+    {{if eq .View "about"}}{{template "about" .}}{{end}}
   </main>
-  <footer class="foot"><span>Songstead · Good music, from your people.</span>{{if .User}}<a href="/account/export" hx-boost="false">Export your history</a>{{end}}<a href="https://comfyware.org/" rel="noreferrer">Part of Comfyware</a></footer>
+  <footer class="foot"><span>{{.Settings.Name}}{{if and .Settings.ShowVersion .Version}} · {{.Version}}{{end}} · Good music, from your people.</span><a href="/about">About &amp; house rules</a>{{if .Settings.SourceURL}}<a href="{{.Settings.SourceURL}}" rel="noreferrer">Source code</a>{{end}}{{if .User}}<a href="/account/export" hx-boost="false">Export your history</a>{{end}}<a href="https://comfyware.org/" rel="noreferrer">Part of Comfyware</a></footer>
 </body>
 </html>{{end}}

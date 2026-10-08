@@ -1,9 +1,9 @@
 {{define "login"}}<section class="welcome">
-  <div><p class="eyebrow">A place for the music your friends send.</p><h1>Keep the good songs close.</h1><p class="intro">Save a recommendation, listen when you have a moment, and let your friend know what you thought.</p><img class="mascot" src="/static/jukebox.png" width="240" height="240" alt="Songstead's smiling little blue jukebox"></div>
+  <div><p class="eyebrow">A place for the music your friends send.</p><h1>{{.Settings.WelcomeTitle}}</h1><p class="intro">{{.Settings.WelcomeText}}</p><img class="mascot" src="{{if .Settings.Mascot}}/branding/mascot{{else}}/static/jukebox.png{{end}}" width="240" height="240" alt="Songstead's smiling little blue jukebox"></div>
   <div class="panel"><h2>Welcome back</h2><form action="/login" method="post" class="stack">
     <input type="hidden" name="csrf" value="{{.CSRF}}">
     <label>Username<input name="username" value="{{.Username}}" autocomplete="username" required maxlength="24"></label>
     <label>Password<input name="password" type="password" autocomplete="current-password" required maxlength="72"></label>
     <button class="button primary" type="submit">Sign in</button>
-  </form><p class="muted">This is a private gathering. Ask the person running it for an account or help signing in.</p></div>
+  </form><p class="muted">{{if eq .Settings.JoinMode "open"}}<a href="/join">Create an account</a>.{{else if eq .Settings.JoinMode "invite"}}Ask a member who can invite for an invitation link.{{else}}New accounts are currently closed.{{end}} Ask an owner for a recovery link if you need help signing in. <a href="/about">Contact &amp; house rules</a>.</p></div>
 </section>{{end}}

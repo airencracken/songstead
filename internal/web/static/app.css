@@ -42,3 +42,15 @@ fieldset { border:1px solid var(--border); border-radius:8px; padding:1rem; disp
 .timeline svg { width:100%; height:auto; display:block; margin-top:1rem; }
 .timeline nav { display:flex; flex-wrap:wrap; gap:.7rem; margin:1rem 0; }
 section.panel > p > a { overflow-wrap:anywhere; }
+
+.admin-nav { display:flex; gap:1rem; flex-wrap:wrap; margin-block:1rem; }
+.settings-form, .account-grid { display:grid; gap:1.25rem; margin-block:1.5rem; }
+.account-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr)); }
+.check { display:flex; gap:.5rem; align-items:center; }
+.check input { width:auto; }
+.notice { padding:1rem; border:1px solid currentColor; border-radius:.5rem; }
+.preserve-lines { white-space:pre-wrap; overflow-wrap:anywhere; }
+.secret-link input { width:100%; }
+.settings-form + .panel, .settings-form + .panel + .panel { margin-block:1.25rem; }
+
+main p a { text-decoration:underline; }

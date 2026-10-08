@@ -157,17 +157,17 @@ func (a *App) share(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	if a.config.WitmootURL == "" || a.config.BaseURL == "" {
+	if state(r).Settings.WitmootURL == "" || state(r).Settings.BaseURL == "" {
 		a.showDetail(w, r, id, 422, "The operator needs to configure the Songstead and Witmoot addresses.")
 		return
 	}
-	source := strings.TrimRight(a.config.BaseURL, "/") + "/recommendations/" + strconv.FormatInt(id, 10)
+	source := strings.TrimRight(state(r).Settings.BaseURL, "/") + "/recommendations/" + strconv.FormatInt(id, 10)
 	draft := reference.Draft{Source: source, Title: item.Title, Body: item.Title}
 	if item.Artist != "" {
 		draft.Body += " — " + item.Artist
 	}
 	draft.Body += "\n" + item.URL
-	link, err := reference.Handoff(a.config.WitmootURL, draft)
+	link, err := reference.Handoff(state(r).Settings.WitmootURL, draft)
 	if err != nil {
 		a.fail(w, r, store.ErrInvalid)
 		return

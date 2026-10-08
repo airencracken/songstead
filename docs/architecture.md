@@ -2,7 +2,8 @@
 
 Songstead follows Witmoot's Go / SQLite / embedded server-rendered HTML and HTMX
 structure, with Imvault's quieter blue visual direction. A statically built
-binary serves its own assets. Accounts are provisioned locally; sessions are
+binary serves its own assets. Owners can provision accounts locally or issue
+expiring, use-limited invitations. Sessions, invitations and recovery links are
 hashed in SQLite, and session-bound CSRF derivation comes from Comfylib.
 
 The application has three layers: URL identity and provider metadata in
@@ -47,3 +48,15 @@ keys before installing a snapshot into an empty private directory.
 
 No ranked feed, completion metrics, playback tracking, deadlines or reminders.
 Extremely eventual consistency: because your friends have lives.
+
+Administration settings are validated and stored as an instance override. Each
+request reads effective settings, so saves apply immediately without mutating
+shared application configuration. Owner checks, invitation consumption, account
+changes and last-active-owner protection run inside SQLite write transactions.
+Password resets bind to current credentials and change passwords, revoke
+sessions and consume the link atomically. Suspension invalidates sessions and
+bearer links. Administration does not extend private music access.
+
+Comfylib supplies generic password confirmation and bounded image normalization.
+Apps retain terminal handling, password policy, storage and authorization.
+Branding uploads normalize both assets before an atomic database update.

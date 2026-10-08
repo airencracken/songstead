@@ -25,9 +25,9 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	// Previous releases used schema 3. Restore it unchanged; the server applies
-	// the owner migration on its next start.
-	if version != 3 && version != 4 {
+	// Previous releases used schemas 3 and 4. Restore them unchanged; the
+	// server applies forward migrations on its next start.
+	if version != 3 && version != 4 && version != 5 {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string
@@ -82,13 +82,43 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 			return err
 		}
 	}
-	if version == 4 {
+	if version >= 4 {
 		var invalid int
 		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE role IS NULL OR role NOT IN ('member','owner')").Scan(&invalid); err != nil {
 			return err
 		}
 		if invalid != 0 {
 			return errors.New("snapshot has invalid account roles")
+		}
+	}
+	if version >= 5 {
+		for _, query := range []string{
+			"SELECT suspended,can_invite,invited_by FROM users LIMIT 0",
+			"SELECT id,token_hash,prefix,creator_id,label,created_at,expires_at,max_uses,uses,revoked FROM invitations LIMIT 0",
+			"SELECT user_id,token_hash,password_hash,expires_at FROM password_resets LIMIT 0",
+			"SELECT name,content FROM branding_assets LIMIT 0",
+		} {
+			rows, err := db.QueryContext(ctx, query)
+			if err != nil {
+				return err
+			}
+			if err := rows.Close(); err != nil {
+				return err
+			}
+		}
+		settings, err := readSettings(ctx, db, DefaultSettings("", ""))
+		if err != nil {
+			return err
+		}
+		if err := ValidateSettings(settings); err != nil {
+			return errors.New("snapshot has invalid settings")
+		}
+		var invalid int
+		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE suspended NOT IN (0,1) OR can_invite NOT IN (0,1)").Scan(&invalid); err != nil {
+			return err
+		}
+		if invalid != 0 {
+			return errors.New("snapshot has invalid account permissions")
 		}
 	}
 	return nil

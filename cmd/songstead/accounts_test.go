@@ -233,3 +233,35 @@ func TestConfirmedPassword(t *testing.T) {
 		t.Fatal("prompt input error lost", err)
 	}
 }
+
+func TestCLISetRoleRecoveryAndValidation(t *testing.T) {
+	data := privateDir(t)
+	var out bytes.Buffer
+	if err := run(t.Context(), []string{"create-user", "--data-dir", data, "--username", "alex", "--password-stdin"}, strings.NewReader("a-long-test-password"), &out); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"set-role", "--data-dir", data, "--username", "alex", "--role", "owner"}
+	if err := run(t.Context(), args, nil, &out); err != nil {
+		t.Fatal(err)
+	}
+	s, err := store.Open(filepath.Join(data, "songstead.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, _, err := s.Credentials(t.Context(), "alex")
+	s.Close()
+	if err != nil || u.Role != "owner" {
+		t.Fatal("CLI did not promote existing member", u, err)
+	}
+	args[len(args)-1] = "member"
+	if err := run(t.Context(), args, nil, &out); err == nil {
+		t.Fatal("CLI demoted last owner")
+	}
+	args[len(args)-1] = "admin"
+	if err := run(t.Context(), args, nil, &out); err == nil {
+		t.Fatal("invalid role accepted")
+	}
+	if err := run(t.Context(), []string{"help", "set-role"}, nil, &out); err != nil {
+		t.Fatal(err)
+	}
+}

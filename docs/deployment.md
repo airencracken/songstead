@@ -4,8 +4,8 @@ Songstead is an independent AGPL-3.0-or-later Go binary with SQLite and embedded
 HTML, HTMX, CSS and mascot assets. There is no asset server or required external
 service. Go 1.26 is needed to build; static binaries have no C library requirement.
 
-`make build` prepares a 0.1.2 binary in `bin/songstead`. Run
-`bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.1; see
+`make build` prepares a 0.2.0 binary in `bin/songstead`. Run
+`bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.2; see
 [the release installation guide](releases.md).
 
 Create a service account and group named `songstead`, install the binary, and
@@ -70,8 +70,10 @@ downgrade the database.
 Schema 4 adds member and owner roles. Existing accounts remain members with
 unchanged credentials and sessions. `create-owner` provisions a new account and
 never promotes or modifies an existing username. Owners retain the same music
-privacy boundaries; administration is performed locally through the CLI.
-Previous schema 3 backups can still be restored and migrated on server startup.
+privacy boundaries. Schema 5 adds persistent instance settings, invitations,
+password recovery, suspension and invitation permissions. Owners administer
+them in `/admin/settings`, `/admin/users` and `/admin/invites`.
+Previous schema 3 and 4 backups can still be restored and migrated on server startup.
 Account and backup commands refuse older schemas instead of migrating a live
 instance; restart the updated server first.
 
@@ -97,3 +99,10 @@ SONGSTEAD_TRUSTED_PROXIES="127.0.0.1/32,::1/128"
 Keep machine-specific settings and deployment notes outside this repository.
 
 See [Bubblewrap service isolation](sandbox.md) for the optional confined launcher and native service settings.
+
+After upgrading and restarting, sign in as an owner and open Admin. For an
+existing member account, `songstead set-role --username alex --role owner`
+explicitly enables administration. It does not change the password or music
+access. Configure the public Songstead origin and optional Witmoot address in
+Instance settings; saved URLs override service defaults until you restore them.
+See [administration](administration.md) for invitations and account recovery.

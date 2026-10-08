@@ -12,7 +12,7 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.1.2
+## Songstead 0.2.0
 
 Friends and groups can leave tracks, albums, artists and listening links. Browse
 by music, person, group or each recommendation. Duplicate provider identities
@@ -39,13 +39,17 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.1.1 and verified module checksums.
+Release builds use published Comfylib v0.1.2 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh
 GOWORK=off make check build
 make demo
 ```
+
+`make test-browser` adds Chromium administration and accessibility checks.
+Install Playwright Chromium from `scripts/browser`, or set `CHROMIUM` to a local
+executable. The browser suite uses disposable accounts and deletes its database.
 
 For local changes to the shared library, use an untracked `go.work` with the
 sibling Comfylib worktree. Keep workspace files and local replacements out of
@@ -91,17 +95,33 @@ and at most 72 bytes. `set-password` has the same options and revokes every
 session for the account. `create-owner` only creates a new owner: it never
 promotes, replaces, or resets an existing account, including a username differing
 only in case. Existing accounts stay members during upgrade. Owners have the
-same music privacy boundaries as members; site administration remains local CLI
-operations. Use `songstead help COMMAND` or `COMMAND --help` for available flags.
-There is no public registration or invitation system in this phase. The local
-operator provisions accounts and handles recovery.
+same music privacy boundaries as members. Sign in as an owner and open
+**Admin** to configure the instance, invite people, manage account roles and
+suspension, and issue one-hour password recovery links. Members can change
+their own passwords from **Your account**.
+
+Joining is invitation-only by default. Owners can delegate invitation
+permission or choose closed or open joining. Public joining never makes music
+pages public. Invitation links are shown once and support expiry, use limits
+and revocation. Existing accounts remain members during an upgrade; explicitly
+promote your own existing account with:
+
+```sh
+songstead set-role --username alex --role owner
+```
+
+Set the public Songstead and Witmoot addresses in **Admin → Instance settings**.
+Saved settings apply immediately and persist across restarts. A blank Witmoot
+address disables the connection even if the service has an environment default.
+See [administration and invitations](docs/administration.md) for the full flow.
+Use `songstead help COMMAND` or `COMMAND --help` for CLI flags.
 
 ## Configuration and hosting
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `SONGSTEAD_BASE_URL` | empty | Public base URL for discussion handoffs |
-| `SONGSTEAD_WITMOOT_URL` | empty | Optional Witmoot base URL; no startup request |
+| `SONGSTEAD_BASE_URL` | empty | Default public origin for discussion, invitation and recovery links |
+| `SONGSTEAD_WITMOOT_URL` | empty | Default Witmoot base URL; editable in Admin; no startup request |
 | `SONGSTEAD_DATA_DIR` | `./data` | Private directory containing SQLite and the server lock |
 | `SONGSTEAD_ADDR` | `127.0.0.1:8083` | Listen address |
 | `SONGSTEAD_SECURE_COOKIES` | `false` | Set `true` for an installation reached over HTTPS |

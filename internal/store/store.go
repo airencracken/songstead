@@ -30,9 +30,12 @@ var ErrMissing = errors.New("recommendation unavailable")
 
 type Store struct{ db *sql.DB }
 type User struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	ID        int64  `json:"id"`
+	Username  string `json:"username"`
+	Role      string `json:"role"`
+	CanInvite bool   `json:"can_invite"`
+	Suspended bool   `json:"suspended"`
+	InvitedBy string `json:"invited_by,omitempty"`
 }
 type Recommendation struct {
 	ID, MediaID, SenderID, RecipientID                                              int64
@@ -98,14 +101,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 4 {
+	if version > 5 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 4 {
+	if currentOnly && version != 5 {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 4; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql"}[next]
+	for next := version + 1; next <= 5; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -196,18 +199,21 @@ func (s *Store) SetPassword(ctx context.Context, name, password string) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM sessions WHERE user_id=(SELECT id FROM users WHERE username=?)", name); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM password_resets WHERE user_id=(SELECT id FROM users WHERE username=?)", name); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
 func (s *Store) Credentials(ctx context.Context, name string) (User, string, error) {
 	var u User
 	var hash string
-	err := s.db.QueryRowContext(ctx, "SELECT id,username,role,password_hash FROM users WHERE username=?", name).Scan(&u.ID, &u.Username, &u.Role, &hash)
+	err := s.db.QueryRowContext(ctx, "SELECT id,username,role,can_invite,suspended,password_hash FROM users WHERE username=?", name).Scan(&u.ID, &u.Username, &u.Role, &u.CanInvite, &u.Suspended, &hash)
 	return u, hash, err
 }
 
 func (s *Store) Users(ctx context.Context, except int64) ([]User, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT id,username,role FROM users WHERE id!=? ORDER BY username", except)
+	rows, err := s.db.QueryContext(ctx, "SELECT id,username,role,can_invite,suspended FROM users WHERE id!=? AND suspended=0 ORDER BY username", except)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +221,7 @@ func (s *Store) Users(ctx context.Context, except int64) ([]User, error) {
 	users := []User{}
 	for rows.Next() {
 		var u User
-		if err := rows.Scan(&u.ID, &u.Username, &u.Role); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.Role, &u.CanInvite, &u.Suspended); err != nil {
 			return nil, err
 		}
 		users = append(users, u)
@@ -225,7 +231,7 @@ func (s *Store) Users(ctx context.Context, except int64) ([]User, error) {
 
 func (s *Store) Session(ctx context.Context, secret string) (User, error) {
 	var u User
-	err := s.db.QueryRowContext(ctx, "SELECT u.id,u.username,u.role FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires_at>?", token.Hash(secret), time.Now().Unix()).Scan(&u.ID, &u.Username, &u.Role)
+	err := s.db.QueryRowContext(ctx, "SELECT u.id,u.username,u.role,u.can_invite,u.suspended FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires_at>? AND u.suspended=0", token.Hash(secret), time.Now().Unix()).Scan(&u.ID, &u.Username, &u.Role, &u.CanInvite, &u.Suspended)
 	return u, err
 }
 
@@ -241,7 +247,7 @@ func (s *Store) NewSession(ctx context.Context, user int64, verifiedHash string)
 	if _, err := tx.ExecContext(ctx, "DELETE FROM sessions WHERE expires_at<=?", time.Now().Unix()); err != nil {
 		return "", err
 	}
-	result, err := tx.ExecContext(ctx, "INSERT INTO sessions(token_hash,user_id,expires_at) SELECT ?,id,? FROM users WHERE id=? AND password_hash=?", hash, time.Now().Add(7*24*time.Hour).Unix(), user, verifiedHash)
+	result, err := tx.ExecContext(ctx, "INSERT INTO sessions(token_hash,user_id,expires_at) SELECT ?,id,? FROM users WHERE id=? AND password_hash=? AND suspended=0", hash, time.Now().Add(7*24*time.Hour).Unix(), user, verifiedHash)
 	if err != nil {
 		return "", err
 	}

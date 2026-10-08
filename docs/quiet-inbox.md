@@ -73,10 +73,13 @@ another account. There is no streaming account connection or playback telemetry.
 
 # Explicit Witmoot discussions
 
-Set `SONGSTEAD_BASE_URL=https://music.example.org` and optionally
-`SONGSTEAD_WITMOOT_URL=https://board.example.org`. Base URLs may include an app
-path prefix but must not contain credentials, queries or fragments. Restart
-after changing service configuration.
+Owners set the public Songstead origin (for example `https://music.example.org`)
+and optional Witmoot address in **Admin → Instance settings**. Changes apply
+immediately. Witmoot may use a path prefix; the public Songstead address is an
+origin without a path. URLs cannot contain credentials, queries or fragments.
+`SONGSTEAD_BASE_URL` and `SONGSTEAD_WITMOOT_URL` remain service defaults; restart
+after changing those defaults. Saved settings take precedence, including a blank
+Witmoot address that disables handoffs.
 
 Prepare a discussion from a recommendation. A local review page leads to
 Witmoot's `/share` draft chooser, where you select a board or existing topic.

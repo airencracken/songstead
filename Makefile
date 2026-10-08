@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
-VERSION ?= 0.1.2
+VERSION ?= 0.2.0
 GOCACHE ?= /tmp/songstead-go-cache
 export GOCACHE
 
-.PHONY: help build test test-race test-js test-mutations test-sandbox test-cli check demo
+.PHONY: help build test test-race test-js test-mutations test-sandbox test-cli test-browser check demo
 help:
 	@echo 'Songstead: make build, test, test-race, test-js, test-mutations, check, demo'
 build:
@@ -17,14 +17,17 @@ test-packaging:
 test-js:
 	node --test internal/web/static/theme.test.js
 test-mutations:
-	python3 scripts/mutate.py
+	python3 scripts/mutate.py scripts/mutations.json
 test-cli: build
 	python3 scripts/test_cli.py
 check: test-race test-js test-mutations test-packaging test-cli
 	go vet ./...
-	@test -z "$$(gofmt -l cmd internal)" || { echo 'Run gofmt on cmd and internal'; exit 1; }
+	@test -z "$$(gofmt -l cmd internal scripts)" || { echo 'Run gofmt on cmd, internal and scripts'; exit 1; }
 demo: build
 	python3 scripts/demo.py
 
 test-sandbox:
 	COMFYWARE_SANDBOX_TEST=1 go test ./cmd/songstead -run 'TestRealSandbox' -count=1
+
+test-browser: build
+	cd scripts/browser && npm ci && npm test

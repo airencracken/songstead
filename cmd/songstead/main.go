@@ -54,12 +54,13 @@ Usage:
   songstead create-user --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
   songstead set-password --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
   songstead list-users [--data-dir DIRECTORY]
+  songstead set-role --username NAME --role owner|member [--data-dir DIRECTORY]
   songstead backup --output FILE [--data-dir ./data]
   songstead restore --input FILE [--data-dir NEW_DIRECTORY]
   songstead --version
   songstead help [COMMAND]
 
-With no command, starts the server. Accounts are created locally; registration is closed.
+With no command, starts the server. Joining is invitation-only by default; owners configure it in /admin/settings.
 Password commands use a hidden, confirmed terminal prompt or read one line from stdin.
 create-owner creates a new owner; existing accounts are never promoted or changed.
 set-password revokes all sessions. list-users prints account IDs, names, and roles.
@@ -117,7 +118,7 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 	}
 	flags := commandFlags(command, out)
 	data := flags.String("data-dir", "", "private data directory (environment, then installed service, then ./data)")
-	var addr, name, output, input string
+	var addr, name, output, input, role string
 	var stdin, prompt bool
 	switch command {
 	case "serve":
@@ -126,6 +127,9 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 		flags.StringVar(&name, "username", "", "account username (required)")
 		flags.BoolVar(&stdin, "password-stdin", false, "read one password line from standard input")
 		flags.BoolVar(&prompt, "password-prompt", false, "prompt twice without echoing (requires a terminal)")
+	case "set-role":
+		flags.StringVar(&name, "username", "", "existing account username (required)")
+		flags.StringVar(&role, "role", "", "owner or member (required)")
 	case "backup":
 		flags.StringVar(&output, "output", "", "backup destination (must not exist)")
 	case "restore":
@@ -143,6 +147,9 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 	account := command == "create-owner" || command == "create-user" || command == "set-password"
 	if account && (stdin == prompt || name == "") {
 		return errors.New("provide --username and exactly one of --password-prompt or --password-stdin")
+	}
+	if command == "set-role" && (store.ValidateUsername(name) != nil || (role != "owner" && role != "member")) {
+		return errors.New("provide a valid --username and --role owner or member")
 	}
 	if command == "backup" && output == "" {
 		return errors.New("provide --output")
@@ -174,7 +181,7 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 		return err
 	}
 	path := filepath.Join(*data, "songstead.db")
-	if command == "set-password" || command == "list-users" || command == "backup" {
+	if command == "set-role" || command == "set-password" || command == "list-users" || command == "backup" {
 		if _, err := os.Stat(path); err != nil {
 			return fmt.Errorf("open existing Songstead database: %w", err)
 		}
@@ -237,6 +244,12 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 			_, err = fmt.Fprintln(out, "Account updated:", name)
 		}
 		return err
+	case "set-role":
+		if err := s.SetRole(ctx, name, role); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintln(out, "Role updated:", name, role)
+		return err
 	case "list-users":
 		return printUsers(ctx, s, out)
 	case "backup":
@@ -274,7 +287,7 @@ func serve(ctx context.Context, s *store.Store, addr string) error {
 	if err != nil {
 		return err
 	}
-	a, err := web.New(s, web.Config{WitmootURL: os.Getenv("SONGSTEAD_WITMOOT_URL"), BaseURL: os.Getenv("SONGSTEAD_BASE_URL"), SecureCookies: secure, TrustedProxies: trusted})
+	a, err := web.New(s, web.Config{Version: version, WitmootURL: os.Getenv("SONGSTEAD_WITMOOT_URL"), BaseURL: os.Getenv("SONGSTEAD_BASE_URL"), SecureCookies: secure, TrustedProxies: trusted})
 	if err != nil {
 		return err
 	}

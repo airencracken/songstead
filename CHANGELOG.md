@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0
+
+- Add owner administration for persistent identity, joining policy and Witmoot URLs.
+- Add expiring, use-limited invitation links with delegated permission, attribution and revocation.
+- Add account roles and suspension with transactional last-active-owner protection.
+- Add single-use one-hour recovery links and current-password account changes, with session revocation.
+- Add configurable welcome text, house rules, contact, source link, version display and normalized mascot/favicon uploads.
+- Add explicit local `set-role` for upgrading an existing member to owner.
+- Share password confirmation, image normalization and the mutation engine through Comfylib 0.1.2.
+- Preserve schema 3/4 backups, existing accounts and sessions, and all music privacy boundaries.
+- Verify administration with store, HTTP, schema, property, atomicity, adversarial, mutation and Chromium accessibility tests.
+
 ## 0.1.2
 
 - Add transparent jukebox favicons matching the Imvault and Witmoot icon sizes.
