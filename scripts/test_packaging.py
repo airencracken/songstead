@@ -10,6 +10,9 @@ def service_errors(text):
     return [requirement for requirement in ("User=songstead", "Group=songstead", "StateDirectoryMode=0700", "UMask=0077", "EnvironmentFile=-/etc/songstead/songstead.env", "ExecStart=/usr/local/bin/songstead serve") if requirement not in text]
 
 class PackagingTests(unittest.TestCase):
+    def test_generated_python_files_are_not_release_sources(self):
+        tracked=subprocess.run(["git","ls-files","--cached"],cwd=ROOT,check=True,capture_output=True,text=True).stdout.splitlines()
+        self.assertFalse([p for p in tracked if "__pycache__/" in p or p.endswith((".pyc",".pyo"))])
     def test_agpl_stack_and_version(self):
         self.assertIn("GNU AFFERO GENERAL PUBLIC LICENSE", (ROOT/"LICENSE").read_text())
         self.assertEqual((ROOT/"VERSION").read_text().strip(),"0.1.0")

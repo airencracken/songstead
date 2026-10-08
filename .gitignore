@@ -6,3 +6,6 @@
 
 /dist/
 /.release/
+
+__pycache__/
+*.py[cod]
