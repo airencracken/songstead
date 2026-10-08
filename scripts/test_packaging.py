@@ -98,6 +98,19 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertIn("go mod verify || exit 1",prepare)
         subprocess.run(["sh","-n",str(ROOT/"scripts/release/prepare.sh")],check=True)
 
+    def test_release_guides_and_library_pin_are_self_contained(self):
+        guide = (ROOT / "docs/releases.md").read_text()
+        for requirement in ("songstead_0.1.0_linux_amd64.tar.gz", "songstead_0.1.0_checksums.txt",
+                            "sha256sum --check --ignore-missing", "GOWORK=off make check build",
+                            "=www-apps/songstead-0.1.0::comfyware"):
+            self.assertIn(requirement, guide)
+        module = (ROOT / "go.mod").read_text()
+        self.assertIn("github.com/airencracken/comfylib v0.1.1", module)
+        self.assertNotIn("replace ", module)
+        sums = (ROOT / "go.sum").read_text()
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.1\.1 h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.1\.1/go\.mod h1:[A-Za-z0-9+/]{43}=$")
+
     def test_ci_checks_standalone_dependencies_without_rewriting_checksums(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text()
         for requirement in ("GOWORK: 'off'", "shell: bash --noprofile --norc {0}",

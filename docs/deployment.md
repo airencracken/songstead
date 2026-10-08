@@ -5,8 +5,8 @@ HTML, HTMX, CSS and mascot assets. There is no asset server or required external
 service. Go 1.26 is needed to build; static binaries have no C library requirement.
 
 `make build` prepares an unpublished 0.1.0 binary in `bin/songstead`. Run
-`bin/songstead --version` to inspect its build stamp. For local development before
-Comfylib is published, see [release coordination](release-coordination.md).
+`bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.1; see
+[the release installation guide](releases.md).
 
 Create a service account and group named `songstead`, install the binary, and
 create `/var/lib/songstead` with that owner and mode 0700. Run account provisioning
@@ -63,7 +63,7 @@ export format remains version 2 with an additive Visibility field on each
 recommendation. Back up before upgrading; reverting the binary alone cannot
 downgrade the database.
 
-Gentoo live packaging is prepared in the Comfyware overlay. The versioned
-0.1.0 recipe remains staged until source and dependency archives are published
-and checksummed. See the overlay's `release-preparation` directory.
+The Comfyware Gentoo overlay provides versioned and live packages with native
+services and private storage. Versioned packages use published, checksummed
+source and dependency archives; live packages follow upstream `master`.
 For the existing Gentoo/OpenRC host, see [Gentoo deployment](deployment.md).

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (prepared)
+## 0.1.0
 
 First Songstead release: a signed-in Recent tab for music shared with everyone
 here, an explicit audience selector, private recommendations from friends and groups,
@@ -12,4 +12,4 @@ Go, SQLite and HTMX; local accounts, static Linux binaries, backups, restore,
 account exports, OpenRC/systemd configuration and a friendly jukebox mascot.
 AGPL-3.0-or-later. No playback telemetry, deadlines, read receipts or reminders.
 
-Publication is pending the coordinated Comfylib release and verification.
+Uses published Comfylib v0.1.1 with verified module checksums.

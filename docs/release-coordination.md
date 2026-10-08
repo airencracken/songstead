@@ -1,10 +1,10 @@
-# Coordinated release preparation
+# Coordinated releases
 
-Songstead 0.1.0 is prepared on `master`, under AGPL-3.0-or-later, using Go,
+Songstead 0.1.0 uses `master`, under AGPL-3.0-or-later, using Go,
 SQLite and HTMX. Comfylib, Witmoot, imvault, the Gentoo overlay and website have
 separate changes; there is no shared database or mandatory runtime service.
 
-1. Publish Comfylib v0.1.1, including the additive session CSRF helper and
+1. Comfylib v0.1.1 is published, including the additive session CSRF helper and
    `reference` browser handoff package. Existing Witmoot/imvault CSRF purpose
    strings and outputs remain unchanged.
 2. In each app, resolve that real tag with `GOWORK=off go mod download`, record
@@ -43,15 +43,9 @@ Local review archives live in `.artifacts/songstead-0.1.0-preview`; they are
 explicitly unpublished and were built using that workspace. They are not a
 substitute for resolving the released module and passing clean release checks.
 
-On 2026-10-08, website and overlay default-branch pulls succeeded. Songstead's
-public GitHub repository was subsequently created under `airencracken`, and
-its source was pushed to `master` after explicit publication approval.
-Comfylib's remote has no `v0.1.1` tag; library publication remains a release
-prerequisite. Website HTTP and Chromium checks now pass with local
-sockets enabled; see the validation record. Full companion release checks,
-Portage installation, publication and deployment remain outstanding. Website
-copy labels 0.1.0 as in preparation. The first GitHub CI run confirms the
-missing Comfylib tag is the dependency-resolution blocker. The prepared
-library candidate at `411cfde` passes `make check` and remains unpublished.
-
-See [validation.md](validation.md) for checks and unresolved release gates.
+On 2026-10-08, Comfylib v0.1.1 was published at `411cfde` after its full
+GitHub CI passed, including real Bubblewrap and proxy checks. All three apps
+resolve its real module checksums from the official Go checksum database in
+clean builds with `GOWORK=off`. Songstead's source is public with `master` as
+its default branch. Publication of versioned application and overlay artifacts
+follows the checks above; see [validation.md](validation.md) for current results.

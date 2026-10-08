@@ -2,8 +2,7 @@
 
 Good music, from your people.
 
-[Source repository](https://github.com/airencracken/songstead). The first
-release remains in preparation.
+[Source repository](https://github.com/airencracken/songstead). See the [release installation guide](docs/releases.md).
 
 Songstead is a small, self-hosted recommendation shelf for friends. Paste a link,
 share it with everyone here or choose a friend or group privately, and add a note. Listen when you have a moment, keep your own
@@ -13,7 +12,7 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## 0.1.0 release preparation
+## Songstead 0.1.0
 
 Friends and groups can leave tracks, albums, artists and listening links. Browse
 by music, person, group or each recommendation. Duplicate provider identities
@@ -41,20 +40,17 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-**Coordinated library change:** this branch uses the new
-`comfylib/token.SessionCSRF` and `comfylib/reference` APIs intended for Comfylib v0.1.1. Until that release
-is published, develop with a sibling Comfylib worktree and an untracked workspace:
+Release builds use published Comfylib v0.1.1 and verified module checksums.
+Build and test independently of any development workspace:
 
 ```sh
-go work init . ../comfylib
-go work edit -replace=github.com/airencracken/comfylib@v0.1.1=../comfylib
-make build
+GOWORK=off make check build
 make demo
 ```
 
-The workspace is already configured in the supplied worktrees. Keep `go.work`
-and local replacements out of commits. Clean standalone release builds must wait
-for Comfylib v0.1.1; see [release coordination](docs/release-coordination.md).
+For local changes to the shared library, use an untracked `go.work` with the
+sibling Comfylib worktree. Keep workspace files and local replacements out of
+commits and release builds. See [release coordination](docs/release-coordination.md).
 
 The demo listens at `http://127.0.0.1:8083`. Sign in as `alice` or `bobby`, both
 with `demo-password`. It uses a private temporary directory and removes it when
