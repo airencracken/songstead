@@ -66,4 +66,20 @@ downgrade the database.
 The Comfyware Gentoo overlay provides versioned and live packages with native
 services and private storage. Versioned packages use published, checksummed
 source and dependency archives; live packages follow upstream `master`.
-For the existing Gentoo/OpenRC host, see [Gentoo deployment](deployment.md).
+Follow [the release installation guide](releases.md) for Gentoo package setup.
+
+## Example service configuration
+
+Use your own public hostname in the service settings. These reserved domains
+illustrate a deployment with an optional Witmoot discussion connection:
+
+```sh
+SONGSTEAD_ADDR="127.0.0.1:8083"
+SONGSTEAD_DATA_DIR="/var/lib/songstead"
+SONGSTEAD_BASE_URL="https://songstead.example.com"
+SONGSTEAD_WITMOOT_URL="https://boards.example.com"
+SONGSTEAD_SECURE_COOKIES="true"
+SONGSTEAD_TRUSTED_PROXIES="127.0.0.1/32,::1/128"
+```
+
+Keep machine-specific settings and deployment notes outside this repository.

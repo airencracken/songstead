@@ -3,10 +3,27 @@
 """Release, service and license contracts with deliberately damaged inputs."""
 from pathlib import Path
 import os
+import re
+from urllib.parse import urlsplit
 import subprocess
 import tempfile
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
+
+def example_configuration_errors(text):
+    errors = []
+    for raw in re.findall(r'SONGSTEAD_[A-Z_]+=["\']?(https?://[^\s"\']+)', text):
+        try:
+            url = urlsplit(raw)
+            host = url.hostname or ""
+            allowed = host in ("localhost", "127.0.0.1", "::1") or any(
+                host == domain or host.endswith("." + domain)
+                for domain in ("example.com", "example.org", "example.net"))
+            if not allowed or url.username is not None or url.password is not None:
+                errors.append("Deployment examples must use credential-free example or loopback hosts")
+        except ValueError:
+            errors.append("Malformed example address")
+    return errors
 
 def service_errors(text):
     return [requirement for requirement in ("User=songstead", "Group=songstead", "StateDirectoryMode=0700", "UMask=0077", "EnvironmentFile=-/etc/songstead/songstead.env", "ExecStart=/usr/local/bin/songstead serve") if requirement not in text]
@@ -65,6 +82,40 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertEqual(result.stdout.count("checkpath"), 1)
         self.assertNotIn("<--file>", result.stdout)
         self.assertNotIn("command <", result.stdout)
+
+    def test_native_service_documentation_uses_generic_example_hosts(self):
+        guide = (ROOT / "docs/deployment.md").read_text()
+        self.assertEqual(example_configuration_errors(guide), [])
+        service = (ROOT / "contrib/openrc/songstead").read_text()
+        for key in ("SONGSTEAD_BASE_URL", "SONGSTEAD_WITMOOT_URL",
+                    "SONGSTEAD_SECURE_COOKIES", "SONGSTEAD_TRUSTED_PROXIES"):
+            self.assertIn(key, guide)
+            self.assertIn(key, service)
+        for old, new in (("songstead.example.com", "private-host.test"),
+                         ("boards.example.com", "user:password@boards.example.com")):
+            mutated = guide.replace(old, new)
+            self.assertNotEqual(mutated, guide)
+            self.assertTrue(example_configuration_errors(mutated))
+
+    def test_example_configuration_validation(self):
+        for host in ("example.com", "songstead.example.org", "boards.example.net",
+                     "localhost", "127.0.0.1", "[::1]"):
+            with self.subTest(host=host):
+                self.assertEqual(example_configuration_errors(
+                    f'SONGSTEAD_BASE_URL="https://{host}"'), [])
+        for host in ("example.com.attacker.test", "notexample.com", "private-host.test",
+                     "192.0.2.55", "user@example.com", "[broken"):
+            with self.subTest(host=host):
+                self.assertTrue(example_configuration_errors(
+                    f'SONGSTEAD_BASE_URL="https://{host}"'))
+
+    def test_local_documentation_links_exist(self):
+        for path in [ROOT / "README.md", *(ROOT / "docs").glob("*.md")]:
+            for target in re.findall(r'\[[^\]\n]*\]\(([^)\s]+)\)', path.read_text()):
+                if urlsplit(target).scheme or target.startswith("#"):
+                    continue
+                with self.subTest(path=path.name, target=target):
+                    self.assertTrue((path.parent / target.split("#", 1)[0]).exists())
 
     def test_generated_python_files_are_not_release_sources(self):
         tracked=subprocess.run(["git","ls-files","--cached"],cwd=ROOT,check=True,capture_output=True,text=True).stdout.splitlines()

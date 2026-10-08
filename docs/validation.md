@@ -65,7 +65,7 @@ and 306 Chromium checks. Browser coverage includes both palettes at four
 widths, accessibility, full square Songstead artwork and keyboard operation of
 its privacy FAQ without JavaScript. Desktop/mobile screenshots were reviewed.
 The release copy links published source, downloads and deployment instructions.
-Updating the website repository does not deploy the the example host document root.
+Updating the website repository does not deploy the live document root.
 
 ## Gentoo packaging
 
@@ -89,4 +89,4 @@ versions retain existing redundant-version and identical-distfile warnings.
 Real Bubblewrap namespace checks run in GitHub CI rather than
 this Docker container.
 
-No service, DNS, proxy or application data on the example host has been changed.
+Publication changes repositories and release artifacts; host deployment is separate.

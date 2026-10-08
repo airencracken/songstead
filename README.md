@@ -31,8 +31,7 @@ optional. Every application remains usable on its own.
 
 Read [the shelf and annotation behavior](docs/quiet-inbox.md),
 [deployment and migration details](docs/deployment.md), and
-[the publication order](docs/release-coordination.md), and
-[Gentoo deployment](docs/deployment.md). Go/SQLite/HTMX,
+[the publication order](docs/release-coordination.md). Go/SQLite/HTMX,
 AGPL-3.0-or-later, with `master` as the repository default branch.
 
 ## Build and try it

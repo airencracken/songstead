@@ -47,7 +47,7 @@ preview API and Witmoot's draft route enforce authentication.
 
 Follow [releases.md](releases.md) and [Gentoo deployment](deployment.md) to install. Stop and
 back up existing apps before their schema upgrades. Publication does not
-change services, DNS, proxies or data on the example host.
+change services, DNS, proxies or application data.
 
 ## Website and funding
 

@@ -38,8 +38,8 @@ emaint sync -r comfyware
 emerge --ask =www-apps/songstead-0.1.0::comfyware
 ```
 
-See [Gentoo deployment](deployment.md) for the existing Gentoo/OpenRC host and optional
-Witmoot discussion configuration. Each application works independently.
+See [deployment.md](deployment.md) for native services and optional Witmoot
+discussion configuration. Each application works independently.
 
 ## Build the published source
 
