@@ -18,8 +18,10 @@ func promptPassword(in io.Reader, out io.Writer) (string, error) {
 	if !ok || !term.IsTerminal(int(file.Fd())) {
 		return "", errors.New("password prompt requires a terminal; use --password-stdin")
 	}
-	return readConfirmedPassword(out, func() ([]byte, error) {
-		return term.ReadPassword(int(file.Fd()))
+	return password.WithHiddenInput(int(file.Fd()), func() (string, error) {
+		return readConfirmedPassword(out, func() ([]byte, error) {
+			return term.ReadPassword(int(file.Fd()))
+		})
 	})
 }
 

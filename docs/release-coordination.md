@@ -6,24 +6,24 @@ own accounts, database and runtime; the discussion connections are optional.
 
 | Component | Published version | Release |
 | --- | --- | --- |
-| Comfylib | 0.1.2 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.1.2) |
-| Songstead | 0.2.0 | [Linux binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.2.0) |
-| Witmoot | 0.14.1 | [Linux binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.14.1) |
-| Imvault | 0.16.1 | [Linux binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.16.1) |
+| Comfylib | 0.1.3 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.1.3) |
+| Songstead | 0.2.1 | [Linux binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.2.1) |
+| Witmoot | 0.14.2 | [Linux binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.14.2) |
+| Imvault | 0.16.2 | [Linux binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.16.2) |
 
 Comfylib adds shared password confirmation and branding image normalization,
 and retains `token.SessionCSRF` and the `reference` browser handoff package.
 Existing Witmoot and Imvault CSRF purpose strings and outputs are preserved.
-All three applications pin v0.1.2 and its verified Go checksum database records.
+All three applications pin v0.1.3 and its verified Go checksum database records.
 Clean builds and release workflows use `GOWORK=off`, without local replacements.
 
 Songstead's public repository uses `master` as its default branch and
-AGPL-3.0-or-later licensing. Its v0.2.0 tag is on master and matches VERSION.
+AGPL-3.0-or-later licensing. Its v0.2.1 tag is on master and matches VERSION.
 Songstead adds owner settings, invitations, account recovery and suspension.
 GoReleaser publishes static Linux amd64/arm64 archives, source, license notices
 and SHA-256 checksums after the full standalone release checks pass.
 
-Witmoot v0.14.1 accepts deliberate `/share` discussion drafts. Imvault v0.16.1
+Witmoot v0.14.2 accepts deliberate `/share` discussion drafts. Imvault v0.16.2
 adds album discussion links and its authenticated
 `/api/v1/albums/{ref}/preview` endpoint. Optional previews check current public
 visibility; private albums retain plain links. Preparing a draft creates no
@@ -36,15 +36,15 @@ The Comfyware overlay contains versioned and live recipes for all three apps.
 The versioned recipes use verified published sources and these dependency
 releases:
 
-- [Songstead 0.2.0 dependencies](https://github.com/airencracken/comfyware/releases/tag/songstead-0.2.0)
-- [Witmoot 0.14.1 dependencies](https://github.com/airencracken/comfyware/releases/tag/witmoot-0.14.1)
-- [Imvault 0.16.1 dependencies](https://github.com/airencracken/comfyware/releases/tag/imvault-0.16.1)
+- [Songstead 0.2.1 dependencies](https://github.com/airencracken/comfyware/releases/tag/songstead-0.2.1)
+- [Witmoot 0.14.2 dependencies](https://github.com/airencracken/comfyware/releases/tag/witmoot-0.14.2)
+- [Imvault 0.16.2 dependencies](https://github.com/airencracken/comfyware/releases/tag/imvault-0.16.2)
 
-Portage generated the BLAKE2B/SHA512 Manifests from the actual archives.
-All three packages passed full builds, upstream tests and installation in an
+The BLAKE2B/SHA512 Manifests record the actual published archives.
+All three packages passed builds, upstream tests and the overlay installation harness in an
 official Gentoo stage3 container with its external network disconnected.
-Service accounts, private permissions, provisioning and health routes were
-checked. Songstead also passed installed backup/restore checks; Imvault's
+The native release checks cover service accounts, private permissions,
+provisioning and health routes. Songstead also covers backup/restore; Imvault's
 preview API and Witmoot's draft route enforce authentication.
 
 Follow [releases.md](releases.md) and [Gentoo deployment](deployment.md) to install. Stop and

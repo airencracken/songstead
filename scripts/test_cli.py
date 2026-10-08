@@ -42,8 +42,12 @@ class TerminalPasswordTests(unittest.TestCase):
 
         try:
             until(b"Password: ")
+            self.assertEqual(termios.tcgetattr(slave)[3] & (termios.ECHO | termios.ECHONL), 0,
+                             "echo enabled when first prompt became visible")
             os.write(master, first.encode() + b"\n")
             until(b"Confirm password: ")
+            self.assertEqual(termios.tcgetattr(slave)[3] & (termios.ECHO | termios.ECHONL), 0,
+                             "echo enabled when confirmation became visible")
             os.write(master, second.encode() + b"\n")
             code = process.wait(timeout=10)
             while select.select([master], [], [], 0)[0]:

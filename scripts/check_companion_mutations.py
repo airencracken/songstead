@@ -28,7 +28,7 @@ def main():
    cwd=base/app
    env={**os.environ,'GOPROXY':'off','GOSUMDB':'off','GOWORK':'off'}
    if app!='comfylib':
-    workspace=base/'go.work';workspace.write_text(f'go 1.26.0\nuse (\n ./{app}\n ./comfylib\n)\nreplace github.com/airencracken/comfylib v0.1.2 => ./comfylib\n');env['GOWORK']=str(workspace)
+    workspace=base/'go.work';workspace.write_text(f'go 1.26.0\nuse (\n ./{app}\n ./comfylib\n)\nreplace github.com/airencracken/comfylib v0.1.3 => ./comfylib\n');env['GOWORK']=str(workspace)
    command=['go','test','-count=1','-run',test,package]
    baseline=subprocess.run(command,cwd=cwd,env=env,text=True,capture_output=True,timeout=120)
    if baseline.returncode or 'no tests to run' in baseline.stdout:raise RuntimeError(f'{app} baseline failed: {baseline.stdout}\n{baseline.stderr}')

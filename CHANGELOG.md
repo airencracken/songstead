@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Disable terminal echo before displaying either password prompt using Comfylib 0.1.3.
+- Verify prompt-time terminal state and terminal restoration with real pseudo-terminal tests.
+
 ## 0.2.0
 
 - Add owner administration for persistent identity, joining policy and Witmoot URLs.
