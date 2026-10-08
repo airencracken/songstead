@@ -12,7 +12,7 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.1.1
+## Songstead 0.1.2
 
 Friends and groups can leave tracks, albums, artists and listening links. Browse
 by music, person, group or each recommendation. Duplicate provider identities
@@ -55,8 +55,23 @@ The demo listens at `http://127.0.0.1:8083`. Sign in as `alice` or `bobby`, both
 with `demo-password`. It uses a private temporary directory and removes it when
 stopped. Send a link as one account, then sign in as the other to try the shelf.
 
-For a permanent instance, create your accounts locally. Passwords are supplied
-through standard input, never command arguments. For example, in Bash:
+For a permanent instance, provision an owner locally using a hidden password
+prompt. Passwords are entered twice and never passed as command arguments:
+
+```sh
+songstead create-owner --username alex --password-prompt
+songstead create-user --username freya --password-prompt
+songstead list-users
+```
+
+On a packaged installation, these commands discover the data directory in the
+active OpenRC or systemd service configuration. When invoked as root, they run
+as the configured service account to preserve database ownership. An explicit
+`--data-dir` overrides `SONGSTEAD_DATA_DIR`, which overrides service settings.
+Portable installations default to `./data` and run as an unprivileged user.
+
+For scripts, use `--password-stdin` instead of `--password-prompt`. For example,
+in Bash:
 
 ```sh
 if read -r -s -p 'Password: ' songstead_password; then
@@ -73,8 +88,13 @@ fi
 Repeat for your friend, then run `./bin/songstead serve`. Account names use 3–24
 letters, digits, underscores, or dashes. Passwords need at least 12 characters
 and at most 72 bytes. `set-password` has the same options and revokes every
-session for the account. There is no public registration or invitation system
-in this phase. The local operator provisions accounts and handles recovery.
+session for the account. `create-owner` only creates a new owner: it never
+promotes, replaces, or resets an existing account, including a username differing
+only in case. Existing accounts stay members during upgrade. Owners have the
+same music privacy boundaries as members; site administration remains local CLI
+operations. Use `songstead help COMMAND` or `COMMAND --help` for available flags.
+There is no public registration or invitation system in this phase. The local
+operator provisions accounts and handles recovery.
 
 ## Configuration and hosting
 

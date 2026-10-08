@@ -25,7 +25,9 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version != 3 {
+	// Previous releases used schema 3. Restore it unchanged; the server applies
+	// the owner migration on its next start.
+	if version != 3 && version != 4 {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string
@@ -78,6 +80,15 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 		}
 		if err := rows.Close(); err != nil {
 			return err
+		}
+	}
+	if version == 4 {
+		var invalid int
+		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE role IS NULL OR role NOT IN ('member','owner')").Scan(&invalid); err != nil {
+			return err
+		}
+		if invalid != 0 {
+			return errors.New("snapshot has invalid account roles")
 		}
 	}
 	return nil

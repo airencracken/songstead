@@ -15,8 +15,7 @@ import (
 )
 
 func runSandbox(ctx context.Context, args []string, out io.Writer) error {
-	flags := flag.NewFlagSet("sandbox", flag.ContinueOnError)
-	flags.SetOutput(out)
+	flags := commandFlags("sandbox", out)
 	check := flags.Bool("check", false, "verify the sandbox without starting the server")
 	dataDir := flags.String("data-dir", envDefault("SONGSTEAD_DATA_DIR", "./data"), "existing private data directory")
 	bwrap := flags.String("bwrap", envDefault("SONGSTEAD_BWRAP", "bwrap"), "Bubblewrap executable")

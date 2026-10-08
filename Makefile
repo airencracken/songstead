@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
-VERSION ?= 0.1.1
+VERSION ?= 0.1.2
 GOCACHE ?= /tmp/songstead-go-cache
 export GOCACHE
 
-.PHONY: help build test test-race test-js test-mutations test-sandbox check demo
+.PHONY: help build test test-race test-js test-mutations test-sandbox test-cli check demo
 help:
 	@echo 'Songstead: make build, test, test-race, test-js, test-mutations, check, demo'
 build:
@@ -18,7 +18,9 @@ test-js:
 	node --test internal/web/static/theme.test.js
 test-mutations:
 	python3 scripts/mutate.py
-check: test-race test-js test-mutations test-packaging
+test-cli: build
+	python3 scripts/test_cli.py
+check: test-race test-js test-mutations test-packaging test-cli
 	go vet ./...
 	@test -z "$$(gofmt -l cmd internal)" || { echo 'Run gofmt on cmd and internal'; exit 1; }
 demo: build

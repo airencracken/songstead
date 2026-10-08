@@ -211,7 +211,7 @@ func TestRecentMigrationKeepsExistingGiftsPrivate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec(`DROP INDEX recommendations_recent; ALTER TABLE recommendations DROP COLUMN visibility; PRAGMA user_version=2;`); err != nil {
+	if _, err := s.db.Exec(`DROP INDEX recommendations_recent; ALTER TABLE recommendations DROP COLUMN visibility; ALTER TABLE users DROP COLUMN role; PRAGMA user_version=2;`); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Close(); err != nil {

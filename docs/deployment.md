@@ -4,20 +4,25 @@ Songstead is an independent AGPL-3.0-or-later Go binary with SQLite and embedded
 HTML, HTMX, CSS and mascot assets. There is no asset server or required external
 service. Go 1.26 is needed to build; static binaries have no C library requirement.
 
-`make build` prepares an unpublished 0.1.1 binary in `bin/songstead`. Run
+`make build` prepares a 0.1.2 binary in `bin/songstead`. Run
 `bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.1; see
 [the release installation guide](releases.md).
 
 Create a service account and group named `songstead`, install the binary, and
 create `/var/lib/songstead` with that owner and mode 0700. Run account provisioning
-as that account, passing a password on stdin:
+as that account, using a hidden, confirmed password prompt:
 
 ```sh
-songstead create-user --data-dir /var/lib/songstead --username alice --password-stdin
+songstead create-owner --data-dir /var/lib/songstead --username alex --password-prompt
+songstead create-user --data-dir /var/lib/songstead --username freya --password-prompt
+songstead list-users --data-dir /var/lib/songstead
 ```
 
-The command reads one password line from stdin. Use a protected pipe or input
-file; do not place a password in command arguments or shell history. Passwords
+Account and backup commands read the installed service configuration unless
+`--data-dir` or `SONGSTEAD_DATA_DIR` overrides it. Root invocations run as the
+configured service user. On a portable install without a service, use an
+unprivileged account. `--password-stdin` reads one password line for scripts.
+Use a protected pipe or input file; do not place a password in command arguments or shell history. Passwords
 need at least 12 characters and at most 72 bytes. `set-password` uses the same
 arguments and revokes the account's sessions atomically.
 
@@ -41,7 +46,7 @@ Do not run two services against the same directory; the server takes a file lock
 `backup --output PATH` creates a consistent SQLite snapshot without overwriting
 an existing path. `restore --input PATH --data-dir EMPTY_DIRECTORY` validates the
 schema, integrity and foreign keys before installing it. Restore requires a
-snapshot matching this binary's schema; use the old binary to restore a v1 or v2
+schema 3 or 4 snapshot; use the old binary to restore a v1 or v2
 snapshot, then start the new binary to migrate it.
 
 Schema 2 adds groups, canonical music identity, private music organization,
@@ -58,10 +63,17 @@ Schema 3 adds explicit instance sharing and the Recent index. Every existing
 recommendation defaults to private; neither direct nor group recommendations
 are published to the shared feed by an upgrade. New browser forms choose
 everyone here or a private audience explicitly. Older clients keep private
-delivery. Once upgraded, restore requires a schema 3 snapshot; the account
-export format remains version 2 with an additive Visibility field on each
+delivery. The account export format remains version 2 with an additive Visibility field on each
 recommendation. Back up before upgrading; reverting the binary alone cannot
 downgrade the database.
+
+Schema 4 adds member and owner roles. Existing accounts remain members with
+unchanged credentials and sessions. `create-owner` provisions a new account and
+never promotes or modifies an existing username. Owners retain the same music
+privacy boundaries; administration is performed locally through the CLI.
+Previous schema 3 backups can still be restored and migrated on server startup.
+Account and backup commands refuse older schemas instead of migrating a live
+instance; restart the updated server first.
 
 The Comfyware Gentoo overlay provides versioned and live packages with native
 services and private storage. Versioned packages use published, checksummed

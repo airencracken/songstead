@@ -34,8 +34,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 3 {",
-    "after": "if version > 4 {",
+    "before": "if version > 4 {",
+    "after": "if version > 5 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -142,5 +142,61 @@
     "after": "Prefix: \"UNRELATED_\"",
     "package": "./cmd/songstead",
     "run": "^TestSandboxEnvironmentIsRestricted$"
+  },
+  {
+    "name": "owner account role",
+    "file": "cmd/songstead/main.go",
+    "before": "_, err = s.CreateOwner(ctx, name, password)",
+    "after": "_, err = s.CreateUser(ctx, name, password)",
+    "package": "./cmd/songstead",
+    "run": "^TestCLICreateOwnerAndListUsers$"
+  },
+  {
+    "name": "owner role schema constraints",
+    "file": "internal/store/migrations/004_owners.sql",
+    "before": "CHECK(role IN ('member','owner'))",
+    "after": "CHECK(1)",
+    "package": "./internal/store",
+    "run": "^TestOwnerSchemaAndAdversarialInputs$"
+  },
+  {
+    "name": "password prompt confirmation",
+    "file": "cmd/songstead/password_prompt.go",
+    "before": "if string(password) != string(confirmation) {",
+    "after": "if false && string(password) != string(confirmation) {",
+    "package": "./cmd/songstead",
+    "run": "^TestConfirmedPassword$"
+  },
+  {
+    "name": "service data directory discovery",
+    "file": "cmd/songstead/accounts.go",
+    "before": "*data, err = paths.DataDir(\"SONGSTEAD_DATA_DIR\")",
+    "after": "*data, err = filepath.Abs(\"data\")",
+    "package": "./cmd/songstead",
+    "run": "^TestCLIAccountServiceConfiguration$"
+  },
+  {
+    "name": "favicon page discovery",
+    "file": "internal/web/templates/layout.html",
+    "before": "  <link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/static/favicon-32.png\">",
+    "after": "",
+    "package": "./internal/web",
+    "run": "^TestFaviconLinksAndHTTPContracts$"
+  },
+  {
+    "name": "duplicate owner cannot replace account",
+    "file": "internal/store/store.go",
+    "before": "INSERT INTO users(username,password_hash,created_at,role) VALUES(?,?,?,?)",
+    "after": "INSERT INTO users(username,password_hash,created_at,role) VALUES(?,?,?,?) ON CONFLICT(username) DO UPDATE SET password_hash=excluded.password_hash,role=excluded.role",
+    "package": "./internal/store",
+    "run": "^TestOwnerProvisioningAndDuplicateAtomicity$"
+  },
+  {
+    "name": "existing account commands do not migrate",
+    "file": "internal/store/store.go",
+    "before": "if currentOnly && version != 4 {",
+    "after": "if false && currentOnly && version != 4 {",
+    "package": "./internal/store",
+    "run": "^TestOwnerMigrationAndLegacySnapshots$"
   }
 ]

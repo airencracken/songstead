@@ -6,6 +6,7 @@ require (
 	github.com/airencracken/comfylib v0.1.1
 	github.com/gofrs/flock v0.13.1
 	golang.org/x/crypto v0.57.0
+	golang.org/x/term v0.46.0
 	modernc.org/sqlite v1.59.0
 )
 

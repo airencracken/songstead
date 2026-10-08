@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2
+
+- Add transparent jukebox favicons matching the Imvault and Witmoot icon sizes.
+- Add local owner provisioning, account role listings, and hidden, confirmed password prompts.
+- Read installed OpenRC/systemd data directories for account and backup commands, and preserve service account ownership when invoked as root.
+- Add command-specific flags and help. Reject duplicate owner accounts without changing their passwords, roles, or sessions.
+- Preserve existing member accounts and schema 3 backups during the owner-role upgrade. Account commands require the updated server to migrate an existing database first.
+
 ## 0.1.1
 
 - Add `songstead sandbox` and `sandbox --check` using Comfylib's Bubblewrap service policy.

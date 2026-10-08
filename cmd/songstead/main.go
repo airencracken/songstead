@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/airencracken/comfylib/clientip"
+	"github.com/airencracken/comfylib/privdrop"
+	"github.com/airencracken/comfylib/svcconfig"
 	"github.com/airencracken/songstead/internal/media"
 	"github.com/airencracken/songstead/internal/store"
 	"github.com/airencracken/songstead/internal/web"
@@ -29,6 +31,12 @@ import (
 var version = "development"
 
 func main() {
+	if handled, status, err := privdrop.Reexec(provisioningRequest(os.Args[1:], servicePaths())); handled {
+		if err != nil {
+			slog.Error("songstead", "error", err)
+		}
+		os.Exit(status)
+	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	if err := run(ctx, os.Args[1:], os.Stdin, os.Stdout); err != nil {
@@ -42,14 +50,22 @@ const help = `Songstead: good music, from your people.
 Usage:
   songstead serve [--addr 127.0.0.1:8083] [--data-dir ./data]
   songstead sandbox [--check] [--data-dir ./data] [--bwrap bwrap]
-  songstead create-user --username NAME --password-stdin [--data-dir ./data]
-  songstead set-password --username NAME --password-stdin [--data-dir ./data]
+  songstead create-owner --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
+  songstead create-user --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
+  songstead set-password --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
+  songstead list-users [--data-dir DIRECTORY]
   songstead backup --output FILE [--data-dir ./data]
   songstead restore --input FILE [--data-dir NEW_DIRECTORY]
   songstead --version
+  songstead help [COMMAND]
 
 With no command, starts the server. Accounts are created locally; registration is closed.
-Password commands read one line from standard input. set-password revokes all sessions.
+Password commands use a hidden, confirmed terminal prompt or read one line from stdin.
+create-owner creates a new owner; existing accounts are never promoted or changed.
+set-password revokes all sessions. list-users prints account IDs, names, and roles.
+Account and backup commands discover the installed service's data directory unless
+--data-dir or SONGSTEAD_DATA_DIR is set. Root invocations run as the service user.
+Service settings: /etc/conf.d/songstead (OpenRC), /etc/songstead/songstead.env (systemd).
 Environment: SONGSTEAD_DATA_DIR, SONGSTEAD_ADDR, SONGSTEAD_SECURE_COOKIES,
 SONGSTEAD_TRUSTED_PROXIES (comma-separated proxy IPs or CIDRs),
 SONGSTEAD_BASE_URL, SONGSTEAD_WITMOOT_URL (optional discussion handoffs), SONGSTEAD_BWRAP.
@@ -63,33 +79,58 @@ func envDefault(key, fallback string) string {
 }
 
 func run(ctx context.Context, args []string, in io.Reader, out io.Writer) error {
+	return runWithPaths(ctx, args, in, out, servicePaths())
+}
+
+func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Writer, paths svcconfig.Paths) error {
 	command := "serve"
 	if len(args) > 0 {
 		command = args[0]
 		args = args[1:]
 	}
 	if command == "--version" || command == "version" {
+		if command == "version" && len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
+			_, err := io.WriteString(out, "Usage: songstead version\nPrint the running build version.\n")
+			return err
+		}
+		if len(args) != 0 {
+			return errors.New("usage: songstead version (also --version)")
+		}
 		_, err := fmt.Fprintln(out, "songstead", version)
 		return err
 	}
 	if command == "help" || command == "--help" || command == "-h" {
+		if command == "help" && len(args) == 1 && (commandDescriptions[args[0]] != "" || args[0] == "sandbox" || args[0] == "version") {
+			return runWithPaths(ctx, []string{args[0], "--help"}, in, out, paths)
+		}
+		if len(args) != 0 {
+			return errors.New("usage: songstead help [COMMAND]")
+		}
 		_, err := io.WriteString(out, help)
 		return err
 	}
 	if command == "sandbox" {
 		return runSandbox(ctx, args, out)
 	}
-	if command != "serve" && command != "create-user" && command != "set-password" && command != "backup" && command != "restore" {
+	if commandDescriptions[command] == "" {
 		return fmt.Errorf("unknown command %q; use --help", command)
 	}
-	flags := flag.NewFlagSet(command, flag.ContinueOnError)
-	flags.SetOutput(out)
-	data := flags.String("data-dir", envDefault("SONGSTEAD_DATA_DIR", "./data"), "private data directory")
-	addr := flags.String("addr", envDefault("SONGSTEAD_ADDR", "127.0.0.1:8083"), "listen address")
-	name := flags.String("username", "", "account username")
-	stdin := flags.Bool("password-stdin", false, "read one password line from standard input")
-	output := flags.String("output", "", "backup destination (must not exist)")
-	input := flags.String("input", "", "snapshot to restore into an empty data directory")
+	flags := commandFlags(command, out)
+	data := flags.String("data-dir", "", "private data directory (environment, then installed service, then ./data)")
+	var addr, name, output, input string
+	var stdin, prompt bool
+	switch command {
+	case "serve":
+		flags.StringVar(&addr, "addr", envDefault("SONGSTEAD_ADDR", "127.0.0.1:8083"), "listen address")
+	case "create-owner", "create-user", "set-password":
+		flags.StringVar(&name, "username", "", "account username (required)")
+		flags.BoolVar(&stdin, "password-stdin", false, "read one password line from standard input")
+		flags.BoolVar(&prompt, "password-prompt", false, "prompt twice without echoing (requires a terminal)")
+	case "backup":
+		flags.StringVar(&output, "output", "", "backup destination (must not exist)")
+	case "restore":
+		flags.StringVar(&input, "input", "", "snapshot to restore into an empty data directory")
+	}
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -99,14 +140,44 @@ func run(ctx context.Context, args []string, in io.Reader, out io.Writer) error 
 	if flags.NArg() != 0 {
 		return errors.New("unexpected arguments")
 	}
-	if (command == "create-user" || command == "set-password") && (!*stdin || *name == "") {
-		return errors.New("provide --username and --password-stdin")
+	account := command == "create-owner" || command == "create-user" || command == "set-password"
+	if account && (stdin == prompt || name == "") {
+		return errors.New("provide --username and exactly one of --password-prompt or --password-stdin")
 	}
-	if command == "backup" && *output == "" {
+	if command == "backup" && output == "" {
 		return errors.New("provide --output")
 	}
-	if command == "restore" && *input == "" {
+	if command == "restore" && input == "" {
 		return errors.New("provide --input")
+	}
+	if provisioningCommands[command] {
+		if err := privdrop.RefuseRoot(geteuid(), command, "sudo -u songstead env SONGSTEAD_DATA_DIR=/var/lib/songstead songstead "+command); err != nil {
+			return err
+		}
+	}
+	var password string
+	if account {
+		if err := store.ValidateUsername(name); err != nil {
+			return err
+		}
+		var err error
+		if prompt {
+			password, err = promptPassword(in, out)
+		} else {
+			password, err = readPassword(in)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	if err := resolveDataDir(flags, data, paths, provisioningCommands[command]); err != nil {
+		return err
+	}
+	path := filepath.Join(*data, "songstead.db")
+	if command == "set-password" || command == "list-users" || command == "backup" {
+		if _, err := os.Stat(path); err != nil {
+			return fmt.Errorf("open existing Songstead database: %w", err)
+		}
 	}
 	if err := os.MkdirAll(*data, 0700); err != nil {
 		return err
@@ -118,9 +189,8 @@ func run(ctx context.Context, args []string, in io.Reader, out io.Writer) error 
 	if info.Mode().Perm()&0077 != 0 {
 		return errors.New("data directory must be private: chmod 700 it before continuing")
 	}
-	path := filepath.Join(*data, "songstead.db")
 	if command == "restore" {
-		return restore(ctx, *input, path)
+		return restore(ctx, input, path)
 	}
 	if command == "serve" {
 		lock := flock.New(filepath.Join(*data, ".server.lock"))
@@ -133,7 +203,15 @@ func run(ctx context.Context, args []string, in io.Reader, out io.Writer) error 
 		}
 		defer lock.Close()
 	}
-	s, err := store.Open(path)
+	open := store.Open
+	if command != "serve" {
+		if _, err := os.Stat(path); err == nil {
+			open = store.OpenCurrent
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	s, err := open(path)
 	if err != nil {
 		return err
 	}
@@ -142,25 +220,29 @@ func run(ctx context.Context, args []string, in io.Reader, out io.Writer) error 
 		return err
 	}
 	switch command {
-	case "create-user", "set-password":
-		password, err := readPassword(in)
-		if err != nil {
-			return err
-		}
+	case "create-owner", "create-user", "set-password":
 		if command == "create-user" {
-			_, err = s.CreateUser(ctx, *name, password)
+			_, err = s.CreateUser(ctx, name, password)
+		} else if command == "create-owner" {
+			_, err = s.CreateOwner(ctx, name, password)
 		} else {
-			err = s.SetPassword(ctx, *name, password)
+			err = s.SetPassword(ctx, name, password)
 		}
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintln(out, "Account updated:", *name)
+		if command == "create-owner" {
+			_, err = fmt.Fprintln(out, "Created owner:", name)
+		} else {
+			_, err = fmt.Fprintln(out, "Account updated:", name)
+		}
 		return err
+	case "list-users":
+		return printUsers(ctx, s, out)
 	case "backup":
-		return backup(ctx, s, *output)
+		return backup(ctx, s, output)
 	default:
-		return serve(ctx, s, *addr)
+		return serve(ctx, s, addr)
 	}
 }
 

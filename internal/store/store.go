@@ -32,6 +32,7 @@ type Store struct{ db *sql.DB }
 type User struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
+	Role     string `json:"role"`
 }
 type Recommendation struct {
 	ID, MediaID, SenderID, RecipientID                                              int64
@@ -57,6 +58,16 @@ type Reaction struct {
 }
 
 func Open(path string) (*Store, error) {
+	return open(path, false)
+}
+
+// OpenCurrent opens a provisioned instance without applying migrations while
+// an older server might still be running. Start the updated server first.
+func OpenCurrent(path string) (*Store, error) {
+	return open(path, true)
+}
+
+func open(path string, currentOnly bool) (*Store, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
@@ -69,7 +80,7 @@ func Open(path string) (*Store, error) {
 	}
 	db.SetMaxOpenConns(1)
 	s := &Store{db: db}
-	if err := s.migrate(); err != nil {
+	if err := s.migrate(currentOnly); err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
 	return s, nil
@@ -77,7 +88,7 @@ func Open(path string) (*Store, error) {
 
 func (s *Store) Close() error { return s.db.Close() }
 
-func (s *Store) migrate() error {
+func (s *Store) migrate(currentOnly bool) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -87,11 +98,14 @@ func (s *Store) migrate() error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 3 {
+	if version > 4 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	for next := version + 1; next <= 3; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql"}[next]
+	if currentOnly && version != 4 {
+		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
+	}
+	for next := version + 1; next <= 4; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -113,6 +127,13 @@ func (s *Store) migrate() error {
 
 var username = regexp.MustCompile(`^[A-Za-z0-9_-]{3,24}$`)
 
+func ValidateUsername(name string) error {
+	if !username.MatchString(name) {
+		return errors.New("username needs 3-24 letters, numbers, underscores or dashes")
+	}
+	return nil
+}
+
 func ValidatePassword(password string) error {
 	if !utf8.ValidString(password) || utf8.RuneCountInString(password) < 12 || len(password) > 72 {
 		return errors.New("password needs at least 12 characters and at most 72 bytes")
@@ -121,8 +142,18 @@ func ValidatePassword(password string) error {
 }
 
 func (s *Store) CreateUser(ctx context.Context, name, password string) (int64, error) {
-	if !username.MatchString(name) {
-		return 0, errors.New("username needs 3-24 letters, numbers, underscores or dashes")
+	return s.createAccount(ctx, name, password, "member")
+}
+
+// CreateOwner provisions a new owner. Duplicate usernames, including names
+// differing only in case, never promote or change an existing account.
+func (s *Store) CreateOwner(ctx context.Context, name, password string) (int64, error) {
+	return s.createAccount(ctx, name, password, "owner")
+}
+
+func (s *Store) createAccount(ctx context.Context, name, password, role string) (int64, error) {
+	if err := ValidateUsername(name); err != nil {
+		return 0, err
 	}
 	if err := ValidatePassword(password); err != nil {
 		return 0, err
@@ -131,7 +162,7 @@ func (s *Store) CreateUser(ctx context.Context, name, password string) (int64, e
 	if err != nil {
 		return 0, err
 	}
-	result, err := s.db.ExecContext(ctx, "INSERT INTO users(username,password_hash,created_at) VALUES(?,?,?)", name, string(hash), time.Now().Unix())
+	result, err := s.db.ExecContext(ctx, "INSERT INTO users(username,password_hash,created_at,role) VALUES(?,?,?,?)", name, string(hash), time.Now().Unix(), role)
 	if err != nil {
 		return 0, err
 	}
@@ -171,12 +202,12 @@ func (s *Store) SetPassword(ctx context.Context, name, password string) error {
 func (s *Store) Credentials(ctx context.Context, name string) (User, string, error) {
 	var u User
 	var hash string
-	err := s.db.QueryRowContext(ctx, "SELECT id,username,password_hash FROM users WHERE username=?", name).Scan(&u.ID, &u.Username, &hash)
+	err := s.db.QueryRowContext(ctx, "SELECT id,username,role,password_hash FROM users WHERE username=?", name).Scan(&u.ID, &u.Username, &u.Role, &hash)
 	return u, hash, err
 }
 
 func (s *Store) Users(ctx context.Context, except int64) ([]User, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT id,username FROM users WHERE id!=? ORDER BY username", except)
+	rows, err := s.db.QueryContext(ctx, "SELECT id,username,role FROM users WHERE id!=? ORDER BY username", except)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +215,7 @@ func (s *Store) Users(ctx context.Context, except int64) ([]User, error) {
 	users := []User{}
 	for rows.Next() {
 		var u User
-		if err := rows.Scan(&u.ID, &u.Username); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.Role); err != nil {
 			return nil, err
 		}
 		users = append(users, u)
@@ -194,7 +225,7 @@ func (s *Store) Users(ctx context.Context, except int64) ([]User, error) {
 
 func (s *Store) Session(ctx context.Context, secret string) (User, error) {
 	var u User
-	err := s.db.QueryRowContext(ctx, "SELECT u.id,u.username FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires_at>?", token.Hash(secret), time.Now().Unix()).Scan(&u.ID, &u.Username)
+	err := s.db.QueryRowContext(ctx, "SELECT u.id,u.username,u.role FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires_at>?", token.Hash(secret), time.Now().Unix()).Scan(&u.ID, &u.Username, &u.Role)
 	return u, err
 }
 

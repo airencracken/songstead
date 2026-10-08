@@ -186,7 +186,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	if err != nil || user.ID != id {
 		t.Fatal("migration changed data")
 	}
-	if _, err := s.db.Exec("PRAGMA user_version=4"); err != nil {
+	if _, err := s.db.Exec("PRAGMA user_version=5"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()
@@ -200,7 +200,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	defer db.Close()
 	var version int
 	db.QueryRow("PRAGMA user_version").Scan(&version)
-	if version != 4 {
+	if version != 5 {
 		t.Fatal("modified newer schema")
 	}
 }
@@ -360,7 +360,7 @@ func TestExportPrivacyAndSnapshot(t *testing.T) {
 	s.React(ctx, u[0], id, Reaction{"unheard", 0, "sender-secret-note"})
 	s.React(ctx, u[1], id, Reaction{"listened", 1, "recipient-note"})
 	s.AddComment(ctx, u[1], id, "my comment")
-	archive, err := s.Export(ctx, User{u[1], "bobby"})
+	archive, err := s.Export(ctx, User{ID: u[1], Username: "bobby"})
 	if err != nil {
 		t.Fatal(err)
 	}
