@@ -41,6 +41,7 @@ const help = `Songstead: good music, from your people.
 
 Usage:
   songstead serve [--addr 127.0.0.1:8083] [--data-dir ./data]
+  songstead sandbox [--check] [--data-dir ./data] [--bwrap bwrap]
   songstead create-user --username NAME --password-stdin [--data-dir ./data]
   songstead set-password --username NAME --password-stdin [--data-dir ./data]
   songstead backup --output FILE [--data-dir ./data]
@@ -51,7 +52,7 @@ With no command, starts the server. Accounts are created locally; registration i
 Password commands read one line from standard input. set-password revokes all sessions.
 Environment: SONGSTEAD_DATA_DIR, SONGSTEAD_ADDR, SONGSTEAD_SECURE_COOKIES,
 SONGSTEAD_TRUSTED_PROXIES (comma-separated proxy IPs or CIDRs),
-SONGSTEAD_BASE_URL, SONGSTEAD_WITMOOT_URL (optional discussion handoffs).
+SONGSTEAD_BASE_URL, SONGSTEAD_WITMOOT_URL (optional discussion handoffs), SONGSTEAD_BWRAP.
 `
 
 func envDefault(key, fallback string) string {
@@ -74,6 +75,9 @@ func run(ctx context.Context, args []string, in io.Reader, out io.Writer) error 
 	if command == "help" || command == "--help" || command == "-h" {
 		_, err := io.WriteString(out, help)
 		return err
+	}
+	if command == "sandbox" {
+		return runSandbox(ctx, args, out)
 	}
 	if command != "serve" && command != "create-user" && command != "set-password" && command != "backup" && command != "restore" {
 		return fmt.Errorf("unknown command %q; use --help", command)

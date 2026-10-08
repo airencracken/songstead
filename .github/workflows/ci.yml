@@ -20,5 +20,10 @@ jobs:
           go mod download || exit 1
           go mod verify || exit 1
           git diff --exit-code -- go.mod go.sum || exit 1
+      - name: Install Bubblewrap for native integration
+        run: |
+          sudo apt-get update || exit 1
+          sudo apt-get install -y bubblewrap || exit 1
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || exit 1
       - name: Check and build
-        run: make check build
+        run: make check test-sandbox build

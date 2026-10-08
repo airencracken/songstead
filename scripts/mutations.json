@@ -118,5 +118,29 @@
     "after": "p.Audience = \"members\"",
     "package": "./internal/web",
     "run": "^TestRecentLegacyAndAdversarialAudience$"
+  },
+  {
+    "name": "sandbox failure must stop startup",
+    "file": "cmd/songstead/sandbox.go",
+    "before": "if err := sandbox.Check(ctx, binary, mounts, environment, \"/app/server\", \"--help\"); err != nil {",
+    "after": "if err := sandbox.Check(ctx, binary, mounts, environment, \"/app/server\", \"--help\"); false && err != nil {",
+    "package": "./cmd/songstead",
+    "run": "^TestSandboxFailureDoesNotCreateDatabase$"
+  },
+  {
+    "name": "sandbox private data directory",
+    "file": "cmd/songstead/sandbox.go",
+    "before": "if !info.IsDir() || info.Mode().Perm()&0077 != 0 {",
+    "after": "if false && (!info.IsDir() || info.Mode().Perm()&0077 != 0) {",
+    "package": "./cmd/songstead",
+    "run": "^TestSandboxRejectsUnsafeDataDirectories$"
+  },
+  {
+    "name": "sandbox settings prefix",
+    "file": "cmd/songstead/sandbox.go",
+    "before": "Prefix: \"SONGSTEAD_\"",
+    "after": "Prefix: \"UNRELATED_\"",
+    "package": "./cmd/songstead",
+    "run": "^TestSandboxEnvironmentIsRestricted$"
   }
 ]

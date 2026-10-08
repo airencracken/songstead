@@ -7,3 +7,7 @@ SONGSTEAD_DATA_DIR="/var/lib/songstead"
 # SONGSTEAD_TRUSTED_PROXIES="127.0.0.1/32,::1/128"
 # SONGSTEAD_BIN="/usr/bin/songstead"
 # SONGSTEAD_LOG_FILE="/var/log/songstead.log"
+
+# Opt in to whole-service isolation with sys-apps/bubblewrap installed.
+SONGSTEAD_SANDBOX="false"
+# SONGSTEAD_BWRAP="/usr/bin/bwrap"

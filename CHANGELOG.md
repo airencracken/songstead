@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Add `songstead sandbox` and `sandbox --check` using Comfylib's Bubblewrap service policy.
+- Add OpenRC opt-in configuration and a systemd drop-in. Sandbox failures stop startup.
+- Keep only the private data directory writable on the host, strip unrelated inherited settings, and disable nested user namespaces.
+- Require real sandbox lifecycle and filesystem boundary tests in CI and release validation.
+
 ## 0.1.0
 
 First Songstead release: a signed-in Recent tab for music shared with everyone

@@ -60,6 +60,26 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertIn("<--file> <--mode> <0640> <--owner> <songstead:songstead> </tmp/songstead.log>", result.stdout)
         self.assertIn("command </usr/local/bin/songstead> args <serve> user <songstead:songstead> umask <0077>", result.stdout)
 
+    def test_openrc_sandbox_selection_is_explicit_and_validated(self):
+        result = self.run_openrc_start({"SONGSTEAD_SANDBOX": "true"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("args <sandbox>", result.stdout)
+        for value in ("yes", "1", "TRUE", "true; touch /tmp/injected"):
+            result = self.run_openrc_start({"SONGSTEAD_SANDBOX": value})
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn("checkpath", result.stdout)
+            self.assertIn("must be true or false", result.stderr)
+
+    def test_systemd_sandbox_dropin_and_native_ci_checks(self):
+        dropin = (ROOT / "contrib/systemd/songstead-sandbox.conf").read_text()
+        self.assertIn("ExecStart=\nExecStart=/usr/local/bin/songstead sandbox", dropin)
+        self.assertIn("TimeoutStopSec=25", dropin)
+        self.assertIn("RestrictNamespaces=user pid ipc uts mnt", dropin)
+        for name in ("ci.yml", "release.yml"):
+            workflow = (ROOT / ".github/workflows" / name).read_text()
+            self.assertIn("install -y bubblewrap", workflow)
+            self.assertIn("make check test-sandbox build", workflow)
+
     def test_openrc_rejects_relative_and_adversarial_paths_before_changes(self):
         with tempfile.TemporaryDirectory() as directory:
             marker = Path(directory) / "injected"
@@ -122,7 +142,7 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertFalse([p for p in tracked if "__pycache__/" in p or p.endswith((".pyc",".pyo"))])
     def test_agpl_stack_and_version(self):
         self.assertIn("GNU AFFERO GENERAL PUBLIC LICENSE", (ROOT/"LICENSE").read_text())
-        self.assertEqual((ROOT/"VERSION").read_text().strip(),"0.1.0")
+        self.assertEqual((ROOT/"VERSION").read_text().strip(),"0.1.1")
         self.assertIn("modernc.org/sqlite",(ROOT/"go.mod").read_text())
         self.assertTrue((ROOT/"internal/web/static/htmx.min.js").is_file())
         make=(ROOT/"Makefile").read_text()
@@ -143,7 +163,7 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         workflow=(ROOT/".github/workflows/release.yml").read_text()
         self.assertIn("HEAD origin/master",workflow)
         self.assertIn("git diff --exit-code -- go.mod go.sum",workflow)
-        self.assertIn("make check build",workflow)
+        self.assertIn("make check test-sandbox build",workflow)
         prepare=(ROOT/"scripts/release/prepare.sh").read_text()
         self.assertIn("export GOWORK=off",prepare)
         self.assertIn("go mod verify || exit 1",prepare)
@@ -151,9 +171,9 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
 
     def test_release_guides_and_library_pin_are_self_contained(self):
         guide = (ROOT / "docs/releases.md").read_text()
-        for requirement in ("songstead_0.1.0_linux_amd64.tar.gz", "songstead_0.1.0_checksums.txt",
+        for requirement in ("songstead_0.1.1_linux_amd64.tar.gz", "songstead_0.1.1_checksums.txt",
                             "sha256sum --check --ignore-missing", "GOWORK=off make check build",
-                            "=www-apps/songstead-0.1.0::comfyware"):
+                            "=www-apps/songstead-0.1.1::comfyware"):
             self.assertIn(requirement, guide)
         module = (ROOT / "go.mod").read_text()
         self.assertIn("github.com/airencracken/comfylib v0.1.1", module)
@@ -167,7 +187,7 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         for requirement in ("GOWORK: 'off'", "shell: bash --noprofile --norc {0}",
                             "go mod download || exit 1", "go mod verify || exit 1",
                             "git diff --exit-code -- go.mod go.sum || exit 1",
-                            "make check build"):
+                            "make check test-sandbox build"):
             self.assertIn(requirement, workflow)
 
 if __name__=="__main__":unittest.main(verbosity=2)
