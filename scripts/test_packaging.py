@@ -93,4 +93,12 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertIn("go mod verify || exit 1",prepare)
         subprocess.run(["sh","-n",str(ROOT/"scripts/release/prepare.sh")],check=True)
 
+    def test_ci_checks_standalone_dependencies_without_rewriting_checksums(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+        for requirement in ("GOWORK: 'off'", "shell: bash --noprofile --norc {0}",
+                            "go mod download || exit 1", "go mod verify || exit 1",
+                            "git diff --exit-code -- go.mod go.sum || exit 1",
+                            "make check build"):
+            self.assertIn(requirement, workflow)
+
 if __name__=="__main__":unittest.main(verbosity=2)

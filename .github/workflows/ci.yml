@@ -2,6 +2,11 @@ name: Checks
 on: [push, pull_request]
 permissions:
   contents: read
+env:
+  GOWORK: 'off'
+defaults:
+  run:
+    shell: bash --noprofile --norc {0}
 jobs:
   check:
     runs-on: ubuntu-24.04
@@ -11,8 +16,9 @@ jobs:
         with:
           go-version: '1.26.x'
       - name: Resolve published dependencies
-        run: go mod download
+        run: |
+          go mod download || exit 1
+          go mod verify || exit 1
+          git diff --exit-code -- go.mod go.sum || exit 1
       - name: Check and build
-        env:
-          GOWORK: 'off'
         run: make check build
