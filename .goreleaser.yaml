@@ -1,0 +1,46 @@
+version: 2
+project_name: songstead
+env:
+  - GOWORK=off
+before:
+  hooks:
+    - sh scripts/release/prepare.sh
+builds:
+  - id: songstead
+    main: ./cmd/songstead
+    binary: songstead
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath, -buildvcs=false]
+    ldflags:
+      - "-s -w -X main.version={{ .Version }}"
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+      - THIRD_PARTY.md
+      - docs/*
+      - docs/**/*
+      - contrib/**/*
+      - src: .release/THIRD_PARTY_NOTICES.txt
+        dst: .
+        strip_parent: true
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}_{{ .Version }}_source"
+  prefix_template: "{{ .ProjectName }}_{{ .Version }}_source/"
+  format: tar.gz
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+release:
+  github:
+    owner: airencracken
+    name: songstead
+changelog:
+  use: git

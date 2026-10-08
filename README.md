@@ -3,27 +3,30 @@
 Good music, from your people.
 
 Songstead is a small, self-hosted recommendation inbox for friends. Paste a link,
-choose a person, and add a note. Listen when you have a moment, keep your own
+choose a person or group, and add a note. Listen when you have a moment, keep your own
 listening state and rating, and talk about it together.
 
 It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## This first version
+## 0.1.0 release preparation
 
-- Locally created accounts, password sign-in, and revocable sessions.
-- Direct recommendations with original URLs and optional notes.
-- An unheard-first inbox, chronological history, filtering, and pagination.
-- Independent, revisable listening state, like/dislike, and personal notes.
-- Chronological comments shared only with the sender and recipient.
-- Best-effort YouTube metadata and a privacy-enhanced YouTube embed.
-- Ordinary forms that work without JavaScript; locally bundled HTMX enhances them.
-- Light, dark, and system themes, plus account history export and database backups.
+Friends and groups can leave tracks, albums, artists and listening links. Browse
+by music, person, group or each recommendation. Duplicate provider identities
+keep each sender's words while sharing your private listening organization.
+Recommendations are gifts: there is no need to keep up.
 
-Groups, tags, public access, feeds, and provider integrations are later work.
-Unknown providers remain usable links. Songstead stores recommendations, not
-music files; playback stays with the provider.
+Comments can mark several moments in a chosen recording. Show annotations
+immediately, reveal them manually, or use spoiler-free mode with a position you
+indicate yourself. Songstead neither tracks playback nor connects streaming
+accounts. Explicit Witmoot drafts and saved discussion links keep conversation
+optional. Every application remains usable on its own.
+
+Read [the inbox and annotation behavior](docs/quiet-inbox.md),
+[deployment and migration details](docs/deployment.md), and
+[the publication order](docs/release-coordination.md). Go/SQLite/HTMX,
+AGPL-3.0-or-later, with `master` as the repository default branch.
 
 ## Build and try it
 
@@ -31,7 +34,7 @@ Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
 **Coordinated library change:** this branch uses the new
-`comfylib/token.SessionCSRF` API intended for Comfylib v0.1.1. Until that release
+`comfylib/token.SessionCSRF` and `comfylib/reference` APIs intended for Comfylib v0.1.1. Until that release
 is published, develop with a sibling Comfylib worktree and an untracked workspace:
 
 ```sh
@@ -74,6 +77,8 @@ in this phase. The local operator provisions accounts and handles recovery.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
+| `SONGSTEAD_BASE_URL` | empty | Public base URL for discussion handoffs |
+| `SONGSTEAD_WITMOOT_URL` | empty | Optional Witmoot base URL; no startup request |
 | `SONGSTEAD_DATA_DIR` | `./data` | Private directory containing SQLite and the server lock |
 | `SONGSTEAD_ADDR` | `127.0.0.1:8083` | Listen address |
 | `SONGSTEAD_SECURE_COOKIES` | `false` | Set `true` for an installation reached over HTTPS |

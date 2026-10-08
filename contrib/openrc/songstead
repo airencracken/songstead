@@ -1,0 +1,55 @@
+#!/sbin/openrc-run
+# openrc-run reads the service variables below, and its shells provide local.
+# shellcheck shell=sh disable=SC2034,SC3043
+
+description="Music your people leave for you"
+
+: "${SONGSTEAD_USER:=songstead}"
+: "${SONGSTEAD_GROUP:=songstead}"
+: "${SONGSTEAD_BIN:=/usr/local/bin/songstead}"
+: "${SONGSTEAD_DATA_DIR:=/var/lib/songstead}"
+: "${SONGSTEAD_ADDR:=127.0.0.1:8083}"
+: "${SONGSTEAD_LOG_FILE:=/var/log/songstead.log}"
+
+# OpenRC sources conf.d before this script. Export the application's settings
+# explicitly so plain assignments in conf.d reach the daemon.
+export SSL_CERT_FILE
+export SONGSTEAD_DATA_DIR SONGSTEAD_ADDR SONGSTEAD_BASE_URL
+export SONGSTEAD_SECURE_COOKIES SONGSTEAD_TRUSTED_PROXIES SONGSTEAD_WITMOOT_URL
+
+command="${SONGSTEAD_BIN}"
+command_user="${SONGSTEAD_USER}:${SONGSTEAD_GROUP}"
+command_background="yes"
+start_stop_daemon_args="--wait 1000"
+umask="0077"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="${SONGSTEAD_LOG_FILE}"
+error_log="${SONGSTEAD_LOG_FILE}"
+# The server allows ten seconds to finish requests after SIGTERM.
+retry="TERM/15/KILL/5"
+
+depend() {
+	need net
+	after firewall
+	use dns logger
+}
+
+start_pre() {
+	command_args="serve"
+
+	for path in "$SONGSTEAD_DATA_DIR" "$SONGSTEAD_BIN" "$SONGSTEAD_LOG_FILE"; do
+		case "$path" in
+			/*) ;;
+			*) eerror "Witmoot paths must be absolute: $path"; return 1 ;;
+		esac
+	done
+	umask "$umask"
+	checkpath --directory --mode 0700 --owner "$command_user" "$SONGSTEAD_DATA_DIR" || return 1
+	local log_dir
+	log_dir=$(dirname "$SONGSTEAD_LOG_FILE") || return 1
+	if [ ! -d "$log_dir" ]; then
+		checkpath --directory --mode 0755 "$log_dir" || return 1
+	fi
+	checkpath --file --mode 0640 --owner "$command_user" "$SONGSTEAD_LOG_FILE" || return 1
+
+}

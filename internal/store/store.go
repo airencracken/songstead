@@ -37,11 +37,15 @@ type Recommendation struct {
 	ID, MediaID, SenderID, RecipientID                                              int64
 	Sender, Recipient, URL, Provider, Title, Artist, Thumbnail, Type, VideoID, Note string
 	CreatedAt                                                                       int64
+	GroupID                                                                         int64
+	Group, Kind                                                                     string
 	Listening                                                                       string
 	Rating                                                                          int
 	PersonalNote                                                                    string
 }
 type Comment struct {
+	RecordingID             int64
+	Offsets                 []Offset
 	ID, AuthorID, CreatedAt int64
 	Author, Body            string
 }
@@ -82,18 +86,24 @@ func (s *Store) migrate() error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 1 {
+	if version > 2 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if version == 0 {
-		data, err := migrations.ReadFile("migrations/001_initial.sql")
+	for next := version + 1; next <= 2; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql"}[next]
+		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
 		}
 		if _, err := tx.Exec(string(data)); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("PRAGMA user_version=1"); err != nil {
+		if next == 2 {
+			if err := migrateMusic(tx); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec(fmt.Sprintf("PRAGMA user_version=%d", next)); err != nil {
 			return err
 		}
 	}
@@ -220,66 +230,32 @@ func validText(s string, min, max int) bool {
 }
 
 func (s *Store) Recommend(ctx context.Context, sender, recipient int64, raw, note string) (int64, error) {
-	link, err := media.Parse(raw)
-	if err != nil {
-		return 0, err
-	}
-	if sender == recipient || !validText(note, 0, 2000) {
-		return 0, ErrInvalid
-	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
-	result, err := tx.ExecContext(ctx, "INSERT INTO media(original_url,provider,title,media_type,video_id) VALUES(?,?,?,?,?)", link.Original, link.Provider, link.Title, link.Type, link.VideoID)
-	if err != nil {
-		return 0, err
-	}
-	mid, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	result, err = tx.ExecContext(ctx, "INSERT INTO recommendations(media_id,sender_id,note,created_at) VALUES(?,?,?,?)", mid, sender, note, time.Now().Unix())
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO recommendation_destinations(recommendation_id,user_id) VALUES(?,?)", id, recipient); err != nil {
-		return 0, err
-	}
-	if link.VideoID != "" {
-		if _, err := tx.ExecContext(ctx, "INSERT INTO metadata_jobs(media_id) VALUES(?)", mid); err != nil {
-			return 0, err
-		}
-	}
-	return id, tx.Commit()
+	return s.recommend(ctx, sender, recipient, 0, raw, note, "", "", "")
 }
 
 const selectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sender.username,recipient.username,
- m.original_url,m.provider,m.title,m.artist,m.thumbnail,m.media_type,m.video_id,r.note,r.created_at,
- coalesce(x.listening,'unheard'),coalesce(x.rating,0),coalesce(x.note,'')
+ coalesce(nullif(r.source_url,''),m.original_url),m.provider,m.title,m.artist,m.thumbnail,m.media_type,m.video_id,r.note,r.created_at,
+ coalesce(ms.listening,'unheard'),coalesce(x.rating,0),coalesce(x.note,''),coalesce(r.group_id,0),coalesce(g.name,''),m.kind
  FROM recommendations r JOIN media m ON m.id=r.media_id
  JOIN recommendation_destinations d ON d.recommendation_id=r.id
  JOIN users sender ON sender.id=r.sender_id JOIN users recipient ON recipient.id=d.user_id
- LEFT JOIN reactions x ON x.recommendation_id=r.id AND x.user_id=? `
+ LEFT JOIN reactions x ON x.recommendation_id=r.id AND x.user_id=?
+ LEFT JOIN music_states ms ON ms.media_id=m.id AND ms.user_id=?
+ LEFT JOIN groups g ON g.id=r.group_id `
 
 // The same visibility predicate protects details, comments and mutations.
-const visible = `(r.sender_id=? OR d.user_id=?)`
+const visible = `((r.group_id IS NULL AND (r.sender_id=? OR d.user_id=?)) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`
 
 type scanner interface{ Scan(...any) error }
 
 func scanRecommendation(row scanner) (Recommendation, error) {
 	var r Recommendation
-	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote)
+	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote, &r.GroupID, &r.Group, &r.Kind)
 	return r, err
 }
 
 func (s *Store) Recommendation(ctx context.Context, viewer, id int64) (Recommendation, error) {
-	r, err := scanRecommendation(s.db.QueryRowContext(ctx, selectRecommendation+" WHERE r.id=? AND "+visible, viewer, id, viewer, viewer))
+	r, err := scanRecommendation(s.db.QueryRowContext(ctx, selectRecommendation+" WHERE r.id=? AND "+visible, viewer, viewer, id, viewer, viewer, viewer))
 	if errors.Is(err, sql.ErrNoRows) {
 		err = ErrMissing
 	}
@@ -287,66 +263,47 @@ func (s *Store) Recommendation(ctx context.Context, viewer, id int64) (Recommend
 }
 
 func (s *Store) List(ctx context.Context, viewer int64, history bool, status string, limit, offset int) ([]Recommendation, error) {
-	if limit < 1 || limit > 100 || offset < 0 {
-		return nil, ErrInvalid
-	}
-	if status != "" && !validListening(status) {
-		return nil, ErrInvalid
-	}
-	where := "d.user_id=?"
-	args := []any{viewer, viewer}
-	if history {
-		where = visible
-		args = append(args, viewer)
-	}
-	if status != "" {
-		where += " AND coalesce(x.listening,'unheard')=?"
-		args = append(args, status)
-	}
-	order := "r.created_at DESC,r.id DESC"
-	if !history {
-		order = "(coalesce(x.listening,'unheard')='unheard') DESC," + order
-	}
-	args = append(args, limit, offset)
-	rows, err := s.db.QueryContext(ctx, selectRecommendation+" WHERE "+where+" ORDER BY "+order+" LIMIT ? OFFSET ?", args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	list := []Recommendation{}
-	for rows.Next() {
-		r, err := scanRecommendation(rows)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, r)
-	}
-	return list, rows.Err()
+	return s.Browse(ctx, viewer, history, Filter{Status: status}, limit, offset)
 }
 
 func validListening(s string) bool {
-	return s == "unheard" || s == "listened" || s == "revisit" || s == "dismissed"
+	return s == "saved" || s == "explored" || s == "unheard" || s == "listened" || s == "revisit" || s == "dismissed"
 }
 
 func (s *Store) React(ctx context.Context, viewer, id int64, reaction Reaction) error {
 	if !validListening(reaction.Listening) || reaction.Rating < -1 || reaction.Rating > 1 || !validText(reaction.Note, 0, 2000) {
 		return ErrInvalid
 	}
-	result, err := s.db.ExecContext(ctx, `INSERT INTO reactions(recommendation_id,user_id,listening,rating,note,updated_at)
- SELECT r.id,?,?,?,?,? FROM recommendations r JOIN recommendation_destinations d ON d.recommendation_id=r.id
- WHERE r.id=? AND `+visible+` ON CONFLICT(recommendation_id,user_id) DO UPDATE SET
- listening=excluded.listening,rating=excluded.rating,note=excluded.note,updated_at=excluded.updated_at`, viewer, reaction.Listening, reaction.Rating, reaction.Note, time.Now().Unix(), id, viewer, viewer)
-	return mutationResult(result, err)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var mid int64
+	err = tx.QueryRowContext(ctx, `SELECT r.media_id FROM recommendations r JOIN recommendation_destinations d ON d.recommendation_id=r.id WHERE r.id=? AND `+visible, id, viewer, viewer, viewer).Scan(&mid)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrMissing
+	}
+	if err != nil {
+		return err
+	}
+	legacy := reaction.Listening
+	if legacy == "saved" || legacy == "explored" {
+		legacy = "unheard"
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO reactions VALUES(?,?,?,?,?,?) ON CONFLICT(recommendation_id,user_id) DO UPDATE SET listening=excluded.listening,rating=excluded.rating,note=excluded.note,updated_at=excluded.updated_at`, id, viewer, legacy, reaction.Rating, reaction.Note, time.Now().Unix())
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO music_states VALUES(?,?,?,?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at`, mid, viewer, reaction.Listening, time.Now().Unix())
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *Store) AddComment(ctx context.Context, viewer, id int64, body string) error {
-	if !validText(body, 1, 2000) || strings.TrimSpace(body) == "" {
-		return ErrInvalid
-	}
-	result, err := s.db.ExecContext(ctx, `INSERT INTO comments(recommendation_id,author_id,body,created_at)
- SELECT r.id,?,?,? FROM recommendations r JOIN recommendation_destinations d ON d.recommendation_id=r.id
- WHERE r.id=? AND `+visible, viewer, body, time.Now().Unix(), id, viewer, viewer)
-	return mutationResult(result, err)
+	return s.Annotate(ctx, viewer, id, 0, body)
 }
 
 func mutationResult(result sql.Result, err error) error {
@@ -364,26 +321,7 @@ func mutationResult(result sql.Result, err error) error {
 }
 
 func (s *Store) Comments(ctx context.Context, viewer, id int64) ([]Comment, error) {
-	// Even an empty list must distinguish an inaccessible recommendation.
-	if _, err := s.Recommendation(ctx, viewer, id); err != nil {
-		return nil, err
-	}
-	rows, err := s.db.QueryContext(ctx, `SELECT c.id,c.author_id,c.created_at,u.username,c.body
- FROM comments c JOIN users u ON u.id=c.author_id JOIN recommendations r ON r.id=c.recommendation_id
- JOIN recommendation_destinations d ON d.recommendation_id=r.id WHERE r.id=? AND `+visible+` ORDER BY c.id`, id, viewer, viewer)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	list := []Comment{}
-	for rows.Next() {
-		var c Comment
-		if err := rows.Scan(&c.ID, &c.AuthorID, &c.CreatedAt, &c.Author, &c.Body); err != nil {
-			return nil, err
-		}
-		list = append(list, c)
-	}
-	return list, rows.Err()
+	return s.comments(ctx, viewer, id)
 }
 
 // Metadata processes one durable job. Failed requests retry three times; saving
@@ -413,7 +351,7 @@ func (s *Store) Metadata(ctx context.Context, fetch func(context.Context, string
 		return err
 	}
 	defer tx.Rollback()
-	if _, err := tx.ExecContext(ctx, "UPDATE media SET title=?,artist=?,thumbnail=? WHERE id=?", meta.Title, meta.Artist, meta.Thumbnail, id); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE media SET title=CASE WHEN title=original_url THEN ? ELSE title END,artist=CASE WHEN artist='' THEN ? ELSE artist END,thumbnail=? WHERE id=?", meta.Title, meta.Artist, meta.Thumbnail, id); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM metadata_jobs WHERE media_id=?", id); err != nil {

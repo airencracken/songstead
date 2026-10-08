@@ -187,7 +187,7 @@ func serve(ctx context.Context, s *store.Store, addr string) error {
 	if err != nil {
 		return err
 	}
-	a, err := web.New(s, web.Config{SecureCookies: secure, TrustedProxies: trusted})
+	a, err := web.New(s, web.Config{WitmootURL: os.Getenv("SONGSTEAD_WITMOOT_URL"), BaseURL: os.Getenv("SONGSTEAD_BASE_URL"), SecureCookies: secure, TrustedProxies: trusted})
 	if err != nil {
 		return err
 	}

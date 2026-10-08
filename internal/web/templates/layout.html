@@ -14,7 +14,7 @@
   <header class="topbar">
     <a class="brand" href="/inbox"><img src="/static/jukebox.png" alt="" width="42" height="42">Songstead</a>
     <nav aria-label="Main navigation">
-      {{if .User}}<a href="/inbox">Inbox</a><a href="/history">History</a><a class="button" href="/recommendations/new">Send music</a>{{end}}
+      {{if .User}}<a href="/inbox">Inbox</a><a href="/history">History</a><a href="/groups">Groups</a><a class="button" href="/recommendations/new">Send music</a>{{end}}
       <label class="theme-picker" hidden><span class="sr-only">Color theme</span><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
       {{if .User}}<span class="muted">{{.User.Username}}</span><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>{{end}}
     </nav>
@@ -24,7 +24,9 @@
     {{if eq .View "login"}}{{template "login" .}}{{end}}
     {{if eq .View "list"}}{{template "list" .}}{{end}}
     {{if eq .View "compose"}}{{template "compose" .}}{{end}}
-    {{if eq .View "detail"}}{{template "detail" .}}{{end}}
+    {{if eq .View "groups"}}{{template "groups" .}}{{end}}
+ {{if eq .View "handoff"}}{{template "handoff" .}}{{end}}
+ {{if eq .View "detail"}}{{template "detail" .}}{{end}}
   </main>
   <footer class="foot"><span>Songstead · Good music, from your people.</span>{{if .User}}<a href="/account/export" hx-boost="false">Export your history</a>{{end}}<a href="https://comfyware.org/" rel="noreferrer">Part of Comfyware</a></footer>
 </body>

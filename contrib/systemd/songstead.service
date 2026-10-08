@@ -1,0 +1,29 @@
+[Unit]
+Description=Songstead music recommendation inbox
+After=network.target
+
+[Service]
+Type=simple
+User=songstead
+Group=songstead
+StateDirectory=songstead
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/songstead
+Environment=SONGSTEAD_DATA_DIR=/var/lib/songstead
+Environment=SONGSTEAD_ADDR=127.0.0.1:8083
+EnvironmentFile=-/etc/songstead/songstead.env
+ExecStart=/usr/local/bin/songstead serve
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=songstead
+Restart=on-failure
+TimeoutStopSec=15
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/songstead
+
+[Install]
+WantedBy=multi-user.target

@@ -21,7 +21,9 @@ import (
 	"time"
 
 	"github.com/airencracken/comfylib/clientip"
+	"github.com/airencracken/comfylib/reference"
 	"github.com/airencracken/comfylib/token"
+	"github.com/airencracken/songstead/internal/annotations"
 	"github.com/airencracken/songstead/internal/media"
 	"github.com/airencracken/songstead/internal/store"
 	"golang.org/x/crypto/bcrypt"
@@ -31,8 +33,9 @@ import (
 var assets embed.FS
 
 type Config struct {
-	SecureCookies  bool
-	TrustedProxies []netip.Prefix
+	WitmootURL, BaseURL string
+	SecureCookies       bool
+	TrustedProxies      []netip.Prefix
 }
 type App struct {
 	store     *store.Store
@@ -52,21 +55,51 @@ type requestState struct {
 	CSRF, Session string
 }
 type stateKey struct{}
+type recommendationCard struct {
+	store.Recommendation
+	ShowMusic bool
+}
+type bundle struct {
+	Heading string
+	Items   []recommendationCard
+}
 type page struct {
-	View, Title, Error, CSRF, URL, Note, Username, Status string
-	User                                                  *store.User
-	Users                                                 []store.User
-	Items                                                 []store.Recommendation
-	Item                                                  store.Recommendation
-	Comments                                              []store.Comment
-	Recipient                                             int64
-	Offset, Previous, Next                                int
-	HasPrevious, HasNext                                  bool
-	History                                               bool
+	CommentDraft                                                            string
+	Bundles                                                                 []bundle
+	Perspective, Kind, MusicTitle, Artist, AnnotationMode, Handoff, Members string
+	Person, GroupID                                                         int64
+	Groups                                                                  []store.Group
+	Recordings                                                              []store.Recording
+	Discussions                                                             []string
+	Reveal                                                                  bool
+	View, Title, Error, CSRF, URL, Note, Username, Status                   string
+	User                                                                    *store.User
+	Users                                                                   []store.User
+	Items                                                                   []store.Recommendation
+	Item                                                                    store.Recommendation
+	Comments                                                                []store.Comment
+	Recipient                                                               int64
+	Offset, Previous, Next                                                  int
+	HasPrevious, HasNext                                                    bool
+	History                                                                 bool
 }
 
 func New(s *store.Store, cfg Config) (*App, error) {
+	for _, base := range []string{cfg.WitmootURL, cfg.BaseURL} {
+		if base != "" {
+			if _, err := reference.Handoff(base, reference.Draft{Source: "https://source.invalid"}); err != nil {
+				return nil, err
+			}
+		}
+	}
 	tmpl, err := template.New("pages").Funcs(template.FuncMap{
+		"timestamp": annotations.Format,
+		"timelineX": func(seconds, duration int) int {
+			if duration <= 0 {
+				return 20
+			}
+			return 20 + seconds*960/duration
+		},
 		"date":    func(unix int64) string { return time.Unix(unix, 0).UTC().Format("2 Jan 2006, 15:04 UTC") },
 		"isoDate": func(unix int64) string { return time.Unix(unix, 0).UTC().Format(time.RFC3339) },
 	}).ParseFS(assets, "templates/*.html")
@@ -103,6 +136,13 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.detail))
 	mux.HandleFunc("POST /recommendations/{id}/reaction", a.signedIn(a.react))
 	mux.HandleFunc("POST /recommendations/{id}/comments", a.signedIn(a.comment))
+	mux.HandleFunc("GET /groups", a.signedIn(a.groups))
+	mux.HandleFunc("POST /groups", a.signedIn(a.saveGroup))
+	mux.HandleFunc("POST /recommendations/{id}/recordings", a.signedIn(a.addRecording))
+	mux.HandleFunc("POST /recommendations/{id}/position", a.signedIn(a.position))
+	mux.HandleFunc("POST /recommendations/{id}/annotations", a.signedIn(a.annotationPreference))
+	mux.HandleFunc("POST /recommendations/{id}/discussion", a.signedIn(a.discussion))
+	mux.HandleFunc("POST /recommendations/{id}/share", a.signedIn(a.share))
 	mux.HandleFunc("GET /account/export", a.signedIn(a.export))
 	a.handler = http.NewCrossOriginProtection().Handler(a.middleware(mux))
 	return a, nil
@@ -317,7 +357,31 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history bool) {
 		}
 	}
 	status := r.URL.Query().Get("status")
-	items, err := a.store.List(r.Context(), state(r).User.ID, history, status, 51, offset)
+	person, _ := strconv.ParseInt(r.URL.Query().Get("person"), 10, 64)
+	group, _ := strconv.ParseInt(r.URL.Query().Get("group"), 10, 64)
+	for _, key := range []string{"person", "group"} {
+		if raw := r.URL.Query().Get(key); raw != "" {
+			n, err := strconv.ParseInt(raw, 10, 64)
+			if err != nil || n < 0 {
+				http.Error(w, "invalid filter", 400)
+				return
+			}
+		}
+	}
+	kind := r.URL.Query().Get("kind")
+	if kind != "" && kind != "track" && kind != "album" && kind != "artist" && kind != "link" {
+		http.Error(w, "invalid music kind", 400)
+		return
+	}
+	perspective := r.URL.Query().Get("view")
+	if perspective == "" {
+		perspective = "music"
+	}
+	if perspective != "music" && perspective != "person" && perspective != "group" && perspective != "recommendations" {
+		http.Error(w, "invalid view", 400)
+		return
+	}
+	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Status: status, Person: person, Group: group, Kind: kind, GroupByMusic: perspective == "music"}, 51, offset)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -327,14 +391,69 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history bool) {
 		title = "Your history"
 	}
 	p := page{View: "list", Title: title, Items: items, History: history, Status: status, Offset: offset, HasNext: len(items) > 50, HasPrevious: offset > 0, Next: offset + 50, Previous: max(0, offset-50)}
-	if p.HasNext {
+	if p.HasNext && perspective != "music" {
 		p.Items = items[:50]
+	}
+	p.Person, p.GroupID, p.Kind, p.Perspective = person, group, kind, perspective
+	p.Users, err = a.store.Users(r.Context(), 0)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	p.Groups, err = a.store.Groups(r.Context(), state(r).User.ID)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	seen := map[string]int{}
+	for _, item := range p.Items {
+		key := strconv.FormatInt(item.MediaID, 10)
+		heading := item.Title
+		if perspective == "person" {
+			key = "person:" + strconv.FormatInt(item.SenderID, 10)
+			heading = item.Sender
+		}
+		if perspective == "group" {
+			key = "group:" + strconv.FormatInt(item.GroupID, 10)
+			heading = item.Group
+			if heading == "" {
+				heading = "Between friends"
+			}
+		}
+		if perspective == "recommendations" {
+			key = strconv.FormatInt(item.ID, 10)
+		}
+		if i, ok := seen[key]; ok {
+			p.Bundles[i].Items = append(p.Bundles[i].Items, recommendationCard{Recommendation: item})
+		} else {
+			seen[key] = len(p.Bundles)
+			p.Bundles = append(p.Bundles, bundle{Heading: heading, Items: []recommendationCard{{Recommendation: item}}})
+		}
+	}
+	for i := range p.Bundles {
+		seenMusic := map[int64]bool{}
+		for j := range p.Bundles[i].Items {
+			mid := p.Bundles[i].Items[j].MediaID
+			p.Bundles[i].Items[j].ShowMusic = !seenMusic[mid]
+			seenMusic[mid] = true
+		}
+	}
+	if perspective == "music" {
+		p.HasNext = len(p.Bundles) > 50
+		if p.HasNext {
+			p.Bundles = p.Bundles[:50]
+		}
 	}
 	a.render(w, r, 200, p)
 }
 func (a *App) newRecommendation(w http.ResponseWriter, r *http.Request) { a.compose(w, r, 200, page{}) }
 func (a *App) compose(w http.ResponseWriter, r *http.Request, status int, p page) {
 	users, err := a.store.Users(r.Context(), state(r).User.ID)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	p.Groups, err = a.store.Groups(r.Context(), state(r).User.ID)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -346,8 +465,12 @@ func (a *App) compose(w http.ResponseWriter, r *http.Request, status int, p page
 }
 func (a *App) recommend(w http.ResponseWriter, r *http.Request) {
 	recipient, err := strconv.ParseInt(r.PostForm.Get("recipient"), 10, 64)
-	p := page{URL: r.PostForm.Get("url"), Note: r.PostForm.Get("note"), Recipient: recipient}
-	if err != nil || recipient <= 0 {
+	group, groupErr := strconv.ParseInt(r.PostForm.Get("group"), 10, 64)
+	if r.PostForm.Get("group") == "" {
+		groupErr = nil
+	}
+	p := page{GroupID: group, Kind: r.PostForm.Get("kind"), MusicTitle: r.PostForm.Get("title"), Artist: r.PostForm.Get("artist"), URL: r.PostForm.Get("url"), Note: r.PostForm.Get("note"), Recipient: recipient}
+	if groupErr != nil || group < 0 || group == 0 && (err != nil || recipient <= 0) {
 		p.Error = "Choose a recipient."
 		a.compose(w, r, 422, p)
 		return
@@ -363,12 +486,12 @@ func (a *App) recommend(w http.ResponseWriter, r *http.Request) {
 			found = true
 		}
 	}
-	if !found {
+	if !found && group == 0 {
 		p.Error = "Choose a recipient from this instance."
 		a.compose(w, r, 422, p)
 		return
 	}
-	id, err := a.store.Recommend(r.Context(), state(r).User.ID, recipient, p.URL, p.Note)
+	id, err := a.store.RecommendMusic(r.Context(), state(r).User.ID, recipient, group, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist)
 	if err != nil {
 		// Validate before storage; unknown database failures stay server errors.
 		if errors.Is(err, store.ErrInvalid) {
@@ -413,7 +536,24 @@ func (a *App) showDetail(w http.ResponseWriter, r *http.Request, id int64, statu
 		a.fail(w, r, err)
 		return
 	}
-	a.render(w, r, status, page{View: "detail", Title: item.Title, Item: item, Comments: comments, Error: message})
+	tracks, err := a.store.Recordings(r.Context(), state(r).User.ID, id)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	mode, err := a.store.AnnotationMode(r.Context(), state(r).User.ID)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	reveal := r.URL.Query().Get("reveal") == "1"
+	comments = store.VisibleComments(comments, tracks, mode, reveal)
+	links, err := a.store.Discussions(r.Context(), state(r).User.ID, id)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.render(w, r, status, page{View: "detail", Title: item.Title, Item: item, Comments: comments, Recordings: tracks, AnnotationMode: mode, Reveal: reveal, Discussions: links, Error: message, Handoff: a.config.WitmootURL, CommentDraft: r.PostForm.Get("body")})
 }
 func (a *App) react(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)
@@ -443,9 +583,14 @@ func (a *App) comment(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	err = a.store.AddComment(r.Context(), state(r).User.ID, id, r.PostForm.Get("body"))
+	track, parseErr := parseOptionalID(r.PostForm.Get("recording"))
+	if parseErr != nil {
+		a.showDetail(w, r, id, 422, "Choose a recording.")
+		return
+	}
+	err = a.store.Annotate(r.Context(), state(r).User.ID, id, track, r.PostForm.Get("body"))
 	if errors.Is(err, store.ErrInvalid) {
-		a.showDetail(w, r, id, 422, "Write a comment of 1-2,000 characters.")
+		a.showDetail(w, r, id, 422, "Write a comment of 1-2,000 characters. For timestamps on an album, choose a track first.")
 		return
 	}
 	if err != nil {

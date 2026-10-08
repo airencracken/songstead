@@ -71,12 +71,12 @@ func TestRecommendationsAndIndependentReactions(t *testing.T) {
 		t.Fatal("reaction leaked to sender", other, err)
 	}
 	duplicate, err := s.Recommendation(ctx, u[1], second)
-	if err != nil || duplicate.Listening != "unheard" {
-		t.Fatal("reaction leaked to repeated recommendation")
+	if err != nil || duplicate.Listening != "revisit" || duplicate.MediaID != item.MediaID || duplicate.PersonalNote != "" {
+		t.Fatal("duplicate music did not share private state")
 	}
 	items, err := s.List(ctx, u[1], false, "", 50, 0)
 	if err != nil || len(items) != 2 || items[0].ID != second {
-		t.Fatalf("unheard first: %+v %v", items, err)
+		t.Fatalf("arrival order: %+v %v", items, err)
 	}
 	if err := s.AddComment(ctx, u[0], id, "try it on headphones"); err != nil {
 		t.Fatal(err)
@@ -186,7 +186,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	if err != nil || user.ID != id {
 		t.Fatal("migration changed data")
 	}
-	if _, err := s.db.Exec("PRAGMA user_version=2"); err != nil {
+	if _, err := s.db.Exec("PRAGMA user_version=3"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()
@@ -200,7 +200,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	defer db.Close()
 	var version int
 	db.QueryRow("PRAGMA user_version").Scan(&version)
-	if version != 2 {
+	if version != 3 {
 		t.Fatal("modified newer schema")
 	}
 }
@@ -297,7 +297,9 @@ func TestMetadataRetriesAreBoundedAndCancelled(t *testing.T) {
 	if calls != 3 {
 		t.Fatal("retry budget not enforced", calls)
 	}
-	recommend(t, s, u[0], u[1])
+	if _, err := s.Recommend(ctx, u[0], u[1], "https://youtu.be/abcdefghijk", ""); err != nil {
+		t.Fatal(err)
+	}
 	cancelCtx, cancel := context.WithCancel(ctx)
 	if err := s.Metadata(cancelCtx, func(context.Context, string) (media.Metadata, error) {
 		cancel()
@@ -430,7 +432,7 @@ func TestConcurrentSubmissionsRemainDistinctAndComplete(t *testing.T) {
 	}
 	for _, table := range []string{"media", "recommendations", "recommendation_destinations", "metadata_jobs"} {
 		var count int
-		if err := s.db.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != 10 {
+		if err := s.db.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != map[string]int{"media": 1, "recommendations": 10, "recommendation_destinations": 10, "metadata_jobs": 1}[table] {
 			t.Fatal("concurrent submission incomplete", table, count, err)
 		}
 	}

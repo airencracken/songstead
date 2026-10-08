@@ -1,7 +1,7 @@
 # Third-party material
 
 HTMX 2.0.10 is bundled at `internal/web/static/htmx.min.js`. It is used under the
-BSD 2-Clause license; the complete text is beside it in `htmx.LICENSE`. The file
+Zero-Clause BSD (0BSD) license; the complete text is beside it in `htmx.LICENSE`. The file
 and license were copied from Witmoot's local, pinned distribution.
 
 The theme script follows Witmoot's existing implementation, and the visual
