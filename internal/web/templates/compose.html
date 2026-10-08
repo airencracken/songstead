@@ -1,0 +1,8 @@
+{{define "compose"}}<section class="compose"><p class="eyebrow">Something they might love</p><h1>Send some music.</h1><p class="muted">A link and a person. Add a few words if you like.</p>
+{{if .Users}}<form action="/recommendations/new" method="post" class="panel stack">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <label>Music link<input type="url" name="url" value="{{.URL}}" placeholder="https://…" maxlength="4096" required></label>
+  <label>Send to<select name="recipient" required>{{range .Users}}<option value="{{.ID}}" {{if eq $.Recipient .ID}}selected{{end}}>{{.Username}}</option>{{end}}</select></label>
+  <label>A note, if you like<textarea name="note" rows="4" maxlength="2000">{{.Note}}</textarea></label>
+  <button class="button primary" type="submit">Send recommendation</button>
+</form>{{else}}<div class="panel"><h2>Make room for a friend.</h2><p>Ask the person running this instance to add another account. Then you can start sending each other music.</p></div>{{end}}</section>{{end}}

@@ -1,0 +1,10 @@
+[
+  {"name":"private recommendation visibility","file":"internal/store/store.go","before":"const visible = `(r.sender_id=? OR d.user_id=?)`","after":"const visible = `(? >= 0 OR ? >= 0)`","package":"./internal/store","run":"^TestPermissions$"},
+  {"name":"independent listening state","file":"internal/store/store.go","before":"x.user_id=?","after":"? >= 0","package":"./internal/store","run":"^TestRecommendationsAndIndependentReactions$"},
+  {"name":"rating constraints","file":"internal/store/migrations/001_initial.sql","before":"CHECK(rating IN (-1,0,1))","after":"CHECK(rating BETWEEN -1 AND 2)","package":"./internal/store","run":"^TestSchemaConstraints$"},
+  {"name":"expired sessions","file":"internal/store/store.go","before":"s.expires_at>?","after":"s.expires_at<=?","package":"./internal/store","run":"^TestSessionsAndPasswordChangeAtomicity$"},
+  {"name":"newer schema rejection","file":"internal/store/store.go","before":"if version > 1 {","after":"if version > 2 {","package":"./internal/store","run":"^TestMigrationRepeatabilityAndNewerSchema$"},
+  {"name":"session-bound CSRF enforcement","file":"internal/web/web.go","before":"if provided == \"\" || !token.Equal(provided, st.CSRF) {","after":"if false && (provided == \"\" || !token.Equal(provided, st.CSRF)) {","package":"./internal/web","run":"^TestCSRFSessionBindingAndOrigin$"},
+  {"name":"DNS answer validation","file":"internal/media/metadata.go","before":"if !publicAddress(ip) {","after":"if false && !publicAddress(ip) {","package":"./internal/media","run":"^TestDNSAnswersAreCheckedAndPinned$"},
+  {"name":"metadata failure preserves URL","file":"internal/store/store.go","before":"if fetchErr != nil {","after":"if false && fetchErr != nil {","package":"./internal/store","run":"^TestMetadataFailurePersistenceAndRecovery$"}
+]

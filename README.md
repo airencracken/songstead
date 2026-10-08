@@ -1,0 +1,136 @@
+# Songstead
+
+Good music, from your people.
+
+Songstead is a small, self-hosted recommendation inbox for friends. Paste a link,
+choose a person, and add a note. Listen when you have a moment, keep your own
+listening state and rating, and talk about it together.
+
+It is part of Comfyware: software for a small community, run by the people using
+it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
+quiet blue panels, with a little jukebox to keep the songs company.
+
+## This first version
+
+- Locally created accounts, password sign-in, and revocable sessions.
+- Direct recommendations with original URLs and optional notes.
+- An unheard-first inbox, chronological history, filtering, and pagination.
+- Independent, revisable listening state, like/dislike, and personal notes.
+- Chronological comments shared only with the sender and recipient.
+- Best-effort YouTube metadata and a privacy-enhanced YouTube embed.
+- Ordinary forms that work without JavaScript; locally bundled HTMX enhances them.
+- Light, dark, and system themes, plus account history export and database backups.
+
+Groups, tags, public access, feeds, and provider integrations are later work.
+Unknown providers remain usable links. Songstead stores recommendations, not
+music files; playback stays with the provider.
+
+## Build and try it
+
+Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
+`CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
+
+**Coordinated library change:** this branch uses the new
+`comfylib/token.SessionCSRF` API intended for Comfylib v0.1.1. Until that release
+is published, develop with a sibling Comfylib worktree and an untracked workspace:
+
+```sh
+go work init . ../comfylib
+go work edit -replace=github.com/airencracken/comfylib@v0.1.1=../comfylib
+make build
+make demo
+```
+
+The workspace is already configured in the supplied worktrees. Keep `go.work`
+and local replacements out of commits. Clean standalone release builds must wait
+for Comfylib v0.1.1; see [release coordination](docs/release-coordination.md).
+
+The demo listens at `http://127.0.0.1:8083`. Sign in as `alice` or `bobby`, both
+with `demo-password`. It uses a private temporary directory and removes it when
+stopped. Send a link as one account, then sign in as the other to try the inbox.
+
+For a permanent instance, create your accounts locally. Passwords are supplied
+through standard input, never command arguments. For example, in Bash:
+
+```sh
+if read -r -s -p 'Password: ' songstead_password; then
+    printf '\n'
+    if ! printf '%s\n' "$songstead_password" | ./bin/songstead create-user --username alice --password-stdin; then
+        printf '%s\n' 'Account creation failed.' >&2
+    fi
+    unset songstead_password
+else
+    printf '%s\n' 'Password input was cancelled.' >&2
+fi
+```
+
+Repeat for your friend, then run `./bin/songstead serve`. Account names use 3–24
+letters, digits, underscores, or dashes. Passwords need at least 12 characters
+and at most 72 bytes. `set-password` has the same options and revokes every
+session for the account. There is no public registration or invitation system
+in this phase. The local operator provisions accounts and handles recovery.
+
+## Configuration and hosting
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `SONGSTEAD_DATA_DIR` | `./data` | Private directory containing SQLite and the server lock |
+| `SONGSTEAD_ADDR` | `127.0.0.1:8083` | Listen address |
+| `SONGSTEAD_SECURE_COOKIES` | `false` | Set `true` for an installation reached over HTTPS |
+| `SONGSTEAD_TRUSTED_PROXIES` | empty | Comma-separated proxy IPs/CIDRs; trust forwarding headers only from these |
+
+`--data-dir` and `--addr` override their environment settings. Use `--help` for
+commands. The data directory must have mode `0700`; new directories are created
+that way. Run the app as its own unprivileged service account.
+
+Put a reverse proxy in front of the localhost listener. A Caddy example is in
+[contrib/Caddyfile](contrib/Caddyfile), alongside a
+[systemd service](contrib/songstead.service). See [deployment](docs/deployment.md)
+for setup and account provisioning. `/healthz` checks SQLite availability.
+
+## Back up and restore
+
+```sh
+./bin/songstead backup --output /private/backups/songstead-2026-10-07.db
+./bin/songstead restore --input /private/backups/songstead-2026-10-07.db --data-dir /private/restored-songstead
+```
+
+Backup uses SQLite's consistent snapshot operation, including committed WAL
+contents; it can run while the server is active. It validates the snapshot and
+publishes a private file atomically, refusing to overwrite an existing target.
+Backups contain account password hashes, sessions, and private recommendations.
+Keep them private. Store backup files outside the served web root.
+
+Restore requires an empty, private destination directory. It copies into a
+temporary file, checks schema compatibility, integrity, and foreign keys, then
+publishes the database without overwriting an existing file. Stop the service
+before switching it to the restored directory. Test restoration periodically.
+
+Signed-in users can download their history as JSON. This preserves accessible
+recommendations, their own reactions and notes, and comments they authored.
+Credentials and other people's personal notes are excluded. It is a portable
+record; import and account deletion are not implemented yet.
+
+## Checks
+
+```sh
+make test
+make check
+```
+
+`make check` runs race-enabled Go tests, JavaScript unit tests, mutation tests,
+vet, and formatting checks. Tests cover the two-friend HTTP workflow without
+JavaScript, route and export contracts, permissions, schema constraints,
+transactions and failed writes, concurrent submissions, property checks,
+adversarial forms and URLs, session revocation, metadata failures, SSRF, and
+backup/restore. Fuzz seeds run in ordinary tests; run the parser continuously with
+`go test ./internal/media -fuzz=FuzzURLParsing -fuzztime=10s`.
+
+The app does not need a frontend build step, CDN, external database, or music
+provider account. Metadata lookup runs after submission and retries at most
+three times. A failed lookup leaves the original link intact.
+
+Read the [architecture notes](docs/architecture.md) for domain and permission
+decisions. The [mascot provenance and prompt](design/mascot.md) document the
+built-in imagegen artwork. HTMX's license is bundled; see
+[THIRD_PARTY.md](THIRD_PARTY.md). Licensed under AGPL-3.0-or-later.
