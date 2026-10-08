@@ -64,6 +64,8 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
+	Audience                                                                string
+	Recent                                                                  bool
 	CommentDraft                                                            string
 	Bundles                                                                 []bundle
 	Perspective, Kind, MusicTitle, Artist, AnnotationMode, Handoff, Members string
@@ -128,8 +130,10 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /login", a.loginForm)
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("POST /logout", a.signedIn(a.logout))
-	mux.HandleFunc("GET /{$}", a.signedIn(a.inbox))
-	mux.HandleFunc("GET /inbox", a.signedIn(a.inbox))
+	mux.HandleFunc("GET /{$}", a.signedIn(a.shelf))
+	mux.HandleFunc("GET /inbox", a.signedIn(a.shelf))
+	mux.HandleFunc("GET /shelf", a.signedIn(a.shelf))
+	mux.HandleFunc("GET /recent", a.signedIn(a.recent))
 	mux.HandleFunc("GET /history", a.signedIn(a.history))
 	mux.HandleFunc("GET /recommendations/new", a.signedIn(a.newRecommendation))
 	mux.HandleFunc("POST /recommendations/new", a.signedIn(a.recommend))
@@ -333,7 +337,7 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 	}
 	a.cookie(w, r, "session", secret, 7*86400)
 	a.cookie(w, r, "csrf", token.SessionCSRF(secret, "songstead-csrf-v1"), 86400)
-	http.Redirect(w, r, "/inbox", 303)
+	http.Redirect(w, r, "/shelf", 303)
 }
 func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	if err := a.store.Logout(r.Context(), state(r).Session); err != nil {
@@ -344,9 +348,10 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	a.cookie(w, r, "csrf", "", -1)
 	http.Redirect(w, r, "/login", 303)
 }
-func (a *App) inbox(w http.ResponseWriter, r *http.Request)   { a.list(w, r, false) }
-func (a *App) history(w http.ResponseWriter, r *http.Request) { a.list(w, r, true) }
-func (a *App) list(w http.ResponseWriter, r *http.Request, history bool) {
+func (a *App) shelf(w http.ResponseWriter, r *http.Request)   { a.list(w, r, false, false) }
+func (a *App) history(w http.ResponseWriter, r *http.Request) { a.list(w, r, true, false) }
+func (a *App) recent(w http.ResponseWriter, r *http.Request)  { a.list(w, r, false, true) }
+func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool) {
 	offset := 0
 	if v := r.URL.Query().Get("offset"); v != "" {
 		var err error
@@ -376,21 +381,27 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history bool) {
 	perspective := r.URL.Query().Get("view")
 	if perspective == "" {
 		perspective = "music"
+		if recent {
+			perspective = "recommendations"
+		}
 	}
 	if perspective != "music" && perspective != "person" && perspective != "group" && perspective != "recommendations" {
 		http.Error(w, "invalid view", 400)
 		return
 	}
-	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Status: status, Person: person, Group: group, Kind: kind, GroupByMusic: perspective == "music"}, 51, offset)
+	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Recent: recent, Status: status, Person: person, Group: group, Kind: kind, GroupByMusic: perspective == "music"}, 51, offset)
 	if err != nil {
 		a.fail(w, r, err)
 		return
 	}
-	title := "Your inbox"
+	title := "Your shelf"
 	if history {
 		title = "Your history"
 	}
-	p := page{View: "list", Title: title, Items: items, History: history, Status: status, Offset: offset, HasNext: len(items) > 50, HasPrevious: offset > 0, Next: offset + 50, Previous: max(0, offset-50)}
+	if recent {
+		title = "Recent"
+	}
+	p := page{View: "list", Title: title, Items: items, History: history, Recent: recent, Status: status, Offset: offset, HasNext: len(items) > 50, HasPrevious: offset > 0, Next: offset + 50, Previous: max(0, offset-50)}
 	if p.HasNext && perspective != "music" {
 		p.Items = items[:50]
 	}
@@ -418,6 +429,9 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history bool) {
 			heading = item.Group
 			if heading == "" {
 				heading = "Between friends"
+				if item.Visibility == "members" {
+					heading = "Shared here"
+				}
 			}
 		}
 		if perspective == "recommendations" {
@@ -446,7 +460,9 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history bool) {
 	}
 	a.render(w, r, 200, p)
 }
-func (a *App) newRecommendation(w http.ResponseWriter, r *http.Request) { a.compose(w, r, 200, page{}) }
+func (a *App) newRecommendation(w http.ResponseWriter, r *http.Request) {
+	a.compose(w, r, 200, page{Audience: "members"})
+}
 func (a *App) compose(w http.ResponseWriter, r *http.Request, status int, p page) {
 	users, err := a.store.Users(r.Context(), state(r).User.ID)
 	if err != nil {
@@ -460,38 +476,68 @@ func (a *App) compose(w http.ResponseWriter, r *http.Request, status int, p page
 	}
 	p.Users = users
 	p.View = "compose"
-	p.Title = "Send some music"
+	p.Title = "Share some music"
 	a.render(w, r, status, p)
 }
 func (a *App) recommend(w http.ResponseWriter, r *http.Request) {
-	recipient, err := strconv.ParseInt(r.PostForm.Get("recipient"), 10, 64)
-	group, groupErr := strconv.ParseInt(r.PostForm.Get("group"), 10, 64)
-	if r.PostForm.Get("group") == "" {
-		groupErr = nil
-	}
-	p := page{GroupID: group, Kind: r.PostForm.Get("kind"), MusicTitle: r.PostForm.Get("title"), Artist: r.PostForm.Get("artist"), URL: r.PostForm.Get("url"), Note: r.PostForm.Get("note"), Recipient: recipient}
-	if groupErr != nil || group < 0 || group == 0 && (err != nil || recipient <= 0) {
-		p.Error = "Choose a recipient."
+	p := page{Audience: r.PostForm.Get("audience"), Kind: r.PostForm.Get("kind"), MusicTitle: r.PostForm.Get("title"), Artist: r.PostForm.Get("artist"), URL: r.PostForm.Get("url"), Note: r.PostForm.Get("note")}
+	_, explicit := r.PostForm["audience"]
+	if explicit && (r.PostForm.Has("recipient") || r.PostForm.Has("group")) {
+		p.Audience = ""
+		p.Error = "Choose one audience for this recommendation."
 		a.compose(w, r, 422, p)
 		return
 	}
-	users, err := a.store.Users(r.Context(), state(r).User.ID)
-	if err != nil {
-		a.fail(w, r, err)
-		return
-	}
-	found := false
-	for _, u := range users {
-		if u.ID == recipient {
-			found = true
+	if !explicit {
+		// Older forms and clients retain private delivery; omission never shares.
+		group, err := parseOptionalID(r.PostForm.Get("group"))
+		if err != nil {
+			p.Error = "Choose a group from this instance."
+			a.compose(w, r, 422, p)
+			return
+		}
+		p.Audience = "person:" + r.PostForm.Get("recipient")
+		if group > 0 {
+			p.Audience = "group:" + strconv.FormatInt(group, 10)
 		}
 	}
-	if !found && group == 0 {
-		p.Error = "Choose a recipient from this instance."
-		a.compose(w, r, 422, p)
-		return
+	scope, rawID, _ := strings.Cut(p.Audience, ":")
+	if p.Audience != "members" {
+		id, err := strconv.ParseInt(rawID, 10, 64)
+		if err != nil || id <= 0 || scope != "person" && scope != "group" {
+			p.Error = "Choose who can see this recommendation."
+			a.compose(w, r, 422, p)
+			return
+		}
+		if scope == "group" {
+			p.GroupID = id
+		} else {
+			p.Recipient = id
+		}
 	}
-	id, err := a.store.RecommendMusic(r.Context(), state(r).User.ID, recipient, group, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist)
+	if p.Recipient > 0 {
+		users, err := a.store.Users(r.Context(), state(r).User.ID)
+		if err != nil {
+			a.fail(w, r, err)
+			return
+		}
+		found := false
+		for _, u := range users {
+			found = found || u.ID == p.Recipient
+		}
+		if !found {
+			p.Error = "Choose a friend from this instance."
+			a.compose(w, r, 422, p)
+			return
+		}
+	}
+	var id int64
+	var err error
+	if p.Audience == "members" {
+		id, err = a.store.ShareMusic(r.Context(), state(r).User.ID, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist)
+	} else {
+		id, err = a.store.RecommendMusic(r.Context(), state(r).User.ID, p.Recipient, p.GroupID, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist)
+	}
 	if err != nil {
 		// Validate before storage; unknown database failures stay server errors.
 		if errors.Is(err, store.ErrInvalid) {

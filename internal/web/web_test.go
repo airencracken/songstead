@@ -151,7 +151,7 @@ func TestRouteAndHTTPContracts(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := login(t, a, "bobby")
-	for _, path := range []string{"/", "/inbox", "/history", "/recommendations/new", "/recommendations/" + strconv.FormatInt(id, 10), "/login"} {
+	for _, path := range []string{"/", "/shelf", "/inbox", "/recent", "/history", "/recommendations/new", "/recommendations/" + strconv.FormatInt(id, 10), "/login"} {
 		w := b.request("GET", path, nil)
 		if w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/html") {
 			t.Fatal("route failed", path, w.Code, w.Body.String())

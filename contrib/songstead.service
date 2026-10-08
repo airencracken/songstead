@@ -1,5 +1,5 @@
 [Unit]
-Description=Songstead music recommendation inbox
+Description=Songstead music recommendation shelf
 After=network.target
 
 [Service]

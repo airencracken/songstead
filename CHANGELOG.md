@@ -2,7 +2,8 @@
 
 ## 0.1.0 (prepared)
 
-First Songstead release: private music recommendations from friends and groups,
+First Songstead release: a signed-in Recent tab for music shared with everyone
+here, an explicit audience selector, private recommendations from friends and groups,
 views by music, person, group and recommendation, shared personal organization
 for duplicate music, timestamped comments tied to recordings, annotation
 preferences with manual listening positions, and explicit Witmoot draft handoffs.

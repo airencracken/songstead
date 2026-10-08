@@ -2,8 +2,8 @@
 
 Good music, from your people.
 
-Songstead is a small, self-hosted recommendation inbox for friends. Paste a link,
-choose a person or group, and add a note. Listen when you have a moment, keep your own
+Songstead is a small, self-hosted recommendation shelf for friends. Paste a link,
+share it with everyone here or choose a friend or group privately, and add a note. Listen when you have a moment, keep your own
 listening state and rating, and talk about it together.
 
 It is part of Comfyware: software for a small community, run by the people using
@@ -17,15 +17,20 @@ by music, person, group or each recommendation. Duplicate provider identities
 keep each sender's words while sharing your private listening organization.
 Recommendations are gifts: there is no need to keep up.
 
+Recent shows what people shared with everyone on the instance, newest first.
+Choose an audience before posting; private friend and group gifts stay out of
+Recent. All views require sign-in. Sharing does not fill anyone else's shelf.
+
 Comments can mark several moments in a chosen recording. Show annotations
 immediately, reveal them manually, or use spoiler-free mode with a position you
 indicate yourself. Songstead neither tracks playback nor connects streaming
 accounts. Explicit Witmoot drafts and saved discussion links keep conversation
 optional. Every application remains usable on its own.
 
-Read [the inbox and annotation behavior](docs/quiet-inbox.md),
+Read [the shelf and annotation behavior](docs/quiet-inbox.md),
 [deployment and migration details](docs/deployment.md), and
-[the publication order](docs/release-coordination.md). Go/SQLite/HTMX,
+[the publication order](docs/release-coordination.md), and
+[Gentoo deployment](docs/deployment.md). Go/SQLite/HTMX,
 AGPL-3.0-or-later, with `master` as the repository default branch.
 
 ## Build and try it
@@ -50,7 +55,7 @@ for Comfylib v0.1.1; see [release coordination](docs/release-coordination.md).
 
 The demo listens at `http://127.0.0.1:8083`. Sign in as `alice` or `bobby`, both
 with `demo-password`. It uses a private temporary directory and removes it when
-stopped. Send a link as one account, then sign in as the other to try the inbox.
+stopped. Send a link as one account, then sign in as the other to try the shelf.
 
 For a permanent instance, create your accounts locally. Passwords are supplied
 through standard input, never command arguments. For example, in Bash:

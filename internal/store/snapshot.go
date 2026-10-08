@@ -25,7 +25,7 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version != 2 {
+	if version != 3 {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string

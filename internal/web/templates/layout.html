@@ -12,9 +12,9 @@
 <body hx-boost="true" hx-history="false">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
-    <a class="brand" href="/inbox"><img src="/static/jukebox.png" alt="" width="42" height="42">Songstead</a>
+    <a class="brand" href="/shelf"><img src="/static/jukebox.png" alt="" width="42" height="42">Songstead</a>
     <nav aria-label="Main navigation">
-      {{if .User}}<a href="/inbox">Inbox</a><a href="/history">History</a><a href="/groups">Groups</a><a class="button" href="/recommendations/new">Send music</a>{{end}}
+      {{if .User}}<a href="/recent" {{if .Recent}}aria-current="page"{{end}}>Recent</a><a href="/shelf" {{if and (eq .View "list") (not .History) (not .Recent)}}aria-current="page"{{end}}>Shelf</a><a href="/history">History</a><a href="/groups">Groups</a><a class="button" href="/recommendations/new">Share music</a>{{end}}
       <label class="theme-picker" hidden><span class="sr-only">Color theme</span><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
       {{if .User}}<span class="muted">{{.User.Username}}</span><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>{{end}}
     </nav>

@@ -19,6 +19,7 @@ type Group struct {
 	Name        string
 }
 type Filter struct {
+	Recent        bool
 	GroupByMusic  bool
 	Status, Kind  string
 	Person, Group int64
@@ -115,7 +116,14 @@ func migrateMusic(tx *sql.Tx) error {
 	return nil
 }
 
-func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, raw, note, kind, title, artist string) (int64, error) {
+func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, raw, note, kind, title, artist, visibility string) (int64, error) {
+	if visibility != "private" && visibility != "members" || group < 0 || visibility == "members" && (group != 0 || recipient != 0) || visibility == "private" && group == 0 && (recipient <= 0 || sender == recipient) {
+		return 0, ErrInvalid
+	}
+	if visibility == "members" {
+		// The destination row remains singular; sharing never fans out individual gifts.
+		recipient = sender
+	}
 	link, err := media.Parse(raw)
 	if err != nil {
 		return 0, err
@@ -127,7 +135,7 @@ func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, r
 	if kind == "" {
 		kind = inferred
 	}
-	if kind != "track" && kind != "album" && kind != "artist" && kind != "link" || !validText(note, 0, 2000) || !validText(title, 0, 160) || !validText(artist, 0, 160) || group == 0 && sender == recipient {
+	if kind != "track" && kind != "album" && kind != "artist" && kind != "link" || !validText(note, 0, 2000) || !validText(title, 0, 160) || !validText(artist, 0, 160) {
 		return 0, ErrInvalid
 	}
 	if title == "" {
@@ -176,7 +184,7 @@ func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, r
 	if group > 0 {
 		groupValue = group
 	}
-	result, err := tx.ExecContext(ctx, "INSERT INTO recommendations(media_id,sender_id,note,created_at,group_id,source_url) VALUES(?,?,?,?,?,?)", mid, sender, note, time.Now().Unix(), groupValue, raw)
+	result, err := tx.ExecContext(ctx, "INSERT INTO recommendations(media_id,sender_id,note,created_at,group_id,source_url,visibility) VALUES(?,?,?,?,?,?,?)", mid, sender, note, time.Now().Unix(), groupValue, raw, visibility)
 	if err != nil {
 		return 0, err
 	}
@@ -200,7 +208,12 @@ func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, r
 	return id, tx.Commit()
 }
 func (s *Store) RecommendMusic(ctx context.Context, sender, recipient, group int64, raw, note, kind, title, artist string) (int64, error) {
-	return s.recommend(ctx, sender, recipient, group, raw, note, kind, title, artist)
+	return s.recommend(ctx, sender, recipient, group, raw, note, kind, title, artist, "private")
+}
+
+// ShareMusic explicitly posts to the signed-in instance, without individual gift delivery.
+func (s *Store) ShareMusic(ctx context.Context, sender int64, raw, note, kind, title, artist string) (int64, error) {
+	return s.recommend(ctx, sender, 0, 0, raw, note, kind, title, artist, "members")
 }
 
 func (s *Store) Browse(ctx context.Context, viewer int64, history bool, f Filter, limit, offset int) ([]Recommendation, error) {
@@ -209,9 +222,14 @@ func (s *Store) Browse(ctx context.Context, viewer int64, history bool, f Filter
 	}
 	where := visible
 	args := []any{viewer, viewer, viewer, viewer, viewer}
-	if !history {
-		where += ` AND (r.group_id IS NOT NULL OR d.user_id=?)`
+	if f.Recent {
+		where += ` AND r.visibility='members'`
+	} else if !history {
+		where += ` AND (r.group_id IS NOT NULL OR (r.visibility='private' AND d.user_id=?))`
 		args = append(args, viewer)
+	} else {
+		where += ` AND (r.visibility='private' OR r.sender_id=? OR ms.user_id IS NOT NULL OR EXISTS(SELECT 1 FROM comments c WHERE c.recommendation_id=r.id AND c.author_id=?))`
+		args = append(args, viewer, viewer)
 	}
 	if f.Status != "" {
 		where += " AND coalesce(ms.listening,'unheard')=?"

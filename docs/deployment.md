@@ -41,7 +41,7 @@ Do not run two services against the same directory; the server takes a file lock
 `backup --output PATH` creates a consistent SQLite snapshot without overwriting
 an existing path. `restore --input PATH --data-dir EMPTY_DIRECTORY` validates the
 schema, integrity and foreign keys before installing it. Restore requires a
-snapshot matching this binary's schema; use the old binary to restore a v1
+snapshot matching this binary's schema; use the old binary to restore a v1 or v2
 snapshot, then start the new binary to migrate it.
 
 Schema 2 adds groups, canonical music identity, private music organization,
@@ -54,6 +54,16 @@ structured timestamp references during migration; ambiguous album comments remai
 annotation preference, positions, recording references, groups, discussion
 links and authored structured annotations, without other people's private state.
 
+Schema 3 adds explicit instance sharing and the Recent index. Every existing
+recommendation defaults to private; neither direct nor group recommendations
+are published to the shared feed by an upgrade. New browser forms choose
+everyone here or a private audience explicitly. Older clients keep private
+delivery. Once upgraded, restore requires a schema 3 snapshot; the account
+export format remains version 2 with an additive Visibility field on each
+recommendation. Back up before upgrading; reverting the binary alone cannot
+downgrade the database.
+
 Gentoo live packaging is prepared in the Comfyware overlay. The versioned
 0.1.0 recipe remains staged until source and dependency archives are published
 and checksummed. See the overlay's `release-preparation` directory.
+For the existing Gentoo/OpenRC host, see [Gentoo deployment](deployment.md).

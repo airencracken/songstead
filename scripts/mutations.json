@@ -2,7 +2,7 @@
   {
     "name": "private recommendation visibility",
     "file": "internal/store/store.go",
-    "before": "const visible = `((r.group_id IS NULL AND (r.sender_id=? OR d.user_id=?)) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`",
+    "before": "const visible = `((r.group_id IS NULL AND (r.sender_id=? OR EXISTS(SELECT 1 FROM users v WHERE v.id=? AND (r.visibility='members' OR d.user_id=v.id)))) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`",
     "after": "const visible = `(? >= 0 OR ? >= 0 OR ? >= 0)`",
     "package": "./internal/store",
     "run": "^TestPermissions$"
@@ -34,8 +34,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 2 {",
-    "after": "if version > 3 {",
+    "before": "if version > 3 {",
+    "after": "if version > 4 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -86,5 +86,37 @@
     "after": "? >= 0",
     "package": "./internal/store",
     "run": "^TestDuplicateMusicKeepsContextAndPrivateState$"
+  },
+  {
+    "name": "Recent excludes private sends",
+    "file": "internal/store/inbox.go",
+    "before": "where += ` AND r.visibility='members'`",
+    "after": "where += ` AND r.visibility IN ('members','private')`",
+    "package": "./internal/store",
+    "run": "^TestRecentAudienceIsolationAndPrivateState$"
+  },
+  {
+    "name": "shared music requires an account",
+    "file": "internal/store/store.go",
+    "before": "v.id=? AND (r.visibility='members' OR d.user_id=v.id)",
+    "after": "(v.id=? OR r.visibility='members') AND (r.visibility='members' OR d.user_id=v.id)",
+    "package": "./internal/store",
+    "run": "^TestRecentAudienceIsolationAndPrivateState$"
+  },
+  {
+    "name": "group audience cannot become instance shared",
+    "file": "internal/store/migrations/003_recent.sql",
+    "before": "CHECK(visibility='private' OR group_id IS NULL)",
+    "after": "CHECK(1)",
+    "package": "./internal/store",
+    "run": "^TestRecentSchemaAudienceConstraints$"
+  },
+  {
+    "name": "legacy forms keep private audience",
+    "file": "internal/web/web.go",
+    "before": "p.Audience = \"person:\" + r.PostForm.Get(\"recipient\")",
+    "after": "p.Audience = \"members\"",
+    "package": "./internal/web",
+    "run": "^TestRecentLegacyAndAdversarialAudience$"
   }
 ]

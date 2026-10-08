@@ -12,7 +12,12 @@ uses SQLite user_version and commits upgrades atomically, rejecting newer schema
 
 Recommendations preserve source URLs and sender notes independently of music
 identity. Group access follows current membership; direct access follows the
-sender/recipient pair. The same visibility predicate protects reads and mutations.
+sender/recipient pair. Explicit instance sharing is visible to valid signed-in
+accounts. The same visibility predicate protects reads and mutations. Recent
+adds a shared-only predicate before sorting and pagination; it never reads
+private provenance for display. A schema constraint prevents a group context
+from being combined with instance sharing. Shared posts use one destination row
+without manufacturing individual gifts.
 Music organization belongs to a viewer, while per-recommendation ratings and
 personal notes remain separate. Neither is publicized.
 

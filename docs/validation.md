@@ -1,7 +1,7 @@
 # Validation of the prepared 0.1.0 changes
 
 Songstead `make check build` passes: the complete race-enabled Go suite, theme
-JavaScript checks, 11 intentional mutation checks, packaging contracts, vet,
+JavaScript checks, 15 intentional mutation checks, packaging contracts, vet,
 format checks and a static binary stamped `songstead 0.1.0`.
 
 Tests cover current group access and removal, direct-recipient isolation,
@@ -10,6 +10,11 @@ provenance, private music organization, migration from schema 1, schema
 constraints, annotation/response atomicity, natural multi-reference timestamps,
 invalid tokens/durations, explicit album-recording selection, spoiler HTML
 suppression, manual positions, export privacy and unavailable providers.
+Recent coverage includes member-only access, private friend/group exclusion
+across all views, shared/private duplicates, schema 2 migration preserving
+privacy, private state on shared music, stable pagination across private posts,
+atomic failed creation, randomized audience properties, native audience choices,
+legacy forms, mixed/duplicate/invalid audiences, CSRF and failed private drafts.
 
 `GOCACHE=/tmp/songstead-go-cache python3 scripts/check_companion_mutations.py`
 passes three coordinated disposable-worktree mutations: credential-free shared
@@ -28,7 +33,7 @@ checks pass too. Their existing full suites were run. Listening socket tests
 cannot run here, and release/module-copy tests require published Comfylib v0.1.1
 checksums. These are unresolved release gates, not passing tests.
 
-Website: all 9 content checks, 6 deployment checks and Caddy validation pass.
+Website: all 11 content checks, 6 deployment checks and Caddy validation pass.
 HTTP checks cannot create sockets. Playwright's package is not cached for offline
 installation; an independent Chromium launch also fails at socket setup.
 Visual/browser validation must run outside this sandbox before deployment.
@@ -37,6 +42,10 @@ Overlay: Songstead live/staged recipe, account, compile-version and recipe parit
 checks pass; the staged install checks the binary, private service configuration,
 logrotate and journald output. Existing recipe, Manifest, dependency-bundle
 immutability/download failure, publication and sandbox-packaging checks pass.
+The three companion preparation checks pass for the proposed Witmoot 0.14.0
+and imvault 0.16.0 recipes, including live-service parity, version stamps and
+absence of fabricated Manifest entries. These recipes remain staged until
+the proposed upstream tags and real distfiles are verified and published.
 A full Portage build/install still needs Gentoo and published source/dependency
 archives. No fabricated Manifest entries were created.
 

@@ -1,7 +1,7 @@
 # Music left for your people
 
 Recommendations are gifts. There are no deadlines, streaks, completion counts,
-read receipts, automatic listening changes or reminders. The inbox uses arrival
+read receipts, automatic listening changes or reminders. The shelf uses arrival
 order and defaults to a music view. Person, group and individual recommendation
 views are filters over the same recommendations, not separate copies.
 
@@ -9,6 +9,25 @@ A group creator chooses members and can change that membership. Current members
 can recommend music to the group and see its recommendations and comments;
 removal revokes that access. Joining grants access to the group's earlier music.
 Direct recommendations remain visible only to their sender and recipient.
+
+Recent is the instance's shared shelf, newest first. The audience selector offers
+everyone here, one friend privately, or a group privately. Everyone here means
+accounts signed in on this installation; there is no anonymous feed. A shared
+recommendation's music, note and conversation are visible to those accounts.
+Private friend and group recommendations never appear in Recent, even for their
+participants, and a shared duplicate never reveals a private recommendation's
+note or conversation. Existing recommendations keep their audience on upgrade.
+Older forms that omit the new audience field still send privately.
+
+Shared posts do not fan out into personal shelves. Your history includes your direct and
+group gifts, shared posts you wrote, and shared music you chose to organize or
+comment on. Merely opening a shared recommendation records no participation.
+Recent defaults to each recommendation; its optional music view groups matching
+shared music while keeping every sender's words. There are no badges, unread
+counts, automatic refresh, reminders or ranking.
+
+The personal view is Your shelf at `/shelf`. Existing `/inbox` links and filters
+remain supported, with the same audience rules, but new navigation uses Shelf.
 
 Music identity is conservative: recognized YouTube video IDs and Spotify
 track/album/artist IDs are shared across their provider URL variants. Other URLs

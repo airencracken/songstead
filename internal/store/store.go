@@ -39,6 +39,7 @@ type Recommendation struct {
 	CreatedAt                                                                       int64
 	GroupID                                                                         int64
 	Group, Kind                                                                     string
+	Visibility                                                                      string
 	Listening                                                                       string
 	Rating                                                                          int
 	PersonalNote                                                                    string
@@ -86,11 +87,11 @@ func (s *Store) migrate() error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 2 {
+	if version > 3 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	for next := version + 1; next <= 2; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql"}[next]
+	for next := version + 1; next <= 3; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -230,12 +231,12 @@ func validText(s string, min, max int) bool {
 }
 
 func (s *Store) Recommend(ctx context.Context, sender, recipient int64, raw, note string) (int64, error) {
-	return s.recommend(ctx, sender, recipient, 0, raw, note, "", "", "")
+	return s.recommend(ctx, sender, recipient, 0, raw, note, "", "", "", "private")
 }
 
 const selectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sender.username,recipient.username,
  coalesce(nullif(r.source_url,''),m.original_url),m.provider,m.title,m.artist,m.thumbnail,m.media_type,m.video_id,r.note,r.created_at,
- coalesce(ms.listening,'unheard'),coalesce(x.rating,0),coalesce(x.note,''),coalesce(r.group_id,0),coalesce(g.name,''),m.kind
+ coalesce(ms.listening,'unheard'),coalesce(x.rating,0),coalesce(x.note,''),coalesce(r.group_id,0),coalesce(g.name,''),m.kind,r.visibility
  FROM recommendations r JOIN media m ON m.id=r.media_id
  JOIN recommendation_destinations d ON d.recommendation_id=r.id
  JOIN users sender ON sender.id=r.sender_id JOIN users recipient ON recipient.id=d.user_id
@@ -244,13 +245,13 @@ const selectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sender.user
  LEFT JOIN groups g ON g.id=r.group_id `
 
 // The same visibility predicate protects details, comments and mutations.
-const visible = `((r.group_id IS NULL AND (r.sender_id=? OR d.user_id=?)) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`
+const visible = `((r.group_id IS NULL AND (r.sender_id=? OR EXISTS(SELECT 1 FROM users v WHERE v.id=? AND (r.visibility='members' OR d.user_id=v.id)))) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`
 
 type scanner interface{ Scan(...any) error }
 
 func scanRecommendation(row scanner) (Recommendation, error) {
 	var r Recommendation
-	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote, &r.GroupID, &r.Group, &r.Kind)
+	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote, &r.GroupID, &r.Group, &r.Kind, &r.Visibility)
 	return r, err
 }
 
