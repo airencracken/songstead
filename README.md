@@ -2,6 +2,9 @@
 
 Good music, from your people.
 
+[Source repository](https://github.com/airencracken/songstead). The first
+release remains in preparation.
+
 Songstead is a small, self-hosted recommendation shelf for friends. Paste a link,
 share it with everyone here or choose a friend or group privately, and add a note. Listen when you have a moment, keep your own
 listening state and rating, and talk about it together.

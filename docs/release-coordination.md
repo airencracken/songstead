@@ -17,8 +17,9 @@ separate changes; there is no shared database or mandatory runtime service.
    chooser. Album previews use imvault's authenticated
    `/api/v1/albums/{ref}/preview` endpoint; older instances simply yield no
    preview and keep the destination links usable.
-4. Create `airencracken/songstead` as a public repository, push `master`, set
-   its default branch to `master`, and confirm CI. Tag `v0.1.0` on that branch.
+4. The public [Songstead repository](https://github.com/airencracken/songstead)
+   was created on 2026-10-08. Push `master`, set its default branch to `master`,
+   and confirm CI after the library dependency is published. Tag `v0.1.0` on that branch.
    The GoReleaser workflow produces static Linux amd64/arm64 archives, source,
    license notices and SHA-256 checksums. Publication requires the tag to be
    on master, match VERSION, and pass the full checks with GOWORK disabled.
@@ -41,9 +42,12 @@ Local review archives live in `.artifacts/songstead-0.1.0-preview`; they are
 explicitly unpublished and were built using that workspace. They are not a
 substitute for resolving the released module and passing clean release checks.
 
-GitHub DNS, listening sockets and browser socket setup are unavailable in the
-current sandbox. Remote creation/push, dependency publication, full socket-based
-checks, Gentoo installation, and deployment must run where those capabilities
-are available. Website copy accurately labels 0.1.0 as in preparation.
+On 2026-10-08, website and overlay default-branch pulls succeeded. Songstead's
+public GitHub repository was subsequently created under `airencracken`.
+Comfylib's remote has no `v0.1.1` tag; library publication remains a release
+prerequisite. Website HTTP and Chromium checks now pass with local
+sockets enabled; see the validation record. Full companion release checks,
+Portage installation, publication and deployment remain outstanding. Website
+copy labels 0.1.0 as in preparation.
 
 See [validation.md](validation.md) for checks and unresolved release gates.

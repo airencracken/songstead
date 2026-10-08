@@ -33,10 +33,14 @@ checks pass too. Their existing full suites were run. Listening socket tests
 cannot run here, and release/module-copy tests require published Comfylib v0.1.1
 checksums. These are unresolved release gates, not passing tests.
 
-Website: all 11 content checks, 6 deployment checks and Caddy validation pass.
-HTTP checks cannot create sockets. Playwright's package is not cached for offline
-installation; an independent Chromium launch also fails at socket setup.
-Visual/browser validation must run outside this sandbox before deployment.
+Website rechecked on 2026-10-08: all 12 content checks, 9 production HTTP
+checks, 6 deployment checks, Caddy validation and 306 Chromium checks pass.
+Pinned browser dependencies were installed and local socket checks ran outside
+the restricted sandbox. Browser coverage includes both palettes at four widths,
+accessibility, full square Songstead artwork, and keyboard use of its privacy
+FAQ without JavaScript. Desktop and mobile screenshots were reviewed; the
+product page now uses the intended mascot styling instead of cropping it as a
+wide screenshot. The website remains unpublished.
 
 Overlay: Songstead live/staged recipe, account, compile-version and recipe parity
 checks pass; the staged install checks the binary, private service configuration,
@@ -49,5 +53,27 @@ the proposed upstream tags and real distfiles are verified and published.
 A full Portage build/install still needs Gentoo and published source/dependency
 archives. No fabricated Manifest entries were created.
 
-No GitHub repository, module or application release, overlay dependency bundle,
-or live website deployment has been published from this environment.
+On 2026-10-08, the overlay's complete local suite and shellcheck pass. CI now
+includes Songstead and companion preparation checks. All three staged recipes
+pass installation checks against their actual local source checkouts. Additional
+mutations reject public data directories, exposed configuration, missing logging,
+wrong service commands, and compressed examples. Dependency publication tests
+cover all three apps and reject inherited development workspaces; resolution
+now explicitly uses `GOWORK=off`.
+
+Songstead's 8 packaging checks also pass, including OpenRC's `serve` command,
+private path setup, default settings, rejection of relative/adversarial paths
+before changes, and stopping after failed directory setup. The complete
+`make check build` passed before the service diagnostic and these tests were
+updated; the updated packaging checks and OpenRC shellcheck then passed.
+
+Website and overlay default branches were pulled before this continuation.
+Songstead's remote initially returned `Repository not found`; its public
+GitHub repository was subsequently created under `airencracken` on 2026-10-08.
+Comfylib's remote still has no `v0.1.1` tag. Clean standalone dependency resolution remains a release
+gate. Earlier companion socket-suite limitations above describe the previous
+run; those full suites have not been rerun in this continuation.
+
+The public Songstead GitHub repository has been created. No module or
+application release, overlay dependency bundle, or live website deployment
+has been published from this environment.

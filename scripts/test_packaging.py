@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Release, service and license contracts with deliberately damaged inputs."""
 from pathlib import Path
+import os
 import subprocess
+import tempfile
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -10,6 +12,55 @@ def service_errors(text):
     return [requirement for requirement in ("User=songstead", "Group=songstead", "StateDirectoryMode=0700", "UMask=0077", "EnvironmentFile=-/etc/songstead/songstead.env", "ExecStart=/usr/local/bin/songstead serve") if requirement not in text]
 
 class PackagingTests(unittest.TestCase):
+    def run_openrc_start(self, overrides=None):
+        script = '''
+eerror() { printf '%s\\n' "$*" >&2; }
+checkpath() {
+    printf 'checkpath'; printf ' <%s>' "$@"; printf '\\n'
+    [ "${FAIL_CHECKPATH:-}" != yes ]
+}
+. "$1" || exit 1
+start_pre || exit 1
+printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_args" "$command_user" "$(umask)"
+'''
+        settings = {"PATH": os.environ["PATH"], "RC_SVCNAME": "songstead",
+                    "SONGSTEAD_DATA_DIR": "/var/lib/songstead",
+                    "SONGSTEAD_BIN": "/usr/local/bin/songstead",
+                    "SONGSTEAD_LOG_FILE": "/tmp/songstead.log", **(overrides or {})}
+        return subprocess.run(["sh", "-c", script, "openrc-test",
+                               str(ROOT / "contrib/openrc/songstead")],
+                              env=settings, capture_output=True, text=True, timeout=10)
+
+    def test_openrc_initializes_private_paths_and_serve_command(self):
+        result = self.run_openrc_start()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("<--directory> <--mode> <0700> <--owner> <songstead:songstead> </var/lib/songstead>", result.stdout)
+        self.assertIn("<--file> <--mode> <0640> <--owner> <songstead:songstead> </tmp/songstead.log>", result.stdout)
+        self.assertIn("command </usr/local/bin/songstead> args <serve> user <songstead:songstead> umask <0077>", result.stdout)
+
+    def test_openrc_rejects_relative_and_adversarial_paths_before_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / "injected"
+            for setting in ("SONGSTEAD_DATA_DIR", "SONGSTEAD_BIN", "SONGSTEAD_LOG_FILE"):
+                for value in ("relative/path", "", f"$(touch {marker})", f".; touch {marker}"):
+                    with self.subTest(setting=setting, value=value):
+                        # Empty settings deliberately use the service defaults.
+                        if not value:
+                            self.assertEqual(self.run_openrc_start({setting: value}).returncode, 0)
+                            continue
+                        result = self.run_openrc_start({setting: value})
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn("Songstead paths must be absolute:", result.stderr)
+                        self.assertNotIn("checkpath", result.stdout)
+                        self.assertFalse(marker.exists())
+
+    def test_openrc_stops_after_failed_data_directory_setup(self):
+        result = self.run_openrc_start({"FAIL_CHECKPATH": "yes"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.count("checkpath"), 1)
+        self.assertNotIn("<--file>", result.stdout)
+        self.assertNotIn("command <", result.stdout)
+
     def test_generated_python_files_are_not_release_sources(self):
         tracked=subprocess.run(["git","ls-files","--cached"],cwd=ROOT,check=True,capture_output=True,text=True).stdout.splitlines()
         self.assertFalse([p for p in tracked if "__pycache__/" in p or p.endswith((".pyc",".pyo"))])

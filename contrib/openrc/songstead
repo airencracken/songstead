@@ -40,7 +40,7 @@ start_pre() {
 	for path in "$SONGSTEAD_DATA_DIR" "$SONGSTEAD_BIN" "$SONGSTEAD_LOG_FILE"; do
 		case "$path" in
 			/*) ;;
-			*) eerror "Witmoot paths must be absolute: $path"; return 1 ;;
+			*) eerror "Songstead paths must be absolute: $path"; return 1 ;;
 		esac
 	done
 	umask "$umask"
