@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-VERSION ?= 0.3.0
+VERSION ?= 0.3.1
 GOCACHE ?= /tmp/songstead-go-cache
 export GOCACHE
 

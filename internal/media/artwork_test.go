@@ -28,6 +28,7 @@ func TestProviderMetadataAndArtworkContracts(t *testing.T) {
 	for _, tt := range []struct{ raw, host, source, thumbnail string }{
 		{"https://youtu.be/dQw4w9WgXcQ?t=30", "www.youtube.com", "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"},
 		{"https://open.spotify.com/intl-de/album/0sNOF9WDwhWunNAHPD3Baj?si=private", "open.spotify.com", "https://open.spotify.com/album/0sNOF9WDwhWunNAHPD3Baj", "https://i.scdn.co/image/ab67656300005f1ff8141e891abf749375772343"},
+		{"https://open.spotify.com/album/0sNOF9WDwhWunNAHPD3Baj", "open.spotify.com", "https://open.spotify.com/album/0sNOF9WDwhWunNAHPD3Baj", "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02626d2ce1fb80955645d4d787"},
 		{"https://soundcloud.com/forss/flickermood?utm_source=private", "soundcloud.com", "https://soundcloud.com/forss/flickermood", "https://i1.sndcdn.com/artworks-test-large.jpg"},
 	} {
 		t.Run(tt.host, func(t *testing.T) {

@@ -12,7 +12,7 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.3.0
+## Songstead 0.3.1
 
 Friends and groups can leave tracks, albums, artists and listening links. Browse
 by music, person, group or each recommendation. Duplicate provider identities

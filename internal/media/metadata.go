@@ -29,7 +29,7 @@ type Metadata struct {
 // may decide which servers the worker can contact.
 func metadataHost(host string) bool {
 	switch host {
-	case "www.youtube.com", "open.spotify.com", "soundcloud.com", "i.ytimg.com", "i.scdn.co", "i1.sndcdn.com":
+	case "www.youtube.com", "open.spotify.com", "soundcloud.com", "i.ytimg.com", "i.scdn.co", "image-cdn-ak.spotifycdn.com", "i1.sndcdn.com":
 		return true
 	}
 	return false
@@ -199,7 +199,7 @@ func thumbnailURL(raw, provider string) bool {
 		parts := strings.Split(u.Path, "/")
 		return u.Host == "i.ytimg.com" && len(parts) == 4 && parts[1] == "vi" && videoID.MatchString(parts[2]) && parts[3] == "hqdefault.jpg"
 	case "spotify":
-		return u.Host == "i.scdn.co" && strings.HasPrefix(u.Path, "/image/") && imageKey(strings.TrimPrefix(u.Path, "/image/"))
+		return (u.Host == "i.scdn.co" || u.Host == "image-cdn-ak.spotifycdn.com") && strings.HasPrefix(u.Path, "/image/") && imageKey(strings.TrimPrefix(u.Path, "/image/"))
 	case "soundcloud":
 		return u.Host == "i1.sndcdn.com" && strings.HasPrefix(u.Path, "/artworks-") && imageKey(strings.TrimPrefix(u.Path, "/"))
 	}

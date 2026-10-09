@@ -1,4 +1,4 @@
-# Songstead 0.3.0 validation
+# Songstead 0.3.1 validation
 
 `GOWORK=off make check` passes race-enabled Go tests, JavaScript tests, all
 42 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
@@ -17,6 +17,10 @@ edits clear old confirmations, and another account cannot read private notes.
 Tiles use authenticated local artwork with a fallback and preserve the compact
 Chips default. Tested pages have no horizontal overflow or automated WCAG A/AA
 violations, and no external thumbnail requests or JavaScript errors occur.
+
+Live smoke checks retrieve normalized artwork from YouTube, Spotify and
+SoundCloud sample recordings. Spotify supports both its documented image host
+and the current CDN returned by its public oEmbed endpoint.
 
 Real Bubblewrap integration passes with the new schema and static executable.
 The URL parser also passes a bounded fuzz run. Comfylib remains pinned at v0.1.3;
