@@ -176,7 +176,7 @@ func TestThumbnailRoutesAccessAndHeaders(t *testing.T) {
 		}
 	}
 	w := b.request("GET", path, nil)
-	if !strings.Contains(w.Body.String(), `class="detail-artwork" src="`+path+`/thumbnail"`) || !strings.Contains(w.Header().Get("Content-Security-Policy"), "img-src 'self';") {
+	if !strings.Contains(w.Body.String(), `class="detail-artwork" src="`+path+`/thumbnail"`) || !strings.Contains(w.Header().Get("Content-Security-Policy"), "img-src 'self' blob:;") {
 		t.Fatal("detail missed local artwork", w.Code, w.Body.String())
 	}
 	carol := login(t, a, "carol")

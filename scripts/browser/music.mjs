@@ -96,8 +96,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.goto(`${base}/recent`);
   check(await bobby.locator('.recommendations.chips').count()===1,'Chips is the default');
   check(await bobby.locator('.tile-artwork').count()===0,'Default compact view omits large artwork');
-  await bobby.getByRole('combobox',{name:'Layout',exact:true}).selectOption('tiles');
-  await bobby.getByRole('button',{name:'Browse',exact:true}).click();
+  await bobby.getByRole('link',{name:'Tiles',exact:true}).click();
   await bobby.waitForURL('**/recent?**');
   await bobby.locator('.recommendations.tiles').waitFor();
   check(await bobby.locator('.tile-artwork').count()===4,'Tile view preserves all shared music');
@@ -148,7 +147,19 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await alice.getByRole('button',{name:'Save genre and tags',exact:true}).click();
   await alice.waitForURL(`**${favorite}?saved=labels*`);
   check((await alice.getByRole('status').innerText())==='Genre and tags saved.','Label edits confirmed');
+  await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);
+  await bobby.getByRole('link',{name:'Acoustic',exact:true}).first().click();
+  await bobby.waitForURL('**/recent?**tag=Acoustic**');
+  check(await bobby.locator('.recommendations.tiles').count()===1,'Tag picker preserves tile layout');
+  check(await bobby.locator('.recommendation-copy').count()===1,'Tag picker filters immediately');
+  await bobby.getByRole('link',{name:'Chips',exact:true}).click();
+  await bobby.locator('.recommendations.chips').waitFor();
+  check(new URL(bobby.url()).searchParams.get('tag')==='Acoustic','Layout switch preserves tag filter');
   const native = await session('bobby',false);
+  await native.goto(`${base}/recent?discovery=all`);
+  await native.getByRole('link',{name:'Tiles',exact:true}).click();
+  await native.locator('.recommendations.tiles').waitFor();
+  check(await native.locator('.tile-artwork').count()===4,'Native layout switch needs no Browse click');
   await native.goto(base+plain);
   await native.getByRole('textbox',{name:'Personal notes',exact:true}).fill('Saved without JavaScript');
   await native.getByRole('button',{name:'Save your reaction',exact:true}).click();
@@ -159,6 +170,87 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await native.getByRole('button',{name:'Save spoiler preference',exact:true}).click();
   await native.waitForURL('**/account?saved=annotations*');
   check(await native.getByRole('combobox',{name:'Spoiler preference',exact:true}).inputValue()==='hidden','Native account preference persists');
+
+  // Deterministic preview responses exercise the real compose code without
+  // relying on an external provider. The server fetcher has separate tests.
+  const tinyPNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64');
+  await alice.route('**/recommendations/preview',async route => {
+    await route.fulfill({contentType:'application/json',body:JSON.stringify({status:'ready',title:'Preview title <script>',artist:'Preview artist',artwork:tinyPNG.toString('base64')})});
+  });
+  await alice.goto(`${base}/recommendations/new`);
+  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/dQw4w9WgXcQ');
+  await alice.getByText('Music preview ready.',{exact:true}).waitFor();
+  check(await alice.getByLabel('Title, if you know it',{exact:true}).inputValue()==='Preview title <script>','Preview auto-fills optional metadata as text');
+  await alice.locator('[data-preview-artwork]').evaluate(img=>img.decode());
+  check(await alice.locator('[data-preview-artwork]').evaluate(img=>img.naturalWidth===1),'Pasted link generates thumbnail before sharing');
+  await alice.getByLabel('Title, if you know it',{exact:true}).fill('My own title');
+  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/aaaaaaaaaaa');
+  await alice.getByText('Music preview ready.',{exact:true}).waitFor();
+  check(await alice.getByLabel('Title, if you know it',{exact:true}).inputValue()==='My own title','Preview preserves manual edits');
+  check(await alice.locator('main script').count()===0,'Provider text never becomes executable HTML');
+  await alice.unroute('**/recommendations/preview');
+  await alice.route('**/recommendations/preview',async route => {
+    const raw=new URLSearchParams(route.request().postData()).get('url');
+    if (raw.includes('dQw4w9WgXcQ')) await new Promise(done=>setTimeout(done,1000));
+    await route.fulfill({contentType:'application/json',body:JSON.stringify({status:'ready',title:raw.includes('dQw4w9WgXcQ')?'Stale preview':'Current preview',artist:'',artwork:tinyPNG.toString('base64')})}).catch(()=>{});
+  });
+  await alice.goto(`${base}/recommendations/new`);
+  const first=alice.waitForRequest(request=>request.url().endsWith('/recommendations/preview'));
+  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/dQw4w9WgXcQ');
+  await first;
+  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/aaaaaaaaaaa');
+  await alice.getByText('Current preview',{exact:true}).waitFor();
+  await alice.waitForTimeout(1200);
+  check(await alice.getByLabel('Title, if you know it',{exact:true}).inputValue()==='Current preview','Late response cannot replace newer link preview');
+  await alice.unroute('**/recommendations/preview');
+  let polling=0;
+  await bobby.route(`**${empty}/preview`,route => route.fulfill({contentType:'application/json',body:JSON.stringify({title:'Late evening sketches',artist:'Demo ensemble',image:++polling>1?`${favorite}/thumbnail`:'',pending:polling<2})}));
+  await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);
+  await bobby.locator(`[data-music-card=\"${empty.split('/').at(-1)}\"] .tile-artwork img[src$=\"/thumbnail\"]`).waitFor();
+  check(polling>=2,'Pending artwork appears without a full-page reload');
+  await bobby.unroute(`**${empty}/preview`);
+  const embedSeed=spawnSync('python3',['-c',`import sqlite3,sys
+from pathlib import Path
+with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
+ db.execute("UPDATE media SET video_id='dQw4w9WgXcQ' WHERE title='Late evening sketches'")`,directory],{encoding:'utf8'});
+  assert.equal(embedSeed.status,0,embedSeed.stderr);
+  let playerReferer;
+  await alice.route('https://www.youtube-nocookie.com/embed/**',async route => {
+    playerReferer=(await route.request().allHeaders()).referer;
+    await route.fulfill({contentType:'text/html',body:'<!doctype html><title>Player fixture</title>'});
+  });
+  await alice.goto(base+empty);
+  await alice.getByText('Show YouTube player',{exact:true}).click();
+  await alice.waitForFunction(()=>document.querySelector('.embed').open);
+  for (let n=0;n<40 && !playerReferer;n++) await alice.waitForTimeout(100);
+  check(playerReferer===base+'/','YouTube receives origin-only referrer even with no-referrer response header');
+  check(await alice.getByRole('link',{name:'Open music link',exact:true}).getAttribute('target')==='_blank','Music links open a new tab');
+  await alice.unroute('https://www.youtube-nocookie.com/embed/**');
+  await alice.goto(`${base}/account`);
+  const oneGIF=Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64');
+  const animatedGIF=Buffer.concat([oneGIF.subarray(0,19),oneGIF.subarray(19,-1),oneGIF.subarray(19,-1),Buffer.from([0x3b])]);
+  await alice.getByLabel('Picture',{exact:true}).setInputFiles({name:'avatar.gif',mimeType:'image/gif',buffer:animatedGIF});
+  await alice.getByRole('button',{name:'Save profile picture',exact:true}).click();
+  await alice.waitForURL('**/account?saved=picture*');
+  let picture=await bobby.request.get(`${base}/users/1/picture`);
+  check(picture.headers()['content-type']==='image/gif','Animated account picture is preserved');
+  await bobby.goto(`${base}/account`);
+  await bobby.getByLabel('Play animated profile pictures',{exact:true}).uncheck();
+  await bobby.getByRole('button',{name:'Save animation preference',exact:true}).click();
+  await bobby.waitForURL('**/account?saved=animation*');
+  picture=await bobby.request.get(`${base}/users/1/picture`);
+  check(picture.headers()['content-type']==='image/png','Disabling animation serves the still image');
+  const reduced=await alice.request.get(`${base}/users/1/picture?still=1`);
+  check(reduced.headers()['content-type']==='image/png','Reduced-motion rendition remains available');
+  await alice.emulateMedia({reducedMotion:'reduce'});
+  await alice.reload();
+  check(await alice.locator('#profile-picture .avatar img').evaluate(img=>img.currentSrc.endsWith('picture?still=1')),'Browser reduced-motion setting selects the still picture');
+  await alice.emulateMedia({reducedMotion:'no-preference'});
+  await alice.getByRole('button',{name:'Remove profile picture',exact:true}).click();
+  await alice.waitForURL('**/account?saved=picture*');
+  picture=await bobby.request.get(`${base}/users/1/picture`);
+  check(picture.headers()['content-type']==='image/png','Removing the picture restores a still fallback');
+
   for (const [width,theme] of [[1280,'light'],[390,'dark']]) {
     await bobby.setViewportSize({width,height:1000});
     await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);

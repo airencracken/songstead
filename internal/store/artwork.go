@@ -12,7 +12,7 @@ import (
 // Upgrade existing links as well as new shares. The transaction includes the
 // queue, so a failed migration never leaves a partially upgraded instance.
 func queueArtwork(tx *sql.Tx) error {
-	rows, err := tx.Query("SELECT id,original_url FROM media")
+	rows, err := tx.Query("SELECT id,original_url FROM media WHERE NOT EXISTS(SELECT 1 FROM media_artwork a WHERE a.media_id=media.id)")
 	if err != nil {
 		return err
 	}

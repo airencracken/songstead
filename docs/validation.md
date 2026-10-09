@@ -1,16 +1,20 @@
-# Songstead 0.3.1 validation
+# Songstead 0.4.0 validation
 
 `GOWORK=off make check` passes race-enabled Go tests, JavaScript tests, all
-42 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
+46 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
 New tests exercise metadata API contracts and bounded artwork fetching, provider
 and DNS allowlists, private thumbnail routes, audience-scoped labels, sender-only
-editing, genre/tag validation, failed-write rollback, schema 5-to-6 migration,
+editing, genre/tag validation, failed-write rollback, schema upgrades through 7,
 backup compatibility, exports, persisted preferences, favorite ordering and
 pagination, exclusions, account spoiler settings and saved-feedback notices.
-Property checks cover label normalization; adversarial tests cover URLs, images,
+Tests also cover preview API and authorization contracts, account motion settings,
+picture replacement/removal, profile schema constraints and export isolation.
+Chromium verifies stale response suppression, automatic artwork refresh, direct
+layout switching with and without JavaScript, and the actual origin-only referrer
+sent to the YouTube iframe. Property checks cover label normalization; adversarial tests cover URLs, images,
 SQL punctuation, invalid forms and unauthorized mutations.
 
-The Chromium suites pass 39 music/preferences checks and 28 administration
+The Chromium suites pass 56 music/preferences checks and 28 administration
 checks across desktop/light and mobile/dark views. Both native and HTMX forms
 save preferences and listening feedback, confirmations remain in view, unsaved
 edits clear old confirmations, and another account cannot read private notes.
@@ -23,9 +27,10 @@ SoundCloud sample recordings. Spotify supports both its documented image host
 and the current CDN returned by its public oEmbed endpoint.
 
 Real Bubblewrap integration passes with the new schema and static executable.
-The URL parser also passes a bounded fuzz run. Comfylib remains pinned at v0.1.3;
-its shared image normalizer validates artwork without a new library release or
-companion-app schema changes.
+The URL parser also passes a bounded fuzz run. Comfylib is pinned at v0.1.4;
+its new profile-image package keeps validated GIF animations and PNG stills.
+Existing artwork uses the shared brand-image normalizer. Companion apps retain
+their own pins and require no changes.
 
 # Previous administration release validation
 

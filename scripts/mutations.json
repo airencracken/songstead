@@ -34,8 +34,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 6 {",
-    "after": "if version > 7 {",
+    "before": "if version > 7 {",
+    "after": "if version > 8 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -194,8 +194,8 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 6 {",
-    "after": "if false && currentOnly && version != 6 {",
+    "before": "if currentOnly && version != 7 {",
+    "after": "if false && currentOnly && version != 7 {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
   },
@@ -334,5 +334,37 @@
     "after": "+\"#listening-notes\"",
     "package": "./internal/web",
     "run": "^TestAccountSpoilerPreferencesAndFeedbackNotice$"
+  },
+  {
+    "name": "viewer animation preference",
+    "file": "internal/store/profiles.go",
+    "before": "!still && v.Animate && len(p.Animation) > 0",
+    "after": "!still && !v.Animate && len(p.Animation) > 0",
+    "package": "./internal/store",
+    "run": "^TestProfilesAtomicityMotionPrivacyAndSchema$"
+  },
+  {
+    "name": "private pending preview visibility",
+    "file": "internal/store/previews.go",
+    "before": "item, err := s.Recommendation(ctx, viewer, id)\n\tif err != nil {\n\t\treturn false",
+    "after": "item, err := s.Recommendation(ctx, 1, id)\n\tif err != nil {\n\t\treturn false",
+    "package": "./internal/store",
+    "run": "^TestLabelChoicesAndPreviewAudience$"
+  },
+  {
+    "name": "recent label picker audience",
+    "file": "internal/store/previews.go",
+    "before": "where += \" AND r.visibility='members' AND r.group_id IS NULL\"",
+    "after": "where += \"\"",
+    "package": "./internal/store",
+    "run": "^TestLabelChoicesAndPreviewAudience$"
+  },
+  {
+    "name": "YouTube origin referrer",
+    "file": "internal/web/templates/detail.html",
+    "before": "referrerpolicy=\"strict-origin-when-cross-origin\"",
+    "after": "referrerpolicy=\"no-referrer\"",
+    "package": "./internal/web",
+    "run": "^TestPreviewContractsPrivacyAndRateLimit$"
   }
 ]

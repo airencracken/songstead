@@ -4,8 +4,8 @@ Songstead is an independent AGPL-3.0-or-later Go binary with SQLite and embedded
 HTML, HTMX, CSS and mascot assets. There is no asset server or required external
 service. Go 1.26 is needed to build; static binaries have no C library requirement.
 
-`make build` prepares a 0.3.1 binary in `bin/songstead`. Run
-`bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.3; see
+`make build` prepares a 0.4.0 binary in `bin/songstead`. Run
+`bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.4; see
 [the release installation guide](releases.md).
 
 Create a service account and group named `songstead`, install the binary, and

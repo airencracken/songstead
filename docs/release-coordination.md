@@ -6,19 +6,21 @@ own accounts, database and runtime; the discussion connections are optional.
 
 | Component | Published version | Release |
 | --- | --- | --- |
-| Comfylib | 0.1.3 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.1.3) |
-| Songstead | 0.3.1 | [Linux binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.3.1) |
+| Comfylib | 0.1.4 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.1.4) |
+| Songstead | 0.4.0 | [Linux binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.4.0) |
 | Witmoot | 0.14.2 | [Linux binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.14.2) |
 | Imvault | 0.16.2 | [Linux binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.16.2) |
 
 Comfylib adds shared password confirmation and branding image normalization,
 and retains `token.SessionCSRF` and the `reference` browser handoff package.
 Existing Witmoot and Imvault CSRF purpose strings and outputs are preserved.
-All three applications pin v0.1.3 and its verified Go checksum database records.
+Songstead pins Comfylib v0.1.4 for reusable profile-image validation. Imvault
+and Witmoot retain v0.1.3; their existing image handling is unchanged. All pins
+use verified Go checksum database records.
 Clean builds and release workflows use `GOWORK=off`, without local replacements.
 
 Songstead's public repository uses `master` as its default branch and
-AGPL-3.0-or-later licensing. Its v0.3.1 tag is on master and matches VERSION.
+AGPL-3.0-or-later licensing. Its v0.4.0 tag is on master and matches VERSION.
 Songstead adds owner settings, invitations, account recovery and suspension.
 GoReleaser publishes static Linux amd64/arm64 archives, source, license notices
 and SHA-256 checksums after the full standalone release checks pass.
@@ -36,7 +38,7 @@ The Comfyware overlay contains versioned and live recipes for all three apps.
 The versioned recipes use verified published sources and these dependency
 releases:
 
-- [Songstead 0.3.1 dependencies](https://github.com/airencracken/comfyware/releases/tag/songstead-0.3.1)
+- [Songstead 0.4.0 dependencies](https://github.com/airencracken/comfyware/releases/tag/songstead-0.4.0)
 - [Witmoot 0.14.2 dependencies](https://github.com/airencracken/comfyware/releases/tag/witmoot-0.14.2)
 - [Imvault 0.16.2 dependencies](https://github.com/airencracken/comfyware/releases/tag/imvault-0.16.2)
 

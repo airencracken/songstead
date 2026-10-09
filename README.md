@@ -12,7 +12,19 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.3.1
+## Songstead 0.4.0
+
+Pasting a supported music link now previews its title, artist and artwork before
+sharing. Pending artwork refreshes automatically, and YouTube artwork can be
+fetched even when its metadata endpoint is unavailable. Chips/Tiles switches
+immediately; compact genre/tag pickers sit beneath the main controls. Music links
+open in a new tab, and the YouTube player sends only the site origin to satisfy
+its client-identification requirement.
+
+Accounts can upload PNG, JPEG or animated GIF profile pictures. Every animation
+has a still version; viewers can disable animations in Account, and browser
+reduced-motion preferences select stills automatically. External sharing cards
+show the instance branding without exposing private recommendations.
 
 Friends and groups can leave tracks, albums, artists and listening links. Browse
 by music, person, group or each recommendation. Duplicate provider identities
@@ -51,7 +63,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.1.3 and verified module checksums.
+Release builds use published Comfylib v0.1.4 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh

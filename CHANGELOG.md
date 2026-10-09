@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0
+
+- Preview titles, artists and thumbnails when pasting supported music links.
+- Refresh pending artwork locally, retry failed previews, and fetch YouTube
+  thumbnails independently of its metadata endpoint.
+- Switch Chips/Tiles immediately; use compact genre/tag pickers and tuck secondary
+  dropdowns into More filters. Preserve active filters across layout switches.
+- Open external music links in a new tab. Fix YouTube error 153 by sending an
+  origin-only referrer to the optional player.
+- Upload PNG, JPEG or animated GIF profile pictures. Add an account setting to
+  disable animation; browser reduced-motion preferences always choose stills.
+- Use Comfylib 0.1.4 for bounded, re-encoded profile images.
+- Add generic public sharing cards without exposing private recommendation data.
+- Migrate to schema 7 and export format 4; retry existing missing artwork.
+
+
 ## 0.2.1
 
 - Disable terminal echo before displaying either password prompt using Comfylib 0.1.3.

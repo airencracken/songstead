@@ -105,14 +105,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 6 {
+	if version > 7 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 6 {
+	if currentOnly && version != 7 {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 6; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql"}[next]
+	for next := version + 1; next <= 7; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -125,7 +125,7 @@ func (s *Store) migrate(currentOnly bool) error {
 				return err
 			}
 		}
-		if next == 6 {
+		if next == 6 || next == 7 {
 			if err := queueArtwork(tx); err != nil {
 				return err
 			}
@@ -412,7 +412,7 @@ func (s *Store) Metadata(ctx context.Context, fetch func(context.Context, string
 			return err
 		}
 	}
-	if meta.Thumbnail != "" && len(meta.Artwork) == 0 {
+	if (meta.Thumbnail != "" && len(meta.Artwork) == 0) || meta.Title == raw {
 		_, err = tx.ExecContext(ctx, "UPDATE metadata_jobs SET attempts=attempts+1,next_attempt=? WHERE media_id=?", time.Now().Add(time.Duration(attempts+1)*time.Minute).Unix(), id)
 	} else {
 		_, err = tx.ExecContext(ctx, "DELETE FROM metadata_jobs WHERE media_id=?", id)

@@ -211,7 +211,7 @@ func TestRecentMigrationKeepsExistingGiftsPrivate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec(`DROP INDEX recommendations_recent; ALTER TABLE recommendations DROP COLUMN visibility; DROP TABLE media_artwork; DROP TABLE recommendation_labels; DROP TABLE discovery_preferences; DROP TABLE branding_assets; DROP TABLE password_resets; DROP TABLE invitations; DROP TABLE instance_settings; ALTER TABLE users DROP COLUMN invited_by; ALTER TABLE users DROP COLUMN can_invite; ALTER TABLE users DROP COLUMN suspended; ALTER TABLE users DROP COLUMN role; PRAGMA user_version=2;`); err != nil {
+	if _, err := s.db.Exec(`DROP INDEX recommendations_recent; ALTER TABLE recommendations DROP COLUMN visibility; DROP TABLE user_profiles; DROP TABLE media_artwork; DROP TABLE recommendation_labels; DROP TABLE discovery_preferences; DROP TABLE branding_assets; DROP TABLE password_resets; DROP TABLE invitations; DROP TABLE instance_settings; ALTER TABLE users DROP COLUMN invited_by; ALTER TABLE users DROP COLUMN can_invite; ALTER TABLE users DROP COLUMN suspended; ALTER TABLE users DROP COLUMN role; PRAGMA user_version=2;`); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.Close(); err != nil {

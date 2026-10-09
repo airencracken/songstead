@@ -39,13 +39,14 @@ type Config struct {
 	TrustedProxies               []netip.Prefix
 }
 type App struct {
-	store     *store.Store
-	config    Config
-	templates *template.Template
-	handler   http.Handler
-	dummyHash []byte
-	mu        sync.Mutex
-	attempts  map[string]attempt
+	store        *store.Store
+	config       Config
+	templates    *template.Template
+	handler      http.Handler
+	dummyHash    []byte
+	previewFetch func(context.Context, string) (media.Metadata, error)
+	mu           sync.Mutex
+	attempts     map[string]attempt
 }
 type attempt struct {
 	count   int
@@ -66,6 +67,9 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
+	AvailableGenres, AvailableTags                                                      []string
+	Profile                                                                             store.Profile
+	SocialImage                                                                         string
 	Layout, Genre, Tags, Tag, Discovery, FeedbackNotice, AnnotationNotice, LabelsNotice string
 	DiscoveryPreferences                                                                store.DiscoveryPreferences
 	DiscoveryDraft                                                                      *store.DiscoveryPreferences
@@ -104,7 +108,9 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		}
 	}
 	tmpl, err := template.New("pages").Funcs(template.FuncMap{
-		"joinLabels": func(values []string) string { return strings.Join(values, ", ") },
+		"supportsMetadata": media.SupportsMetadata,
+		"browseURL":        browseURL,
+		"joinLabels":       func(values []string) string { return strings.Join(values, ", ") },
 		"labelLink": func(kind, value string) string {
 			return "/recent?" + url.Values{kind: {value}, "discovery": {"all"}}.Encode()
 		},
@@ -140,6 +146,8 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = w.Write([]byte("ok\n"))
 	})
+	client := media.Client()
+	a.previewFetch = func(ctx context.Context, raw string) (media.Metadata, error) { return media.Fetch(ctx, client, raw) }
 	a.adminRoutes(mux)
 	mux.HandleFunc("GET /login", a.loginForm)
 	mux.HandleFunc("POST /login", a.login)
@@ -151,6 +159,12 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /history", a.signedIn(a.history))
 	mux.HandleFunc("GET /recommendations/new", a.signedIn(a.newRecommendation))
 	mux.HandleFunc("POST /recommendations/new", a.signedIn(a.recommend))
+	mux.HandleFunc("POST /recommendations/preview", a.signedIn(a.musicPreview))
+	mux.HandleFunc("GET /recommendations/{id}/preview", a.signedIn(a.savedPreview))
+	mux.HandleFunc("POST /recommendations/{id}/preview", a.signedIn(a.retryPreview))
+	mux.HandleFunc("GET /users/{id}/picture", a.signedIn(a.profilePicture))
+	mux.HandleFunc("POST /account/picture", a.signedIn(a.saveProfilePicture))
+	mux.HandleFunc("POST /account/animation", a.signedIn(a.saveAnimationPreference))
 	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.detail))
 	mux.HandleFunc("GET /recommendations/{id}/thumbnail", a.signedIn(a.thumbnail))
 	mux.HandleFunc("POST /recommendations/{id}/labels", a.signedIn(a.saveLabels))
@@ -195,7 +209,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("X-Frame-Options", "DENY")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; frame-src https://www.youtube-nocookie.com; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; frame-src https://www.youtube-nocookie.com; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 		w.Header().Set("Cache-Control", "no-store")
 		if strings.HasPrefix(r.URL.Path, "/static/") || r.URL.Path == "/healthz" {
 			next.ServeHTTP(w, r)
@@ -236,7 +250,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 		r = r.WithContext(context.WithValue(r.Context(), stateKey{}, st))
 		if r.Method != "GET" && r.Method != "HEAD" && r.Method != "OPTIONS" && r.Method != "TRACE" {
 			limit := int64(16384)
-			multipart := r.URL.Path == "/admin/settings/images" && strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data")
+			multipart := (r.URL.Path == "/admin/settings/images" || r.URL.Path == "/account/picture") && strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data")
 			if multipart {
 				limit = 5 << 20
 			}
@@ -301,6 +315,20 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 		p.Settings = *p.SettingsDraft
 	}
 	p.Version = a.config.Version
+	base := p.Settings.BaseURL
+	if base == "" {
+		scheme := "http"
+		if a.secure(r) || r.TLS != nil {
+			scheme = "https"
+		}
+		origin, err := url.Parse(scheme + "://" + r.Host)
+		if err == nil && origin.Hostname() != "" && origin.User == nil && origin.Path == "" && origin.RawQuery == "" && origin.Fragment == "" {
+			base = origin.String()
+		}
+	}
+	if base != "" {
+		p.SocialImage = strings.TrimRight(base, "/") + "/static/jukebox.png"
+	}
 	var buf bytes.Buffer
 	if err := a.templates.ExecuteTemplate(&buf, "layout", p); err != nil {
 		a.fail(w, r, err)
@@ -472,6 +500,11 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 	}
 	p.Person, p.GroupID, p.Kind, p.Perspective = person, group, kind, perspective
 	p.Layout, p.Genre, p.Tag, p.Discovery = layout, genre, tag, discovery
+	p.AvailableGenres, p.AvailableTags, err = a.store.LabelChoices(r.Context(), state(r).User.ID, recent)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
 	p.Users, err = a.store.Users(r.Context(), 0)
 	if err != nil {
 		a.fail(w, r, err)

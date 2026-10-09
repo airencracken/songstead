@@ -1,12 +1,14 @@
 {{define "compose"}}<section class="compose"><p class="eyebrow">Something they might love</p><h1>Share some music.</h1><p class="muted">Leave something for everyone here, or send it privately. Add a few words if you like.</p>
-<form action="/recommendations/new" method="post" class="panel stack">
+<form action="/recommendations/new" method="post" class="panel stack" data-music-compose>
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <label>Music link<input type="url" name="url" value="{{.URL}}" placeholder="https://…" maxlength="4096" required></label>
+  <section class="link-preview" data-link-preview hidden aria-label="Music link preview"><img data-preview-artwork width="160" height="120" alt="" hidden><div><p data-preview-title></p><p class="muted" data-preview-artist></p><p class="muted" data-preview-status role="status"></p></div></section>
   <label>Who can see this?<select name="audience" required aria-describedby="audience-help"><option value="">Choose an audience</option><option value="members" {{if eq .Audience "members"}}selected{{end}}>Everyone here — Recent</option>{{range .Users}}{{$audience := printf "person:%d" .ID}}<option value="{{$audience}}" {{if eq $.Audience $audience}}selected{{end}}>{{.Username}} — private</option>{{end}}{{range .Groups}}{{$audience := printf "group:%d" .ID}}<option value="{{$audience}}" {{if eq $.Audience $audience}}selected{{end}}>Group: {{.Name}} — private</option>{{end}}</select></label>
   <p id="audience-help" class="muted">Everyone here means signed-in accounts on this instance. The music, your note, and comments appear in Recent. Private sends stay between you and your friend, or current group members, and never appear in Recent. Listening notes and discovery preferences are private to you. Genre and tags follow the audience of this recommendation.</p>
  <label>Music kind<select name="kind"><option value="">Recognize from link</option><option value="track" {{if eq .Kind "track"}}selected{{end}}>Track</option><option value="album" {{if eq .Kind "album"}}selected{{end}}>Album</option><option value="artist" {{if eq .Kind "artist"}}selected{{end}}>Artist</option></select></label>
  <label>Title, if you know it<input name="title" value="{{.MusicTitle}}" maxlength="160"></label><label>Artist<input name="artist" value="{{.Artist}}" maxlength="160"></label>
  {{template "label-fields" .}}
  <label>A note, if you like<textarea name="note" rows="4" maxlength="2000">{{.Note}}</textarea></label>
+  <p class="muted">YouTube, Spotify and SoundCloud previews appear automatically. You can still share a link if a preview is unavailable.</p>
   <button class="button primary" type="submit">Share recommendation</button>
 </form></section>{{end}}

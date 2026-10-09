@@ -143,3 +143,31 @@ the new schema.
 Listening saves confirm beside the form and keep invalid drafts for correction.
 Export format 3 adds accessible labels and the exporting user's own discovery
 preferences. It never includes another user's preferences or private feedback.
+
+## Link previews and profile pictures
+
+The authenticated compose form previews YouTube, Spotify and SoundCloud links
+after a short pause. Provider responses supply text and locally normalized PNG
+bytes; provider HTML is never rendered. A failed or unsupported preview leaves
+sharing available. Manual title and artist edits take precedence. After saving,
+artwork refreshes without reloading the listening or comment forms. A retry
+button requeues an accessible supported link. Preview requests and retries are
+limited per account; fetch destinations retain their fixed provider allowlist.
+
+Schema 7 stores account pictures and a viewer animation preference. Upgrading
+also requeues supported links with missing artwork, leaving cached artwork alone.
+PNG, JPEG and GIF uploads are limited to 2 MiB and 512 by 512 pixels; animated GIFs
+are limited to 64 frames. Comfylib re-encodes both GIF animation and a PNG still.
+Pictures are visible only to signed-in members. Disabling animation makes the
+authenticated picture route serve PNG; reduced-motion browsers request PNG too.
+Account export format 4 includes only the exporting user's picture and preference.
+
+Public Open Graph metadata describes the instance, not a particular song, note or
+person. Signal and Slack preview the login page after following an unauthenticated
+recommendation redirect. Set the public base URL in Admin for stable absolute
+artwork URLs; otherwise the card uses the request origin. A song-specific public
+card would require a separate explicit public-sharing feature.
+
+The optional YouTube player uses `strict-origin-when-cross-origin` on the iframe
+so YouTube receives the instance origin, but never the recommendation path.
+Ordinary external music links still suppress their referrer and open a new tab.

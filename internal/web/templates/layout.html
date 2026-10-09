@@ -7,10 +7,15 @@
   <title>{{.Title}} · {{.Settings.Name}}</title>
   {{if .Settings.Favicon}}<link rel="icon" type="image/png" href="/branding/favicon">{{else}}<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">{{end}}
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{.Settings.Name}}">
+  <meta property="og:description" content="Good music, from your people. Sign in to see recommendations shared with you.">
+  {{if .SocialImage}}<meta property="og:image" content="{{.SocialImage}}"><meta property="og:image:alt" content="Songstead jukebox"><meta name="twitter:card" content="summary">{{end}}
   <script src="/static/theme.js"></script>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/feedback.js" defer></script>
+  <script src="/static/music.js" defer></script>
 </head>
 <body hx-boost="true" hx-history="false">
   <a class="skip" href="#main">Skip to content</a>

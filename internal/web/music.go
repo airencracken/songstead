@@ -106,11 +106,20 @@ func (a *App) showAccount(w http.ResponseWriter, r *http.Request, status int, p 
 	if p.DiscoveryDraft != nil {
 		p.DiscoveryPreferences = *p.DiscoveryDraft
 	}
+	p.Profile, err = a.store.Profile(r.Context(), state(r).User.ID)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
 	p.View, p.Title = "account", "Your account"
 	if status == http.StatusOK && r.Method == http.MethodGet {
 		switch r.URL.Query().Get("saved") {
 		case "annotations":
 			p.AnnotationNotice = "Spoiler preference saved for your account."
+		case "picture":
+			p.Notice = "Profile picture saved."
+		case "animation":
+			p.Notice = "Animation preference saved."
 		case "discovery":
 			p.Notice = "Discovery preferences saved. They apply to Recent."
 		}

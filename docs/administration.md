@@ -75,7 +75,7 @@ and animation while retaining transparency. Invalid images leave both assets
 unchanged.
 
 Songstead follows Witmoot and Imvault's owner settings, invitation creation and
-recovery patterns. Comfylib v0.1.3 supplies shared password confirmation and image
+recovery patterns. Comfylib v0.1.4 supplies shared password confirmation and image
 normalization, alongside existing tokens, session CSRF, trusted proxy resolution,
 service configuration and privilege dropping. Application roles, SQLite schemas,
 joining policy and music access rules remain in Songstead.
