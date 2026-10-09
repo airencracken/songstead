@@ -93,6 +93,8 @@ type page struct {
 	Items                                                                               []store.Recommendation
 	Item                                                                                store.Recommendation
 	Comments                                                                            []store.Comment
+	RecentComments                                                                      []store.RecentComment
+	CommentsBefore, CommentsNext                                                        int64
 	Recipient                                                                           int64
 	Offset, Previous, Next                                                              int
 	HasPrevious, HasNext                                                                bool
@@ -156,6 +158,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /inbox", a.signedIn(a.shelf))
 	mux.HandleFunc("GET /shelf", a.signedIn(a.shelf))
 	mux.HandleFunc("GET /recent", a.signedIn(a.recent))
+	mux.HandleFunc("GET /recent/comments", a.signedIn(a.recentComments))
 	mux.HandleFunc("GET /history", a.signedIn(a.history))
 	mux.HandleFunc("GET /recommendations/new", a.signedIn(a.newRecommendation))
 	mux.HandleFunc("POST /recommendations/new", a.signedIn(a.recommend))

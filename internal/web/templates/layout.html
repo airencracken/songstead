@@ -32,6 +32,7 @@
     {{if .Error}}<p class="error" role="alert">{{.Error}}</p>{{end}}
     {{if eq .View "login"}}{{template "login" .}}{{end}}
     {{if eq .View "list"}}{{template "list" .}}{{end}}
+    {{if eq .View "recent-comments"}}{{template "recent-comments" .}}{{end}}
     {{if eq .View "compose"}}{{template "compose" .}}{{end}}
     {{if eq .View "groups"}}{{template "groups" .}}{{end}}
  {{if eq .View "handoff"}}{{template "handoff" .}}{{end}}

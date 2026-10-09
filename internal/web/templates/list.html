@@ -1,4 +1,5 @@
 {{define "list"}}<div class="page-head"><div><p class="eyebrow">For a quiet moment, whenever it comes</p><h1>{{.Title}}</h1><p class="muted">{{if .Recent}}Music people shared with everyone here. Your favorites come first when preferences are enabled. Private sends stay in their own circles.{{else}}Music your people left for you.{{end}} There is no need to keep up.</p></div><a class="button primary" href="/recommendations/new">Share some music</a></div>
+{{if .Recent}}{{template "recent-tabs" .}}{{end}}
 <form method="get" class="browse-controls">
   <div class="browse-toolbar">
     <fieldset class="view-switch"><legend>View</legend><div><a class="button" href="{{browseURL . "layout" "chips"}}" {{if eq .Layout "chips"}}aria-current="true"{{end}}>List</a><a class="button" href="{{browseURL . "layout" "tiles"}}" {{if eq .Layout "tiles"}}aria-current="true"{{end}}>Tiles</a></div></fieldset>

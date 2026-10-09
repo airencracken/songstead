@@ -414,5 +414,77 @@
     "after": "if false && !state(r).Settings.WitmootDiscussions() {",
     "package": "./internal/web",
     "run": "^TestDiscussionLocationHTTPContractsAndHistory$"
+  },
+  {
+    "name": "recent comments shared audience",
+    "file": "internal/store/recent_comments.go",
+    "before": "WHERE r.visibility='members' AND ",
+    "after": "WHERE 1=1 AND ",
+    "package": "./internal/store",
+    "run": "^TestRecentCommentsAudienceProjectionAndPagination$"
+  },
+  {
+    "name": "recent comments spoiler policy",
+    "file": "internal/store/recent_comments.go",
+    "before": "AND v.annotation_mode<>'immediate'",
+    "after": "AND 0=1",
+    "package": "./internal/store",
+    "run": "^TestRecentCommentsSpoilerPropertiesAndPageBoundaries$"
+  },
+  {
+    "name": "recent comments latest timestamp",
+    "file": "internal/store/recent_comments.go",
+    "before": "p.seconds>=o.seconds",
+    "after": "p.seconds>=0",
+    "package": "./internal/store",
+    "run": "^TestRecentCommentsSpoilerPropertiesAndPageBoundaries$"
+  },
+  {
+    "name": "recent comments viewer position",
+    "file": "internal/store/recent_comments.go",
+    "before": "p.user_id=v.id",
+    "after": "p.user_id<>v.id",
+    "package": "./internal/store",
+    "run": "^TestRecentCommentsSpoilerPropertiesAndPageBoundaries$"
+  },
+  {
+    "name": "recent comments cursor boundary",
+    "file": "internal/store/recent_comments.go",
+    "before": "c.id<?",
+    "after": "c.id<=?",
+    "package": "./internal/store",
+    "run": "^TestRecentCommentsAudienceProjectionAndPagination$"
+  },
+  {
+    "name": "recent comments chronological order",
+    "file": "internal/store/recent_comments.go",
+    "before": "ORDER BY c.id DESC LIMIT ?",
+    "after": "ORDER BY c.id ASC LIMIT ?",
+    "package": "./internal/store",
+    "run": "^TestRecentCommentsAudienceProjectionAndPagination$"
+  },
+  {
+    "name": "recent comments active member",
+    "file": "internal/store/recent_comments.go",
+    "before": "v.suspended=0",
+    "after": "v.suspended>=0",
+    "package": "./internal/store",
+    "run": "^TestRecentCommentsAudienceProjectionAndPagination$"
+  },
+  {
+    "name": "recent comments HTTP authentication",
+    "file": "internal/web/web.go",
+    "before": "a.signedIn(a.recentComments)",
+    "after": "a.recentComments",
+    "package": "./internal/web",
+    "run": "^TestRecentCommentsRoutesPrivacySpoilersAndPagination$"
+  },
+  {
+    "name": "recent comments exact anchor",
+    "file": "internal/web/templates/recent_comments.html",
+    "before": "<a href=\"/recommendations/{{.RecommendationID}}#comment-{{.ID}}\">View comment &amp; conversation</a>",
+    "after": "<a href=\"/recommendations/{{.RecommendationID}}\">View comment &amp; conversation</a>",
+    "package": "./internal/web",
+    "run": "^TestRecentCommentsRoutesPrivacySpoilersAndPagination$"
   }
 ]

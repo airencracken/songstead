@@ -12,7 +12,18 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.5.0
+## Songstead 0.6.0
+
+Open **Recent → Comments** to discover conversations on music shared with everyone
+here. The feed is chronological, includes profile pictures and music artwork, and
+links to the exact comment. Private sends, ratings and personal listening notes
+stay out. Timestamped comments follow your saved spoiler preference and indicated
+listening positions. Older pages remain stable as new comments arrive.
+
+The feed includes earlier local comments when your host chooses Witmoot for new
+posts. Witmoot discussions remain on Witmoot. This release retains schema 7,
+export format 4 and Comfylib 0.1.4.
+
 
 Owners choose **Discussion location** in Admin: Songstead for comments here,
 Witmoot for separate board discussions, or Both for either option. Members

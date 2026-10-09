@@ -1,0 +1,14 @@
+{{define "recent-tabs"}}<nav class="recent-tabs" aria-label="Recent activity"><a class="button" href="/recent" {{if eq .View "list"}}aria-current="page"{{end}}>Music</a><a class="button" href="/recent/comments" {{if eq .View "recent-comments"}}aria-current="page"{{end}}>Comments</a></nav>{{end}}
+{{define "recent-comments"}}
+<div class="page-head"><div><p class="eyebrow">Hear what people thought</p><h1>Recent comments</h1><p class="muted">Conversations on music shared with everyone here, newest first. Private sends and personal listening notes stay private.</p></div></div>
+{{template "recent-tabs" .}}
+<p class="muted">Timestamped comments follow your <a href="/account#spoiler-preferences">spoiler preference</a> and indicated listening positions. Open a song to reveal annotations for that view.</p>
+{{if not .Settings.LocalComments}}<p class="muted">New comments are posted in Witmoot. Earlier comments here remain readable.</p>{{end}}
+<ol class="comment-feed" aria-label="Recent comments">
+{{range .RecentComments}}<li class="panel" id="recent-comment-{{.ID}}"><article class="comment-activity">
+<a class="comment-artwork" href="/recommendations/{{.RecommendationID}}#comment-{{.ID}}" tabindex="-1" aria-hidden="true">{{if .HasArtwork}}<img src="/recommendations/{{.RecommendationID}}/thumbnail" width="80" height="60" alt="" loading="lazy">{{else}}<img class="artwork-placeholder" src="/static/jukebox.png" width="80" height="60" alt="" loading="lazy">{{end}}</a>
+<div class="comment-copy"><h2><a href="/recommendations/{{.RecommendationID}}#comment-{{.ID}}">{{.Title}}</a></h2>{{if .Artist}}<p class="muted">{{.Artist}}</p>{{end}}<p>{{template "avatar" .AuthorID}} <strong>{{.Author}}</strong> <span class="muted">· <time datetime="{{isoDate .CreatedAt}}">{{date .CreatedAt}}</time></span></p><p class="user-text">{{.Body}}</p><a href="/recommendations/{{.RecommendationID}}#comment-{{.ID}}">View comment &amp; conversation</a></div>
+</article></li>{{else}}<li class="empty"><h2>A quiet conversation.</h2><p>No comments to show on this page. Comments on music shared with everyone here appear when your spoiler preference allows them.</p><p><a href="/recent">Find some music</a></p></li>{{end}}
+</ol>
+<nav class="pagination" aria-label="Comments pages">{{if .CommentsBefore}}<a href="/recent/comments">Newest comments</a>{{end}}{{if .HasNext}}<a href="/recent/comments?before={{.CommentsNext}}" rel="next">Older comments</a>{{end}}</nav>
+{{end}}

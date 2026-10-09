@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+- Add Recent → Comments for chronological reactions on music shared with everyone.
+- Include author avatars, artwork and links to the exact conversation comment.
+- Apply saved annotation preferences and indicated positions before pagination;
+  hidden comments never enter feed HTML or consume page space.
+- Keep private sends, group conversations and personal listening feedback out.
+- Use stable comment cursors so new activity does not repeat older pages.
+- Retain existing local comments in Witmoot mode and keep schema 7, export format 4
+  and Comfylib 0.1.4.
+
 ## 0.5.0
 
 - Add an owner setting for Songstead, Witmoot or Both discussion locations.

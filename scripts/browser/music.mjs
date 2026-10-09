@@ -53,11 +53,12 @@ try {
     return page;
   }
   const alice = await session('alice'), bobby = await session('bobby');
-  async function share(title, genre, tags, audience='members', raw=title.toLowerCase().replaceAll(' ','-')) {
+  async function share(title, genre, tags, audience='members', raw=title.toLowerCase().replaceAll(' ','-'), kind='') {
     await alice.goto(`${base}/recommendations/new`);
     await alice.getByLabel('Music link',{exact:true}).fill(`https://music.example/${raw}`);
     await alice.getByLabel('Title, if you know it',{exact:true}).fill(title);
     await alice.getByLabel('Artist',{exact:true}).fill('Demo ensemble');
+    if (kind) await alice.getByRole('combobox',{name:'Music kind',exact:true}).selectOption(kind);
     await alice.getByLabel('Genre',{exact:true}).fill(genre);
     await alice.getByLabel('Tags',{exact:true}).fill(tags);
     await alice.getByRole('combobox',{name:'Who can see this?',exact:true}).selectOption(audience);
@@ -310,11 +311,52 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   picture=await bobby.request.get(`${base}/users/1/picture`);
   check(picture.headers()['content-type']==='image/png','Removing the picture restores a still fallback');
 
+  // Comment activity uses the explicit shared audience and never private feedback.
+  const feedSong = await share('A song with reactions','Jazz','Warm','members','feed-song','track');
+  await bobby.goto(base+feedSong);
+  const feedCSRF = await bobby.locator('input[name="csrf"]').first().inputValue();
+  for (let i=0; i<27; i++) {
+    const response=await bobby.request.post(base+feedSong+'/comments',{form:{csrf:feedCSRF,body:`Visible feed reaction ${String(i).padStart(2,'0')}`},maxRedirects:0});
+    assert.equal(response.status(),303);
+  }
+  for (const [path,body] of [[feedSong,'SECRET feed annotation at 0:40'],[privatePath,'SECRET private feed conversation']]) {
+    const response=await bobby.request.post(base+path+'/comments',{form:{csrf:feedCSRF,body},maxRedirects:0});
+    assert.equal(response.status(),303);
+  }
+  const preference=await bobby.request.post(base+'/account/annotations',{form:{csrf:feedCSRF,mode:'hidden'},maxRedirects:0});
+  assert.equal(preference.status(),303);
+  for (const member of [bobby,native]) {
+    await member.goto(base+'/recent');
+    await member.getByRole('link',{name:'Comments',exact:true}).click();
+    await member.waitForURL('**/recent/comments');
+    check(await member.locator('.comment-activity').count()===25,'Feed pages contain 25 visible comments');
+    check(!(await member.locator('main').innerText()).includes('SECRET'),'Private and hidden comments never render in the feed');
+    await member.getByText('Visible feed reaction 26',{exact:true}).waitFor();
+    check(await member.locator('.comment-artwork img').count()===25,'Comment cards include artwork or local fallbacks');
+    await member.getByRole('link',{name:'Older comments',exact:true}).click();
+    await member.waitForURL('**/recent/comments?before=*');
+    await member.getByText('Visible feed reaction 00',{exact:true}).waitFor();
+    check(!(await member.locator('main').innerText()).includes('Visible feed reaction 26'),'Older pages do not repeat newer reactions');
+    await member.getByRole('link',{name:'Newest comments',exact:true}).click();
+    await member.waitForURL('**/recent/comments');
+    await member.getByRole('link',{name:'View comment & conversation',exact:true}).first().click();
+    await member.waitForURL(/\/recommendations\/\d+#comment-\d+$/);
+    const target=new URL(member.url()).hash;
+    check((await member.locator(target).innerText()).includes('Visible feed reaction 26'),'Feed links reach the exact conversation comment');
+  }
+  await bobby.goto(base+feedSong);
+  await bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}).selectOption('immediate');
+  await bobby.getByRole('button',{name:'Save preference',exact:true}).click();
+  await bobby.getByRole('status').waitFor();
+  await bobby.goto(base+'/recent/comments');
+  await bobby.getByText('SECRET feed annotation at 0:40',{exact:true}).waitFor();
+  check(!(await bobby.locator('main').innerText()).includes('SECRET private feed conversation'),'Immediate annotation mode keeps private comments out');
+
   for (const [width,theme] of [[1280,'light'],[390,'dark']]) {
     await bobby.setViewportSize({width,height:1000});
     await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);
     await bobby.getByLabel('Color theme',{exact:true}).selectOption(theme);
-    for (const route of ['/recent?layout=tiles&discovery=all','/recent',favorite,'/account']) {
+    for (const route of ['/recent?layout=tiles&discovery=all','/recent','/recent/comments',favorite,'/account']) {
       await bobby.goto(base+route);
       check(await bobby.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`No overflow on ${route} at ${width}`);
       if (route==='/recent') {
