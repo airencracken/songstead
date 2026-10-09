@@ -26,7 +26,7 @@ func ownerBrowser(t *testing.T) (*App, []int64, *browser) {
 	return a, u, login(t, a, "owner")
 }
 func settingsValues() url.Values {
-	return url.Values{"name": {"Friends"}, "welcome_title": {"Come listen"}, "welcome_text": {"Music for friends"}, "house_rules": {"Be kind"}, "owner_contact": {"Contact your host"}, "source_url": {"https://github.com/airencracken/songstead"}, "base_url": {"https://music.example.org"}, "witmoot_url": {"https://boards.example.org/forum"}, "join_mode": {"invite"}, "show_version": {"1"}}
+	return url.Values{"name": {"Friends"}, "welcome_title": {"Come listen"}, "welcome_text": {"Music for friends"}, "house_rules": {"Be kind"}, "owner_contact": {"Contact your host"}, "source_url": {"https://github.com/airencracken/songstead"}, "base_url": {"https://music.example.org"}, "witmoot_url": {"https://boards.example.org/forum"}, "join_mode": {"invite"}, "discussion_mode": {"both"}, "show_version": {"1"}}
 }
 func secretFromPage(t *testing.T, body, kind string) string {
 	t.Helper()
@@ -233,6 +233,7 @@ func TestSettingsInvalidDraftEscapingAndBlankIntegration(t *testing.T) {
 		t.Fatal("invalid draft lost or unescaped", w.Code, w.Body.String())
 	}
 	values.Set("witmoot_url", "")
+	values.Set("discussion_mode", "songstead")
 	if w := owner.request("POST", "/admin/settings", values); w.Code != 303 {
 		t.Fatal(w.Code, w.Body.String())
 	}

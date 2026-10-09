@@ -161,8 +161,8 @@ func (a *App) share(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	if state(r).Settings.WitmootURL == "" || state(r).Settings.BaseURL == "" {
-		a.showDetail(w, r, id, 422, "The operator needs to configure the Songstead and Witmoot addresses.")
+	if !state(r).Settings.WitmootDiscussions() {
+		a.showDetail(w, r, id, http.StatusForbidden, "Witmoot discussions are disabled by your host.")
 		return
 	}
 	source := strings.TrimRight(state(r).Settings.BaseURL, "/") + "/recommendations/" + strconv.FormatInt(id, 10)

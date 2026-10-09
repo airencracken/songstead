@@ -706,6 +706,9 @@ func (a *App) showDetail(w http.ResponseWriter, r *http.Request, id int64, statu
 		return
 	}
 	p := page{View: "detail", Title: item.Title, Item: item, Comments: comments, Recordings: tracks, AnnotationMode: mode, Reveal: reveal, Discussions: links, Error: message, Handoff: state(r).Settings.WitmootURL, CommentDraft: r.PostForm.Get("body"), Genre: item.Genre, Tags: strings.Join(item.Tags, ", ")}
+	if !state(r).Settings.WitmootDiscussions() {
+		p.Handoff = ""
+	}
 	if status == 200 && r.Method == http.MethodGet {
 		switch r.URL.Query().Get("saved") {
 		case "feedback":
@@ -754,6 +757,14 @@ func (a *App) comment(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)
 	if err != nil {
 		a.fail(w, r, err)
+		return
+	}
+	if _, err := a.store.Recommendation(r.Context(), state(r).User.ID, id); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	if !state(r).Settings.LocalComments() {
+		a.showDetail(w, r, id, http.StatusForbidden, "New comments are posted in Witmoot. A separate Witmoot account is required; ask your host for an invitation.")
 		return
 	}
 	track, parseErr := parseOptionalID(r.PostForm.Get("recording"))

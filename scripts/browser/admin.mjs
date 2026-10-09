@@ -58,9 +58,13 @@ try {
   await page.getByLabel('Owner contact').fill('Contact your host for help.');
   await page.getByLabel('Public Songstead address').fill(base);
   await page.getByLabel('Witmoot address').fill('https://boards.example.org');
+  check(await page.getByRole('combobox',{name:'Where can people comment?',exact:true}).inputValue()==='songstead','Local discussion is the default without a connection');
+  await page.getByRole('combobox',{name:'Where can people comment?',exact:true}).selectOption('both');
   await page.getByRole('button', { name: 'Save settings', exact: true }).click();
   await page.waitForURL('**/admin/settings?saved=1');
   check((await page.getByRole('status').innerText()).includes('already in effect'), 'Settings saved notice');
+  check(await page.getByRole('combobox',{name:'Where can people comment?',exact:true}).inputValue()==='both','Owner discussion policy persists');
+  check((await page.locator('main').innerText()).includes('No API key is needed'),'Connection explains separate accounts without keys');
   for (const [width, theme] of [[1280, 'light'], [390, 'dark']]) {
     await page.setViewportSize({ width, height: 960 });
     await page.getByLabel('Color theme', { exact: true }).selectOption(theme);

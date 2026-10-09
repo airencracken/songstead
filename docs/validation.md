@@ -1,8 +1,16 @@
-# Songstead 0.4.1 validation
+# Songstead 0.5.0 validation
 
 `GOWORK=off make check` passes race-enabled Go tests, JavaScript tests, all
-48 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
-New tests exercise metadata API contracts and bounded artwork fetching, provider
+52 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
+New discussion tests cover owner-only configuration, all three UI/API modes,
+legacy JSON and snapshot compatibility, rejected/failed-write rollback, unknown
+and duplicate fields, policy changes across restarts, private audiences and
+CSRF. A second database connection verifies a waiting comment writer observes
+the committed policy before any comment or timestamp rows can be written.
+Property checks exercise the mode allowlist. Browser flows include members
+without Witmoot accounts, direct drafts and native local comments.
+
+Tests also exercise metadata API contracts and bounded artwork fetching, provider
 and DNS allowlists, private thumbnail routes, audience-scoped labels, sender-only
 editing, genre/tag validation, failed-write rollback, schema upgrades through 7,
 backup compatibility, exports, persisted preferences, favorite ordering and
@@ -14,7 +22,7 @@ layout switching with and without JavaScript, and the actual origin-only referre
 sent to the YouTube iframe. Property checks cover label normalization; adversarial tests cover URLs, images,
 SQL punctuation, invalid forms and unauthorized mutations.
 
-The Chromium suites pass 71 music/preferences checks and 28 administration
+The Chromium suites pass 95 music/preferences checks and 31 administration
 checks across desktop/light and mobile/dark views. Both native and HTMX forms
 save preferences and listening feedback, confirmations remain in view, unsaved
 edits clear old confirmations, and another account cannot read private notes.

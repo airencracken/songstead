@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0
+
+- Add an owner setting for Songstead, Witmoot or Both discussion locations.
+- Keep local participation available without a Witmoot account in Songstead
+  and Both; explain separate accounts and invitations before Witmoot posting.
+- Enforce local commenting policy transactionally, disable unused handoff routes,
+  and keep existing comments, annotation controls and personal bookmarks readable.
+- Preserve older configured connections as Both and local-only instances as
+  Songstead. Validate modes and connection addresses without partial settings writes.
+- Retain schema 7, private feedback, Comfylib 0.1.4 and browser draft handoffs;
+  no API key, account creation or automatic cross-app posting is introduced.
+
 ## 0.4.1
 
 - Show compact cached thumbnails and artwork fallbacks in List, including Shelf

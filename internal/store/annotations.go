@@ -126,6 +126,13 @@ func (s *Store) Annotate(ctx context.Context, viewer, id, track int64, body stri
 	if err != nil {
 		return err
 	}
+	settings, err := readSettings(ctx, tx, DefaultSettings("", ""))
+	if err != nil {
+		return err
+	}
+	if !settings.LocalComments() {
+		return ErrForbidden
+	}
 	duration := 0
 	if track == 0 && kind == "track" {
 		err = tx.QueryRowContext(ctx, `SELECT recording_id FROM media_recordings WHERE media_id=?`, mid).Scan(&track)

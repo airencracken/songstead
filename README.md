@@ -12,7 +12,15 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.4.1
+## Songstead 0.5.0
+
+Owners choose **Discussion location** in Admin: Songstead for comments here,
+Witmoot for separate board discussions, or Both for either option. Members
+without a Witmoot account can comment in Songstead or Both. Witmoot posting
+requires a separate account and a deliberate draft review; no API key is needed.
+Existing local comments stay readable in every mode, and ratings and personal
+notes stay private. Existing configured connections retain Both on upgrade.
+
 
 Pasting a supported music link now previews its title, artist and artwork before
 sharing. Pending artwork refreshes automatically, and YouTube artwork can be

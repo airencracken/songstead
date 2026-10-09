@@ -35,6 +35,7 @@ func TestSettingsPersistenceDefaultsAndPermissions(t *testing.T) {
 	}
 	v.Name = "Friends"
 	v.WitmootURL = ""
+	v.DiscussionMode = "songstead"
 	v.JoinMode = "closed"
 	v.HouseRules = "Be kind."
 	v.ShowVersion = true

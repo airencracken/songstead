@@ -17,13 +17,30 @@ var ErrForbidden = errors.New("permission denied")
 // access to recommendations, groups or personal listening notes.
 type Settings struct {
 	Name, WelcomeTitle, WelcomeText, HouseRules, OwnerContact, SourceURL string
-	BaseURL, WitmootURL, JoinMode                                        string
+	BaseURL, WitmootURL, JoinMode, DiscussionMode                        string
 	ShowVersion                                                          bool
 	Mascot, Favicon                                                      bool
 }
 
 func DefaultSettings(base, witmoot string) Settings {
-	return Settings{Name: "Songstead", WelcomeTitle: "Keep the good songs close.", WelcomeText: "Save a recommendation, listen when you have a moment, and let your friend know what you thought.", SourceURL: "https://github.com/airencracken/songstead", BaseURL: base, WitmootURL: witmoot, JoinMode: "invite"}
+	return Settings{Name: "Songstead", WelcomeTitle: "Keep the good songs close.", WelcomeText: "Save a recommendation, listen when you have a moment, and let your friend know what you thought.", SourceURL: "https://github.com/airencracken/songstead", BaseURL: base, WitmootURL: witmoot, JoinMode: "invite", DiscussionMode: legacyDiscussionMode(base, witmoot)}
+}
+
+// Existing configured handoffs retain both choices. Instances without a usable
+// connection default to local discussion, including older saved JSON settings.
+func legacyDiscussionMode(base, witmoot string) string {
+	if base != "" && witmoot != "" {
+		return "both"
+	}
+	return "songstead"
+}
+
+func (v Settings) LocalComments() bool {
+	return v.DiscussionMode == "songstead" || v.DiscussionMode == "both"
+}
+
+func (v Settings) WitmootDiscussions() bool {
+	return (v.DiscussionMode == "witmoot" || v.DiscussionMode == "both") && v.BaseURL != "" && v.WitmootURL != ""
 }
 
 type settingsReader interface {
@@ -43,6 +60,9 @@ func readSettings(ctx context.Context, db settingsReader, defaults Settings) (Se
 	if err := json.Unmarshal([]byte(raw), &settings); err != nil {
 		return Settings{}, err
 	}
+	if settings.DiscussionMode == "" {
+		settings.DiscussionMode = legacyDiscussionMode(settings.BaseURL, settings.WitmootURL)
+	}
 	return settings, nil
 }
 func (s *Store) Settings(ctx context.Context, defaults Settings) (Settings, error) {
@@ -55,6 +75,12 @@ func (s *Store) Settings(ctx context.Context, defaults Settings) (Settings, erro
 }
 
 func ValidateSettings(v Settings) error {
+	if v.DiscussionMode != "songstead" && v.DiscussionMode != "witmoot" && v.DiscussionMode != "both" {
+		return ErrInvalid
+	}
+	if v.DiscussionMode != "songstead" && (v.BaseURL == "" || v.WitmootURL == "") {
+		return ErrInvalid
+	}
 	if !validText(v.Name, 1, 80) || strings.ContainsAny(v.Name, "\r\n\t") || !validText(v.WelcomeTitle, 1, 120) || !validText(v.WelcomeText, 0, 2000) || !validText(v.HouseRules, 0, 5000) || !validText(v.OwnerContact, 0, 500) {
 		return ErrInvalid
 	}

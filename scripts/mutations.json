@@ -382,5 +382,37 @@
     "after": ">Account</a>",
     "package": "./internal/web",
     "run": "^TestAccountSpoilerPreferencesAndFeedbackNotice$"
+  },
+  {
+    "name": "discussion mode enum validation",
+    "file": "internal/store/settings.go",
+    "before": "if v.DiscussionMode != \"songstead\" && v.DiscussionMode != \"witmoot\" && v.DiscussionMode != \"both\" {",
+    "after": "if false && v.DiscussionMode != \"songstead\" && v.DiscussionMode != \"witmoot\" && v.DiscussionMode != \"both\" {",
+    "package": "./internal/store",
+    "run": "^TestDiscussionSettingsValidationLegacySchemaAndAtomicity$"
+  },
+  {
+    "name": "discussion comment transaction policy",
+    "file": "internal/store/annotations.go",
+    "before": "if !settings.LocalComments() {",
+    "after": "if false && !settings.LocalComments() {",
+    "package": "./internal/store",
+    "run": "^TestDiscussionPolicyCommentAtomicityAndPrivacy$"
+  },
+  {
+    "name": "discussion form follows owner policy",
+    "file": "internal/web/templates/detail.html",
+    "before": "</ol>{{if .Settings.LocalComments}}",
+    "after": "</ol>{{if true}}",
+    "package": "./internal/web",
+    "run": "^TestDiscussionLocationHTTPContractsAndHistory$"
+  },
+  {
+    "name": "disabled discussion handoff route",
+    "file": "internal/web/integration.go",
+    "before": "if !state(r).Settings.WitmootDiscussions() {",
+    "after": "if false && !state(r).Settings.WitmootDiscussions() {",
+    "package": "./internal/web",
+    "run": "^TestDiscussionLocationHTTPContractsAndHistory$"
   }
 ]

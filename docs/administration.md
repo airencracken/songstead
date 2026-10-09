@@ -11,12 +11,38 @@ Sign in and choose **Admin**. **Instance settings**, **Accounts**, and
 owner status does not bypass recommendation or group privacy. Personal listening
 notes remain private to their author.
 
+## Choose where people discuss music
+
+In **Admin → Instance settings → Discussion location**, choose:
+
+- **Songstead**: members comment here using their Songstead account. The Witmoot
+  posting action is hidden and its route disabled.
+- **Witmoot**: new comments go to Witmoot. The local comment form is hidden and
+  new local comment writes are blocked. Existing comments remain readable,
+  including spoiler controls and timestamp references.
+- **Both**: members choose a local comment or a Witmoot discussion. Use this
+  when some people only have Songstead accounts.
+
+Witmoot and Both require both app addresses below. Each person needs their own
+Witmoot account to post there; ask the Witmoot operator for an invitation if
+joining is restricted. Songstead accounts do not grant Witmoot access. No API key
+is needed, and Songstead never creates accounts or posts on someone's behalf.
+Users review the draft destination and audience, which may differ from the
+recommendation's audience. Existing discussion bookmarks remain available in
+all modes. Ratings, listening status and personal notes stay private.
+
+Changes take effect immediately and persist across restarts. Instances without
+an existing connection default to Songstead. Older saved settings and service
+URL defaults with a working connection retain Both until an owner changes it.
+Changing an address alone does not change an explicitly saved discussion mode.
+Restoring defaults restores local discussion or the existing service URL handoff.
+
 ## Connect Witmoot
 
 In Instance settings, set **Public Songstead address** to your HTTPS origin,
 such as `https://music.example.org`, and **Witmoot address** to your board,
 such as `https://boards.example.org`. Witmoot may have a path prefix.
-Save settings; no restart is needed. A blank Witmoot address disables handoffs.
+Save settings; no restart is needed. Choose Songstead before clearing the Witmoot address.
 Restore default settings to use the service's environment defaults again.
 
 A recommendation offers **Prepare a Witmoot discussion**, followed by a review

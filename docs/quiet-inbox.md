@@ -75,13 +75,19 @@ another account. There is no streaming account connection or playback telemetry.
 
 # Explicit Witmoot discussions
 
+Owners choose Songstead, Witmoot or Both under **Admin → Instance settings →
+Discussion location**. Songstead and Both allow local comments without a Witmoot
+account. Witmoot replaces the comment form while preserving earlier comments;
+new comment writes are blocked in the same transaction as timestamp writes.
+Witmoot posting requires a separate account and no API key.
+
 Owners set the public Songstead origin (for example `https://music.example.org`)
 and optional Witmoot address in **Admin → Instance settings**. Changes apply
 immediately. Witmoot may use a path prefix; the public Songstead address is an
 origin without a path. URLs cannot contain credentials, queries or fragments.
 `SONGSTEAD_BASE_URL` and `SONGSTEAD_WITMOOT_URL` remain service defaults; restart
-after changing those defaults. Saved settings take precedence, including a blank
-Witmoot address that disables handoffs.
+after changing those defaults. Saved settings take precedence, including the discussion mode. Choose Songstead to disable handoffs and clear
+the Witmoot address.
 
 Prepare a discussion from a recommendation. A local review page leads to
 Witmoot's `/share` draft chooser, where you select a board or existing topic.

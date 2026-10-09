@@ -191,6 +191,41 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await native.waitForURL('**/account?saved=annotations*');
   check(await native.getByRole('combobox',{name:'Spoiler preference',exact:true}).inputValue()==='hidden','Native account preference persists');
 
+  // Only Songstead accounts are provisioned here. Local/Both must let these
+  // members participate, while Witmoot mode requires its separate account.
+  await bobby.goto(base+favorite);
+  await bobby.getByRole('textbox',{name:'Your comment',exact:true}).fill('A conversation before changing modes');
+  await bobby.getByRole('button',{name:'Add comment',exact:true}).click();
+  await bobby.getByText('A conversation before changing modes',{exact:true}).waitFor();
+  for (const mode of ['witmoot','both','songstead']) {
+    await alice.goto(`${base}/admin/settings`);
+    await alice.getByLabel('Public Songstead address').fill(base);
+    await alice.getByLabel('Witmoot address').fill('https://boards.example.org/forum');
+    await alice.getByRole('combobox',{name:'Where can people comment?',exact:true}).selectOption(mode);
+    await alice.getByRole('button',{name:'Save settings',exact:true}).click();
+    await alice.waitForURL('**/admin/settings?saved=1');
+    for (const member of [bobby,native]) {
+      await member.goto(base+favorite);
+      check(await member.getByText('A conversation before changing modes',{exact:true}).count()===1,`Earlier comments remain readable in ${mode}`);
+      check(await member.getByRole('button',{name:'Add comment',exact:true}).count()===(mode==='witmoot'?0:1),`Comment form follows ${mode} with JS ${member===bobby}`);
+      check(await member.getByRole('button',{name:'Prepare a Witmoot discussion',exact:true}).count()===(mode==='songstead'?0:1),`Handoff follows ${mode} with JS ${member===bobby}`);
+      if (mode==='witmoot') {
+        check((await member.locator('main').innerText()).includes('Ask your host for an invitation'),'Witmoot-only mode explains access for members without accounts');
+      }
+    }
+    if (mode!=='witmoot') {
+      await native.getByRole('textbox',{name:'Your comment',exact:true}).fill(`Local participation in ${mode}`);
+      await native.getByRole('button',{name:'Add comment',exact:true}).click();
+      await native.getByText(`Local participation in ${mode}`,{exact:true}).waitFor();
+      check(true,`No Witmoot account needed to comment in ${mode}`);
+    } else {
+      await bobby.getByRole('button',{name:'Prepare a Witmoot discussion',exact:true}).click();
+      await bobby.getByRole('heading',{name:'A discussion, if you like',exact:true}).waitFor();
+      check((await bobby.locator('main').innerText()).includes('A separate Witmoot account is required'),'Draft review explains separate identity');
+      check((await bobby.getByRole('link',{name:'Continue to Witmoot',exact:true}).getAttribute('href')).startsWith('https://boards.example.org/forum/share?'),'Handoff respects the configured Witmoot path');
+    }
+  }
+
   // Deterministic preview responses exercise the real compose code without
   // relying on an external provider. The server fetcher has separate tests.
   const tinyPNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64');

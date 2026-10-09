@@ -71,10 +71,17 @@ func (a *App) settingsForm(w http.ResponseWriter, r *http.Request) {
 	a.render(w, r, 200, p)
 }
 func (a *App) saveSettings(w http.ResponseWriter, r *http.Request) {
-	v := store.Settings{Name: strings.TrimSpace(r.PostForm.Get("name")), WelcomeTitle: strings.TrimSpace(r.PostForm.Get("welcome_title")), WelcomeText: r.PostForm.Get("welcome_text"), HouseRules: r.PostForm.Get("house_rules"), OwnerContact: r.PostForm.Get("owner_contact"), SourceURL: strings.TrimSpace(r.PostForm.Get("source_url")), BaseURL: strings.TrimSpace(r.PostForm.Get("base_url")), WitmootURL: strings.TrimSpace(r.PostForm.Get("witmoot_url")), JoinMode: r.PostForm.Get("join_mode"), ShowVersion: r.PostForm.Get("show_version") == "1"}
+	v := store.Settings{Name: strings.TrimSpace(r.PostForm.Get("name")), WelcomeTitle: strings.TrimSpace(r.PostForm.Get("welcome_title")), WelcomeText: r.PostForm.Get("welcome_text"), HouseRules: r.PostForm.Get("house_rules"), OwnerContact: r.PostForm.Get("owner_contact"), SourceURL: strings.TrimSpace(r.PostForm.Get("source_url")), BaseURL: strings.TrimSpace(r.PostForm.Get("base_url")), WitmootURL: strings.TrimSpace(r.PostForm.Get("witmoot_url")), JoinMode: r.PostForm.Get("join_mode"), DiscussionMode: r.PostForm.Get("discussion_mode"), ShowVersion: r.PostForm.Get("show_version") == "1"}
+	// Older forms preserve the current policy. An explicitly empty or repeated
+	// field is invalid, rather than silently changing where comments go.
+	if values, present := r.PostForm["discussion_mode"]; !present {
+		v.DiscussionMode = state(r).Settings.DiscussionMode
+	} else if len(values) != 1 {
+		v.DiscussionMode = "invalid"
+	}
 	if err := a.store.SaveSettings(r.Context(), state(r).User.ID, &v); err != nil {
 		if errors.Is(err, store.ErrInvalid) {
-			a.render(w, r, 422, page{View: "settings", Title: "Instance settings", SettingsDraft: &v, Error: "Check the field lengths, joining mode and HTTP(S) URLs. The Songstead address must be an origin without a path; URLs cannot contain credentials, a query or a fragment."})
+			a.render(w, r, 422, page{View: "settings", Title: "Instance settings", SettingsDraft: &v, Error: "Check the field lengths, joining mode, discussion location and HTTP(S) URLs. Witmoot or Both requires both app addresses. The Songstead address must be an origin without a path; URLs cannot contain credentials, a query or a fragment."})
 			return
 		}
 		a.fail(w, r, err)
