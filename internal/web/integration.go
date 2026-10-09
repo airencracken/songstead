@@ -133,6 +133,10 @@ func (a *App) annotationPreference(w http.ResponseWriter, r *http.Request) {
 	if _, err = a.store.Recommendation(r.Context(), state(r).User.ID, id); err == nil {
 		err = a.store.SetAnnotationMode(r.Context(), state(r).User.ID, r.PostForm.Get("mode"))
 	}
+	if err == nil {
+		http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10)+"?saved=annotations#annotation-preferences", 303)
+		return
+	}
 	a.finishDetail(w, r, id, err)
 }
 func (a *App) discussion(w http.ResponseWriter, r *http.Request) {

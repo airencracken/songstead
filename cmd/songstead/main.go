@@ -328,7 +328,7 @@ func metadataWorker(ctx context.Context, s *store.Store) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			err := s.Metadata(ctx, func(ctx context.Context, id string) (media.Metadata, error) { return media.YouTube(ctx, client, id) })
+			err := s.Metadata(ctx, func(ctx context.Context, raw string) (media.Metadata, error) { return media.Fetch(ctx, client, raw) })
 			if err != nil && ctx.Err() == nil {
 				slog.Error("metadata worker", "error", err)
 			}

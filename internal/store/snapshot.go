@@ -27,7 +27,7 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	}
 	// Previous releases used schemas 3 and 4. Restore them unchanged; the
 	// server applies forward migrations on its next start.
-	if version != 3 && version != 4 && version != 5 {
+	if version != 3 && version != 4 && version != 5 && version != 6 {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string
@@ -51,7 +51,7 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	// Exercise the actual domain joins so a forged version on an unrelated
 	// database cannot be accepted as a Songstead backup.
 	rows.Close()
-	rows, err = db.QueryContext(ctx, selectRecommendation+" LIMIT 0", 0, 0)
+	rows, err = db.QueryContext(ctx, legacySelectRecommendation+" LIMIT 0", 0, 0)
 	if err != nil {
 		return err
 	}
@@ -119,6 +119,17 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 		}
 		if invalid != 0 {
 			return errors.New("snapshot has invalid account permissions")
+		}
+	}
+	if version >= 6 {
+		for _, query := range []string{"SELECT media_id,content FROM media_artwork LIMIT 0", "SELECT recommendation_id,genre,genre_key,tags,tag_keys FROM recommendation_labels LIMIT 0", "SELECT user_id,excluded_genres,preferred_genres,excluded_tags,preferred_tags FROM discovery_preferences LIMIT 0"} {
+			rows, err := db.QueryContext(ctx, query)
+			if err != nil {
+				return err
+			}
+			if err := rows.Close(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

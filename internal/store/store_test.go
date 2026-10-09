@@ -186,7 +186,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	if err != nil || user.ID != id {
 		t.Fatal("migration changed data")
 	}
-	if _, err := s.db.Exec("PRAGMA user_version=6"); err != nil {
+	if _, err := s.db.Exec("PRAGMA user_version=7"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()
@@ -200,7 +200,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	defer db.Close()
 	var version int
 	db.QueryRow("PRAGMA user_version").Scan(&version)
-	if version != 6 {
+	if version != 7 {
 		t.Fatal("modified newer schema")
 	}
 }
@@ -261,10 +261,10 @@ func TestMetadataFailurePersistenceAndRecovery(t *testing.T) {
 	}
 	s.db.Exec("UPDATE metadata_jobs SET next_attempt=0")
 	if err := s.Metadata(ctx, func(_ context.Context, video string) (media.Metadata, error) {
-		if video != "dQw4w9WgXcQ" {
+		if video != "https://youtu.be/dQw4w9WgXcQ?t=30" {
 			t.Fatal("wrong video")
 		}
-		return media.Metadata{Title: "A good song", Artist: "Artist", Thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"}, nil
+		return media.Metadata{Title: "A good song", Artist: "Artist", Thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", Artwork: artworkFixture(t)}, nil
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -19,10 +19,12 @@ type Group struct {
 	Name        string
 }
 type Filter struct {
-	Recent        bool
-	GroupByMusic  bool
-	Status, Kind  string
-	Person, Group int64
+	Recent         bool
+	GroupByMusic   bool
+	Status, Kind   string
+	Genre, Tag     string
+	UsePreferences bool
+	Person, Group  int64
 }
 
 func migrateMusic(tx *sql.Tx) error {
@@ -116,7 +118,7 @@ func migrateMusic(tx *sql.Tx) error {
 	return nil
 }
 
-func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, raw, note, kind, title, artist, visibility string) (int64, error) {
+func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, raw, note, kind, title, artist, visibility string, labels *Labels) (int64, error) {
 	if visibility != "private" && visibility != "members" || group < 0 || visibility == "members" && (group != 0 || recipient != 0) || visibility == "private" && group == 0 && (recipient <= 0 || sender == recipient) {
 		return 0, ErrInvalid
 	}
@@ -140,6 +142,13 @@ func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, r
 	}
 	if title == "" {
 		title = link.Title
+	}
+	if labels != nil {
+		normalized, err := normalizeLabels(*labels)
+		if err != nil {
+			return 0, err
+		}
+		labels = &normalized
 	}
 	if len(title) > 160 {
 		title = link.Provider + " link"
@@ -195,8 +204,8 @@ func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, r
 	if _, err = tx.ExecContext(ctx, "INSERT INTO recommendation_destinations VALUES(?,?)", id, recipient); err != nil {
 		return 0, err
 	}
-	if link.VideoID != "" {
-		if _, err = tx.ExecContext(ctx, "INSERT INTO metadata_jobs(media_id) VALUES(?) ON CONFLICT DO NOTHING", mid); err != nil {
+	if media.SupportsMetadata(raw) {
+		if _, err = tx.ExecContext(ctx, "INSERT INTO metadata_jobs(media_id) SELECT ? WHERE NOT EXISTS(SELECT 1 FROM media_artwork WHERE media_id=?) ON CONFLICT DO NOTHING", mid, mid); err != nil {
 			return 0, err
 		}
 	}
@@ -205,18 +214,28 @@ func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, r
 			return 0, err
 		}
 	}
+	if labels != nil {
+		if err = saveLabels(ctx, tx, id, *labels); err != nil {
+			return 0, err
+		}
+	}
 	return id, tx.Commit()
 }
 func (s *Store) RecommendMusic(ctx context.Context, sender, recipient, group int64, raw, note, kind, title, artist string) (int64, error) {
-	return s.recommend(ctx, sender, recipient, group, raw, note, kind, title, artist, "private")
+	return s.recommend(ctx, sender, recipient, group, raw, note, kind, title, artist, "private", nil)
 }
 
 // ShareMusic explicitly posts to the signed-in instance, without individual gift delivery.
 func (s *Store) ShareMusic(ctx context.Context, sender int64, raw, note, kind, title, artist string) (int64, error) {
-	return s.recommend(ctx, sender, 0, 0, raw, note, kind, title, artist, "members")
+	return s.recommend(ctx, sender, 0, 0, raw, note, kind, title, artist, "members", nil)
 }
 
 func (s *Store) Browse(ctx context.Context, viewer int64, history bool, f Filter, limit, offset int) ([]Recommendation, error) {
+	f.Genre = strings.TrimSpace(f.Genre)
+	f.Tag = strings.TrimSpace(f.Tag)
+	if f.Genre != "" && !validLabel(f.Genre, 80) || f.Tag != "" && !validLabel(f.Tag, 40) {
+		return nil, ErrInvalid
+	}
 	if limit < 1 || limit > 100 || offset < 0 || f.Person < 0 || f.Group < 0 || f.Status != "" && !validListening(f.Status) || f.Kind != "" && f.Kind != "track" && f.Kind != "album" && f.Kind != "artist" && f.Kind != "link" {
 		return nil, ErrInvalid
 	}
@@ -247,13 +266,41 @@ func (s *Store) Browse(ctx context.Context, viewer int64, history bool, f Filter
 		where += " AND m.kind=?"
 		args = append(args, f.Kind)
 	}
-	query := selectRecommendation + " WHERE " + where + " ORDER BY r.created_at DESC,r.id DESC LIMIT ? OFFSET ?"
+	if f.Genre != "" {
+		where += " AND l.genre_key=?"
+		args = append(args, strings.ToLower(f.Genre))
+	}
+	if f.Tag != "" {
+		where += " AND EXISTS(SELECT 1 FROM json_each(coalesce(l.tag_keys,'[]')) tags WHERE tags.value=?)"
+		args = append(args, strings.ToLower(f.Tag))
+	}
+	order := "r.created_at DESC,r.id DESC"
+	var preferred []any
+	if f.UsePreferences {
+		prefs, err := s.DiscoveryPreferences(ctx, viewer)
+		if err != nil {
+			return nil, err
+		}
+		where += " AND NOT " + preferredMatch
+		args = append(args, labelJSON(prefs.ExcludedGenres, true), labelJSON(prefs.ExcludedTags, true))
+		order = preferredMatch + " DESC," + order
+		preferred = []any{labelJSON(prefs.PreferredGenres, true), labelJSON(prefs.PreferredTags, true)}
+	}
+	query := selectRecommendation + " WHERE " + where + " ORDER BY " + order + " LIMIT ? OFFSET ?"
 	if f.GroupByMusic {
 		from := selectRecommendation[strings.Index(selectRecommendation, " FROM recommendations"):]
-		query = selectRecommendation + " WHERE " + where + " AND r.media_id IN (SELECT r.media_id" + from + " WHERE " + where + " GROUP BY r.media_id ORDER BY max(r.created_at) DESC,max(r.id) DESC LIMIT ? OFFSET ?) ORDER BY r.created_at DESC,r.id DESC"
+		musicOrder := "max(r.created_at) DESC,max(r.id) DESC"
+		if f.UsePreferences {
+			musicOrder = "max(" + preferredMatch + ") DESC," + musicOrder
+		}
+		query = selectRecommendation + " WHERE " + where + " AND r.media_id IN (SELECT r.media_id" + from + " WHERE " + where + " GROUP BY r.media_id ORDER BY " + musicOrder + " LIMIT ? OFFSET ?) ORDER BY " + order
 		args = append(args, append([]any{}, args...)...)
 	}
+	args = append(args, preferred...)
 	args = append(args, limit, offset)
+	if f.GroupByMusic {
+		args = append(args, preferred...)
+	}
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

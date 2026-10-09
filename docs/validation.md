@@ -1,4 +1,29 @@
-# Administration release validation
+# Songstead 0.3.0 validation
+
+`GOWORK=off make check` passes race-enabled Go tests, JavaScript tests, all
+42 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
+New tests exercise metadata API contracts and bounded artwork fetching, provider
+and DNS allowlists, private thumbnail routes, audience-scoped labels, sender-only
+editing, genre/tag validation, failed-write rollback, schema 5-to-6 migration,
+backup compatibility, exports, persisted preferences, favorite ordering and
+pagination, exclusions, account spoiler settings and saved-feedback notices.
+Property checks cover label normalization; adversarial tests cover URLs, images,
+SQL punctuation, invalid forms and unauthorized mutations.
+
+The Chromium suites pass 39 music/preferences checks and 28 administration
+checks across desktop/light and mobile/dark views. Both native and HTMX forms
+save preferences and listening feedback, confirmations remain in view, unsaved
+edits clear old confirmations, and another account cannot read private notes.
+Tiles use authenticated local artwork with a fallback and preserve the compact
+Chips default. Tested pages have no horizontal overflow or automated WCAG A/AA
+violations, and no external thumbnail requests or JavaScript errors occur.
+
+Real Bubblewrap integration passes with the new schema and static executable.
+The URL parser also passes a bounded fuzz run. Comfylib remains pinned at v0.1.3;
+its shared image normalizer validates artwork without a new library release or
+companion-app schema changes.
+
+# Previous administration release validation
 
 Songstead 0.2.1, Imvault 0.16.2 and Witmoot 0.14.2 pin the published
 Comfylib v0.1.3 module and verified Go checksum database records. Release checks

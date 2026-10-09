@@ -13,15 +13,16 @@ type ExportDiscussion struct {
 	URL     string
 }
 type Archive struct {
-	AnnotationMode  string             `json:"annotation_mode"`
-	Recordings      []ExportRecording  `json:"recordings"`
-	Groups          []Group            `json:"groups"`
-	Discussions     []ExportDiscussion `json:"discussions"`
-	Format          string             `json:"format"`
-	Version         int                `json:"version"`
-	User            User               `json:"user"`
-	Recommendations []Recommendation   `json:"recommendations"`
-	Comments        []ExportComment    `json:"comments"`
+	DiscoveryPreferences DiscoveryPreferences `json:"discovery_preferences"`
+	AnnotationMode       string               `json:"annotation_mode"`
+	Recordings           []ExportRecording    `json:"recordings"`
+	Groups               []Group              `json:"groups"`
+	Discussions          []ExportDiscussion   `json:"discussions"`
+	Format               string               `json:"format"`
+	Version              int                  `json:"version"`
+	User                 User                 `json:"user"`
+	Recommendations      []Recommendation     `json:"recommendations"`
+	Comments             []ExportComment      `json:"comments"`
 }
 type ExportComment struct {
 	RecommendationID int64
@@ -32,12 +33,16 @@ type ExportComment struct {
 // reactions and personal notes, and comments they authored. Credentials and
 // other people's private reactions never enter the archive types.
 func (s *Store) Export(ctx context.Context, user User) (Archive, error) {
-	archive := Archive{Format: "songstead-account", Version: 2, User: user, Recommendations: []Recommendation{}, Comments: []ExportComment{}}
+	archive := Archive{Format: "songstead-account", Version: 3, User: user, Recommendations: []Recommendation{}, Comments: []ExportComment{}}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return archive, err
 	}
 	defer tx.Rollback()
+	archive.DiscoveryPreferences, err = readDiscoveryPreferences(ctx, tx, user.ID)
+	if err != nil {
+		return archive, err
+	}
 	rows, err := tx.QueryContext(ctx, selectRecommendation+" WHERE "+visible+" ORDER BY r.id", user.ID, user.ID, user.ID, user.ID, user.ID)
 	if err != nil {
 		return archive, err

@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -65,30 +66,33 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
-	Settings                                                                store.Settings
-	SettingsDraft                                                           *store.Settings
-	Invitations                                                             []store.Invitation
-	SecretURL, Notice, Secret, Version                                      string
-	Audience                                                                string
-	Recent                                                                  bool
-	CommentDraft                                                            string
-	Bundles                                                                 []bundle
-	Perspective, Kind, MusicTitle, Artist, AnnotationMode, Handoff, Members string
-	Person, GroupID                                                         int64
-	Groups                                                                  []store.Group
-	Recordings                                                              []store.Recording
-	Discussions                                                             []string
-	Reveal                                                                  bool
-	View, Title, Error, CSRF, URL, Note, Username, Status                   string
-	User                                                                    *store.User
-	Users                                                                   []store.User
-	Items                                                                   []store.Recommendation
-	Item                                                                    store.Recommendation
-	Comments                                                                []store.Comment
-	Recipient                                                               int64
-	Offset, Previous, Next                                                  int
-	HasPrevious, HasNext                                                    bool
-	History                                                                 bool
+	Layout, Genre, Tags, Tag, Discovery, FeedbackNotice, AnnotationNotice, LabelsNotice string
+	DiscoveryPreferences                                                                store.DiscoveryPreferences
+	DiscoveryDraft                                                                      *store.DiscoveryPreferences
+	Settings                                                                            store.Settings
+	SettingsDraft                                                                       *store.Settings
+	Invitations                                                                         []store.Invitation
+	SecretURL, Notice, Secret, Version                                                  string
+	Audience                                                                            string
+	Recent                                                                              bool
+	CommentDraft                                                                        string
+	Bundles                                                                             []bundle
+	Perspective, Kind, MusicTitle, Artist, AnnotationMode, Handoff, Members             string
+	Person, GroupID                                                                     int64
+	Groups                                                                              []store.Group
+	Recordings                                                                          []store.Recording
+	Discussions                                                                         []string
+	Reveal                                                                              bool
+	View, Title, Error, CSRF, URL, Note, Username, Status                               string
+	User                                                                                *store.User
+	Users                                                                               []store.User
+	Items                                                                               []store.Recommendation
+	Item                                                                                store.Recommendation
+	Comments                                                                            []store.Comment
+	Recipient                                                                           int64
+	Offset, Previous, Next                                                              int
+	HasPrevious, HasNext                                                                bool
+	History                                                                             bool
 }
 
 func New(s *store.Store, cfg Config) (*App, error) {
@@ -100,6 +104,10 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		}
 	}
 	tmpl, err := template.New("pages").Funcs(template.FuncMap{
+		"joinLabels": func(values []string) string { return strings.Join(values, ", ") },
+		"labelLink": func(kind, value string) string {
+			return "/recent?" + url.Values{kind: {value}, "discovery": {"all"}}.Encode()
+		},
 		"timestamp": annotations.Format,
 		"timelineX": func(seconds, duration int) int {
 			if duration <= 0 {
@@ -144,6 +152,8 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /recommendations/new", a.signedIn(a.newRecommendation))
 	mux.HandleFunc("POST /recommendations/new", a.signedIn(a.recommend))
 	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.detail))
+	mux.HandleFunc("GET /recommendations/{id}/thumbnail", a.signedIn(a.thumbnail))
+	mux.HandleFunc("POST /recommendations/{id}/labels", a.signedIn(a.saveLabels))
 	mux.HandleFunc("POST /recommendations/{id}/reaction", a.signedIn(a.react))
 	mux.HandleFunc("POST /recommendations/{id}/comments", a.signedIn(a.comment))
 	mux.HandleFunc("GET /groups", a.signedIn(a.groups))
@@ -185,7 +195,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("X-Frame-Options", "DENY")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; frame-src https://www.youtube-nocookie.com; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 		w.Header().Set("Cache-Control", "no-store")
 		if strings.HasPrefix(r.URL.Path, "/static/") || r.URL.Path == "/healthz" {
 			next.ServeHTTP(w, r)
@@ -390,6 +400,23 @@ func (a *App) shelf(w http.ResponseWriter, r *http.Request)   { a.list(w, r, fal
 func (a *App) history(w http.ResponseWriter, r *http.Request) { a.list(w, r, true, false) }
 func (a *App) recent(w http.ResponseWriter, r *http.Request)  { a.list(w, r, false, true) }
 func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool) {
+	layout := r.URL.Query().Get("layout")
+	if layout == "" {
+		layout = "chips"
+	}
+	if layout != "chips" && layout != "tiles" {
+		http.Error(w, "invalid layout", 400)
+		return
+	}
+	discovery := r.URL.Query().Get("discovery")
+	if discovery == "" {
+		discovery = "preferences"
+	}
+	if discovery != "preferences" && discovery != "all" {
+		http.Error(w, "invalid discovery mode", 400)
+		return
+	}
+	genre, tag := r.URL.Query().Get("genre"), r.URL.Query().Get("tag")
 	offset := 0
 	if v := r.URL.Query().Get("offset"); v != "" {
 		var err error
@@ -427,7 +454,7 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		http.Error(w, "invalid view", 400)
 		return
 	}
-	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Recent: recent, Status: status, Person: person, Group: group, Kind: kind, GroupByMusic: perspective == "music"}, 51, offset)
+	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Recent: recent, Status: status, Person: person, Group: group, Kind: kind, Genre: genre, Tag: tag, UsePreferences: recent && discovery == "preferences", GroupByMusic: perspective == "music"}, 51, offset)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -444,6 +471,7 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		p.Items = items[:50]
 	}
 	p.Person, p.GroupID, p.Kind, p.Perspective = person, group, kind, perspective
+	p.Layout, p.Genre, p.Tag, p.Discovery = layout, genre, tag, discovery
 	p.Users, err = a.store.Users(r.Context(), 0)
 	if err != nil {
 		a.fail(w, r, err)
@@ -518,7 +546,7 @@ func (a *App) compose(w http.ResponseWriter, r *http.Request, status int, p page
 	a.render(w, r, status, p)
 }
 func (a *App) recommend(w http.ResponseWriter, r *http.Request) {
-	p := page{Audience: r.PostForm.Get("audience"), Kind: r.PostForm.Get("kind"), MusicTitle: r.PostForm.Get("title"), Artist: r.PostForm.Get("artist"), URL: r.PostForm.Get("url"), Note: r.PostForm.Get("note")}
+	p := page{Audience: r.PostForm.Get("audience"), Kind: r.PostForm.Get("kind"), MusicTitle: r.PostForm.Get("title"), Artist: r.PostForm.Get("artist"), URL: r.PostForm.Get("url"), Note: r.PostForm.Get("note"), Genre: r.PostForm.Get("genre"), Tags: r.PostForm.Get("tags")}
 	_, explicit := r.PostForm["audience"]
 	if explicit && (r.PostForm.Has("recipient") || r.PostForm.Has("group")) {
 		p.Audience = ""
@@ -571,15 +599,22 @@ func (a *App) recommend(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	var err error
+	tags, err := store.ParseLabels(p.Tags, 40)
+	if err != nil {
+		p.Error = "Use up to 20 comma-separated tags, each at most 40 characters."
+		a.compose(w, r, 422, p)
+		return
+	}
+	labels := store.Labels{Genre: p.Genre, Tags: tags}
 	if p.Audience == "members" {
-		id, err = a.store.ShareMusic(r.Context(), state(r).User.ID, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist)
+		id, err = a.store.ShareLabeledMusic(r.Context(), state(r).User.ID, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist, labels)
 	} else {
-		id, err = a.store.RecommendMusic(r.Context(), state(r).User.ID, p.Recipient, p.GroupID, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist)
+		id, err = a.store.RecommendLabeledMusic(r.Context(), state(r).User.ID, p.Recipient, p.GroupID, p.URL, p.Note, p.Kind, p.MusicTitle, p.Artist, labels)
 	}
 	if err != nil {
 		// Validate before storage; unknown database failures stay server errors.
 		if errors.Is(err, store.ErrInvalid) {
-			p.Error = "Keep your note within 2,000 characters."
+			p.Error = "Keep your note within 2,000 characters, title and artist within 160, genre within 80, and each of up to 20 tags within 40. Genre and tags use single-line names."
 		} else {
 			if _, parseErr := media.Parse(p.URL); parseErr != nil {
 				p.Error = parseErr.Error()
@@ -637,7 +672,28 @@ func (a *App) showDetail(w http.ResponseWriter, r *http.Request, id int64, statu
 		a.fail(w, r, err)
 		return
 	}
-	a.render(w, r, status, page{View: "detail", Title: item.Title, Item: item, Comments: comments, Recordings: tracks, AnnotationMode: mode, Reveal: reveal, Discussions: links, Error: message, Handoff: state(r).Settings.WitmootURL, CommentDraft: r.PostForm.Get("body")})
+	p := page{View: "detail", Title: item.Title, Item: item, Comments: comments, Recordings: tracks, AnnotationMode: mode, Reveal: reveal, Discussions: links, Error: message, Handoff: state(r).Settings.WitmootURL, CommentDraft: r.PostForm.Get("body"), Genre: item.Genre, Tags: strings.Join(item.Tags, ", ")}
+	if status == 200 && r.Method == http.MethodGet {
+		switch r.URL.Query().Get("saved") {
+		case "feedback":
+			p.FeedbackNotice = "Listening feedback saved."
+		case "annotations":
+			p.AnnotationNotice = "Spoiler preference saved for your account."
+		case "labels":
+			p.LabelsNotice = "Genre and tags saved."
+		}
+	}
+	if status == 422 && strings.HasSuffix(r.URL.Path, "/reaction") {
+		p.Item.Listening = r.PostForm.Get("listening")
+		p.Item.PersonalNote = r.PostForm.Get("personal_note")
+		if rating, err := strconv.Atoi(r.PostForm.Get("rating")); err == nil && rating >= -1 && rating <= 1 {
+			p.Item.Rating = rating
+		}
+	}
+	if status == 422 && strings.HasSuffix(r.URL.Path, "/labels") {
+		p.Genre, p.Tags = r.PostForm.Get("genre"), r.PostForm.Get("tags")
+	}
+	a.render(w, r, status, p)
 }
 func (a *App) react(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)
@@ -659,7 +715,7 @@ func (a *App) react(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10), 303)
+	http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10)+"?saved=feedback#listening-notes", 303)
 }
 func (a *App) comment(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)

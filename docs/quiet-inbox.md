@@ -60,7 +60,9 @@ referring to several album tracks. Changes cannot shorten a duration below an
 already stored reference. A known duration yields a proportional interactive
 SVG timeline; offset links also work without JavaScript or a known duration.
 
-Annotation preference is per account: immediate, spoiler-free or hidden.
+Choose **Account → Spoiler preferences** to set the account-wide mode:
+immediate, spoiler-free or hidden. The same selector on a recommendation updates
+this global preference, and both forms confirm a successful save.
 Spoiler-free comments appear only after your manually indicated position reaches
 all their references. Hidden comments require an explicit reveal for that view.
 Concealed comment bodies are excluded from the HTML, not hidden with CSS.
@@ -99,3 +101,45 @@ to the person saving them, shared across that person's matching music. They
 are not fetched or verified; an unavailable discussion leaves the music usable.
 To remove a link, choose Remove beside it. An unavailable Witmoot instance has
 no effect on Songstead startup, comments, listening links or organization.
+
+# Labels, artwork and discovery
+
+A sender can add a freeform genre (80 characters) and up to 20 comma-separated
+tags (40 characters each), during sharing or from **Genre & tags** on their
+recommendation. Names are single-line, trimmed and deduplicated without case
+sensitivity. Descriptions follow each recommendation's audience and only its
+sender can edit them. Labels on a private send stay within that send, including
+when the same provider recording appears in another recommendation.
+
+Recent defaults to **Chips**. Choose **Tiles** and Browse for artwork cards;
+filters, audiences, grouping and pagination work in either layout. Shelf and
+History also offer both layouts. Genre and tag filters match exact names without
+case sensitivity. Pagination preserves the current layout and filters.
+
+In **Account → Discovery preferences**, list genres and tags to exclude or
+prefer. These preferences are private, persisted per account and included in
+your export. They apply to Recent: an exclusion hides a matching recommendation
+from that view, even when another label is a favorite. Remaining favorites come
+first, then other music; each tier uses newest-first order. Unlabeled music stays
+visible. A preference neither changes access nor removes music from your shelf
+or history. Choose **All music, newest first** to temporarily bypass exclusions
+and favorites; clear preference fields and save to remove them permanently.
+
+YouTube, Spotify track/album/artist links and SoundCloud track/set links use
+public oEmbed metadata without account credentials. Provider HTML is ignored.
+The worker only contacts fixed provider/CDN hosts, validates DNS answers and
+refuses redirects and private destinations. Small PNG/JPEG/GIF images are
+normalized by Comfylib and cached as PNG inside the database. Thumbnail routes
+require the recommendation's current access permissions. No provider image
+request comes from the listener's browser. The optional YouTube player remains
+a separate, explicit provider embed.
+
+Missing artwork has a jukebox fallback. Text survives artwork failures, which
+retry at most three times. Unsupported links are saved without fetching them.
+Upgrading to schema 6 queues existing supported links for artwork; manual titles
+and artists stay intact. Back up before upgrading; an older binary cannot use
+the new schema.
+
+Listening saves confirm beside the form and keep invalid drafts for correction.
+Export format 3 adds accessible labels and the exporting user's own discovery
+preferences. It never includes another user's preferences or private feedback.

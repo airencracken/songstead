@@ -28,10 +28,13 @@ original plain text. The timestamp parser recognizes complete bounded tokens.
 Spoiler preferences filter comments before rendering, with manually entered
 positions and no telemetry. Detailed rules are in [quiet-inbox.md](quiet-inbox.md).
 
-Metadata is best effort. Only recognized YouTube IDs invoke a bounded fixed-host
-oEmbed lookup. DNS answers are checked and pinned, redirects and proxies are
-disabled, and returned HTML is ignored. Durable retry jobs never prevent saving
-a recommendation. Other URLs remain ordinary links, without server fetches.
+Metadata is best effort. Recognized YouTube, Spotify and SoundCloud links invoke
+bounded, canonical oEmbed lookups. DNS answers are checked and pinned, redirects
+and proxies are disabled, and returned HTML is ignored. Allowlisted provider
+artwork is normalized with Comfylib and cached as a local PNG in SQLite.
+Authenticated thumbnail routes use the same recommendation visibility predicate.
+Durable retry jobs never prevent saving a recommendation; an image failure
+retains the metadata text. Other URLs remain ordinary links without fetches.
 
 Comfylib's small `reference` package validates web addresses and constructs draft
 handoff links. Songstead and imvault explicitly prepare Witmoot drafts; Witmoot
@@ -46,7 +49,14 @@ annotation preferences, manual positions, recordings and discussion links.
 Backups use SQLite VACUUM INTO; restore validates schema, integrity and foreign
 keys before installing a snapshot into an empty private directory.
 
-No ranked feed, completion metrics, playback tracking, deadlines or reminders.
+Genres and tags describe individual recommendations, preserving private-send
+boundaries across duplicate provider identities. Only the sender edits them.
+Per-user discovery preferences filter Recent before pagination and sort matching
+favorites ahead of other music. Exclusions win; each tier retains newest-first
+order. SQL parameters bind normalized names as JSON arrays. Shelf, history and
+access permissions stay independent of discovery preferences.
+
+No engagement scoring, completion metrics, playback tracking, deadlines or reminders.
 Extremely eventual consistency: because your friends have lives.
 
 Administration settings are validated and stored as an instance override. Each

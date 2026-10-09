@@ -53,6 +53,8 @@ var csrfField = regexp.MustCompile(`name="csrf" value="([a-f0-9]{64})"`)
 
 func (b *browser) request(method, path string, values url.Values) *httptest.ResponseRecorder {
 	b.t.Helper()
+	// Browsers keep fragments locally; they never send them to the server.
+	path, _, _ = strings.Cut(path, "#")
 	if values == nil {
 		values = url.Values{}
 	}

@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -47,6 +48,9 @@ type Recommendation struct {
 	Listening                                                                       string
 	Rating                                                                          int
 	PersonalNote                                                                    string
+	HasArtwork                                                                      bool
+	Genre                                                                           string
+	Tags                                                                            []string
 }
 type Comment struct {
 	RecordingID             int64
@@ -101,14 +105,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 5 {
+	if version > 6 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 5 {
+	if currentOnly && version != 6 {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 5; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql"}[next]
+	for next := version + 1; next <= 6; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -118,6 +122,11 @@ func (s *Store) migrate(currentOnly bool) error {
 		}
 		if next == 2 {
 			if err := migrateMusic(tx); err != nil {
+				return err
+			}
+		}
+		if next == 6 {
+			if err := queueArtwork(tx); err != nil {
 				return err
 			}
 		}
@@ -268,10 +277,10 @@ func validText(s string, min, max int) bool {
 }
 
 func (s *Store) Recommend(ctx context.Context, sender, recipient int64, raw, note string) (int64, error) {
-	return s.recommend(ctx, sender, recipient, 0, raw, note, "", "", "", "private")
+	return s.recommend(ctx, sender, recipient, 0, raw, note, "", "", "", "private", nil)
 }
 
-const selectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sender.username,recipient.username,
+const legacySelectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sender.username,recipient.username,
  coalesce(nullif(r.source_url,''),m.original_url),m.provider,m.title,m.artist,m.thumbnail,m.media_type,m.video_id,r.note,r.created_at,
  coalesce(ms.listening,'unheard'),coalesce(x.rating,0),coalesce(x.note,''),coalesce(r.group_id,0),coalesce(g.name,''),m.kind,r.visibility
  FROM recommendations r JOIN media m ON m.id=r.media_id
@@ -281,6 +290,8 @@ const selectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sender.user
  LEFT JOIN music_states ms ON ms.media_id=m.id AND ms.user_id=?
  LEFT JOIN groups g ON g.id=r.group_id `
 
+var selectRecommendation = strings.Replace(legacySelectRecommendation, "r.visibility\n", "r.visibility,EXISTS(SELECT 1 FROM media_artwork art WHERE art.media_id=m.id),coalesce(l.genre,''),coalesce(l.tags,'[]')\n", 1) + ` LEFT JOIN recommendation_labels l ON l.recommendation_id=r.id `
+
 // The same visibility predicate protects details, comments and mutations.
 const visible = `((r.group_id IS NULL AND (r.sender_id=? OR EXISTS(SELECT 1 FROM users v WHERE v.id=? AND (r.visibility='members' OR d.user_id=v.id)))) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`
 
@@ -288,7 +299,11 @@ type scanner interface{ Scan(...any) error }
 
 func scanRecommendation(row scanner) (Recommendation, error) {
 	var r Recommendation
-	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote, &r.GroupID, &r.Group, &r.Kind, &r.Visibility)
+	var tags string
+	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote, &r.GroupID, &r.Group, &r.Kind, &r.Visibility, &r.HasArtwork, &r.Genre, &tags)
+	if err == nil {
+		err = json.Unmarshal([]byte(tags), &r.Tags)
+	}
 	return r, err
 }
 
@@ -366,17 +381,17 @@ func (s *Store) Comments(ctx context.Context, viewer, id int64) ([]Comment, erro
 // links never depends on this worker or the provider being reachable.
 func (s *Store) Metadata(ctx context.Context, fetch func(context.Context, string) (media.Metadata, error)) error {
 	var id int64
-	var video string
+	var raw string
 	var attempts int
-	err := s.db.QueryRowContext(ctx, `SELECT m.id,m.video_id,j.attempts FROM metadata_jobs j JOIN media m ON m.id=j.media_id
- WHERE j.attempts<3 AND j.next_attempt<=? ORDER BY m.id LIMIT 1`, time.Now().Unix()).Scan(&id, &video, &attempts)
+	err := s.db.QueryRowContext(ctx, `SELECT m.id,m.original_url,j.attempts FROM metadata_jobs j JOIN media m ON m.id=j.media_id
+ WHERE j.attempts<3 AND j.next_attempt<=? ORDER BY m.id LIMIT 1`, time.Now().Unix()).Scan(&id, &raw, &attempts)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	meta, fetchErr := fetch(ctx, video)
+	meta, fetchErr := fetch(ctx, raw)
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -392,7 +407,17 @@ func (s *Store) Metadata(ctx context.Context, fetch func(context.Context, string
 	if _, err := tx.ExecContext(ctx, "UPDATE media SET title=CASE WHEN title=original_url THEN ? ELSE title END,artist=CASE WHEN artist='' THEN ? ELSE artist END,thumbnail=? WHERE id=?", meta.Title, meta.Artist, meta.Thumbnail, id); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM metadata_jobs WHERE media_id=?", id); err != nil {
+	if len(meta.Artwork) > 0 {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO media_artwork VALUES(?,?) ON CONFLICT(media_id) DO UPDATE SET content=excluded.content", id, meta.Artwork); err != nil {
+			return err
+		}
+	}
+	if meta.Thumbnail != "" && len(meta.Artwork) == 0 {
+		_, err = tx.ExecContext(ctx, "UPDATE metadata_jobs SET attempts=attempts+1,next_attempt=? WHERE media_id=?", time.Now().Add(time.Duration(attempts+1)*time.Minute).Unix(), id)
+	} else {
+		_, err = tx.ExecContext(ctx, "DELETE FROM metadata_jobs WHERE media_id=?", id)
+	}
+	if err != nil {
 		return err
 	}
 	return tx.Commit()

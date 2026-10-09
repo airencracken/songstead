@@ -4,7 +4,7 @@ Songstead is an independent AGPL-3.0-or-later Go binary with SQLite and embedded
 HTML, HTMX, CSS and mascot assets. There is no asset server or required external
 service. Go 1.26 is needed to build; static binaries have no C library requirement.
 
-`make build` prepares a 0.2.1 binary in `bin/songstead`. Run
+`make build` prepares a 0.3.0 binary in `bin/songstead`. Run
 `bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.3; see
 [the release installation guide](releases.md).
 
@@ -46,7 +46,7 @@ Do not run two services against the same directory; the server takes a file lock
 `backup --output PATH` creates a consistent SQLite snapshot without overwriting
 an existing path. `restore --input PATH --data-dir EMPTY_DIRECTORY` validates the
 schema, integrity and foreign keys before installing it. Restore requires a
-schema 3 or 4 snapshot; use the old binary to restore a v1 or v2
+schema 3, 4 or 5 snapshot; use the old binary to restore a v1 or v2
 snapshot, then start the new binary to migrate it.
 
 Schema 2 adds groups, canonical music identity, private music organization,
@@ -73,7 +73,7 @@ never promotes or modifies an existing username. Owners retain the same music
 privacy boundaries. Schema 5 adds persistent instance settings, invitations,
 password recovery, suspension and invitation permissions. Owners administer
 them in `/admin/settings`, `/admin/users` and `/admin/invites`.
-Previous schema 3 and 4 backups can still be restored and migrated on server startup.
+Previous schema 3, 4 and 5 backups can still be restored and migrated on server startup.
 Account and backup commands refuse older schemas instead of migrating a live
 instance; restart the updated server first.
 
@@ -106,3 +106,7 @@ explicitly enables administration. It does not change the password or music
 access. Configure the public Songstead origin and optional Witmoot address in
 Instance settings; saved URLs override service defaults until you restore them.
 See [administration](administration.md) for invitations and account recovery.
+
+Schema 6 adds recommendation labels, private discovery preferences and cached artwork.
+Existing supported links are queued for artwork after upgrade; original URLs and
+manual metadata remain intact. Restart the updated service before CLI commands.

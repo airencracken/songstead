@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-VERSION ?= 0.2.1
+VERSION ?= 0.3.0
 GOCACHE ?= /tmp/songstead-go-cache
 export GOCACHE
 
@@ -15,7 +15,7 @@ test-race:
 test-packaging:
 	python3 scripts/test_packaging.py
 test-js:
-	node --test internal/web/static/theme.test.js
+	node --test internal/web/static/*.test.js
 test-mutations:
 	python3 scripts/mutate.py scripts/mutations.json
 test-cli: build

@@ -36,6 +36,8 @@ func (a *App) adminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /reset", a.resetPassword)
 	mux.HandleFunc("GET /account", a.signedIn(a.account))
 	mux.HandleFunc("POST /account/password", a.signedIn(a.changePassword))
+	mux.HandleFunc("POST /account/annotations", a.signedIn(a.accountAnnotations))
+	mux.HandleFunc("POST /account/discovery", a.signedIn(a.accountDiscovery))
 	mux.HandleFunc("GET /about", a.about)
 }
 func (a *App) owner(next http.HandlerFunc) http.HandlerFunc {
@@ -277,7 +279,7 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login?reset=1", 303)
 }
 func (a *App) account(w http.ResponseWriter, r *http.Request) {
-	a.render(w, r, 200, page{View: "account", Title: "Your account"})
+	a.showAccount(w, r, 200, page{})
 }
 func (a *App) changePassword(w http.ResponseWriter, r *http.Request) {
 	if a.limited(w, r) {
@@ -290,7 +292,7 @@ func (a *App) changePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	password := r.PostForm.Get("password")
 	if u.ID != state(r).User.ID || bcrypt.CompareHashAndPassword([]byte(hash), []byte(r.PostForm.Get("current_password"))) != nil || password != r.PostForm.Get("confirmation") || store.ValidatePassword(password) != nil {
-		a.render(w, r, 422, page{View: "account", Title: "Your account", Error: "Check your current password and use matching new passwords of at least 12 characters and at most 72 bytes."})
+		a.showAccount(w, r, 422, page{Error: "Check your current password and use matching new passwords of at least 12 characters and at most 72 bytes."})
 		return
 	}
 	if err := a.store.ChangePassword(r.Context(), u.ID, hash, password); err != nil {

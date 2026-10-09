@@ -12,14 +12,16 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.2.0
+## Songstead 0.3.0
 
 Friends and groups can leave tracks, albums, artists and listening links. Browse
 by music, person, group or each recommendation. Duplicate provider identities
 keep each sender's words while sharing your private listening organization.
 Recommendations are gifts: there is no need to keep up.
 
-Recent shows what people shared with everyone on the instance, newest first.
+Recent shows what people shared with everyone on the instance. Chips is the
+default layout; choose Tiles for artwork. It starts newest first, with optional
+private preferences to exclude genres or tags and bring favorites to the top.
 Choose an audience before posting; private friend and group gifts stay out of
 Recent. All views require sign-in. Sharing does not fill anyone else's shelf.
 
@@ -28,6 +30,16 @@ immediately, reveal them manually, or use spoiler-free mode with a position you
 indicate yourself. Songstead neither tracks playback nor connects streaming
 accounts. Explicit Witmoot drafts and saved discussion links keep conversation
 optional. Every application remains usable on its own.
+
+Add an optional freeform genre and comma-separated tags when sharing, or edit
+them on your own recommendation later. These descriptions follow that
+recommendation's audience. Private-send labels never carry over to another
+share of the same music. Listening feedback stays private and saves show an
+inline confirmation. **Account** includes spoiler and discovery preferences.
+
+YouTube, Spotify and SoundCloud metadata can include artwork, cached locally so
+viewing music does not contact image providers from your browser. Unsupported
+links and unavailable artwork keep a useful fallback.
 
 Read [the shelf and annotation behavior](docs/quiet-inbox.md),
 [deployment and migration details](docs/deployment.md), and
@@ -39,7 +51,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.1.2 and verified module checksums.
+Release builds use published Comfylib v0.1.3 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh
@@ -47,7 +59,8 @@ GOWORK=off make check build
 make demo
 ```
 
-`make test-browser` adds Chromium administration and accessibility checks.
+`make test-browser` adds Chromium administration, music, preferences and
+accessibility checks, with and without JavaScript.
 Install Playwright Chromium from `scripts/browser`, or set `CHROMIUM` to a local
 executable. The browser suite uses disposable accounts and deletes its database.
 

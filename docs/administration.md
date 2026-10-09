@@ -79,3 +79,11 @@ recovery patterns. Comfylib v0.1.3 supplies shared password confirmation and ima
 normalization, alongside existing tokens, session CSRF, trusted proxy resolution,
 service configuration and privilege dropping. Application roles, SQLite schemas,
 joining policy and music access rules remain in Songstead.
+
+## Personal preferences
+
+**Account** exposes spoiler visibility and private discovery preferences for
+Recent, alongside password changes and export. Users can exclude genres or tags
+or bring favorites to the top. These are personal settings, separate from owner
+instance settings. Senders manage their recommendation's shared genre and tags;
+these labels follow its audience. See [music and annotation behavior](quiet-inbox.md).

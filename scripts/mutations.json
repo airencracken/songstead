@@ -5,7 +5,7 @@
     "before": "const visible = `((r.group_id IS NULL AND (r.sender_id=? OR EXISTS(SELECT 1 FROM users v WHERE v.id=? AND (r.visibility='members' OR d.user_id=v.id)))) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`",
     "after": "const visible = `(? >= 0 OR ? >= 0 OR ? >= 0)`",
     "package": "./internal/store",
-    "run": "^TestPermissions$"
+    "run": "^(TestPermissions|TestArtworkPermissionsRetryAndAtomicity)$"
   },
   {
     "name": "independent listening state",
@@ -34,8 +34,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 5 {",
-    "after": "if version > 6 {",
+    "before": "if version > 6 {",
+    "after": "if version > 7 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -194,8 +194,8 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 5 {",
-    "after": "if false && currentOnly && version != 5 {",
+    "before": "if currentOnly && version != 6 {",
+    "after": "if false && currentOnly && version != 6 {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
   },
@@ -270,5 +270,69 @@
     "after": "if false && len(files) != 1 {",
     "package": "./internal/web",
     "run": "^TestBrandingMultipartRoutesAndAtomicity$"
+  },
+  {
+    "name": "metadata host allowlist",
+    "file": "internal/media/metadata.go",
+    "before": "!metadataHost(host)",
+    "after": "false && !metadataHost(host)",
+    "package": "./internal/media",
+    "run": "^TestDNSAnswersAreCheckedAndPinned$"
+  },
+  {
+    "name": "provider thumbnail destination",
+    "file": "internal/media/metadata.go",
+    "before": "if !thumbnailURL(meta.Thumbnail, provider) {",
+    "after": "if false && !thumbnailURL(meta.Thumbnail, provider) {",
+    "package": "./internal/media",
+    "run": "^TestThumbnailDestinationsAndBounds$"
+  },
+  {
+    "name": "genre and tag sender authorization",
+    "file": "internal/store/labels.go",
+    "before": "WHERE r.id=? AND r.sender_id=? AND ",
+    "after": "WHERE r.id=? AND ? >= 0 AND ",
+    "package": "./internal/store",
+    "run": "^TestLabelsAudienceIsolationAndSenderPermissions$"
+  },
+  {
+    "name": "discovery exclusions precede favorites",
+    "file": "internal/store/inbox.go",
+    "before": "where += \" AND NOT \" + preferredMatch",
+    "after": "where += \" AND \" + preferredMatch",
+    "package": "./internal/store",
+    "run": "^TestDiscoveryPreferencesOrderingPaginationAndPrivacy$"
+  },
+  {
+    "name": "favorite ranking before recency",
+    "file": "internal/store/inbox.go",
+    "before": "order = preferredMatch + \" DESC,\" + order",
+    "after": "order = preferredMatch + \" ASC,\" + order",
+    "package": "./internal/store",
+    "run": "^TestDiscoveryPreferencesOrderingPaginationAndPrivacy$"
+  },
+  {
+    "name": "private discovery preferences",
+    "file": "internal/store/labels.go",
+    "before": "FROM discovery_preferences WHERE user_id=?",
+    "after": "FROM discovery_preferences WHERE ? >= 0 ORDER BY user_id LIMIT 1",
+    "package": "./internal/store",
+    "run": "^TestDiscoveryPreferencesOrderingPaginationAndPrivacy$"
+  },
+  {
+    "name": "default chip layout",
+    "file": "internal/web/web.go",
+    "before": "layout = \"chips\"",
+    "after": "layout = \"tiles\"",
+    "package": "./internal/web",
+    "run": "^TestLabelsDiscoveryAndLayoutHTTPContracts$"
+  },
+  {
+    "name": "feedback save notice",
+    "file": "internal/web/web.go",
+    "before": "+\"?saved=feedback#listening-notes\"",
+    "after": "+\"#listening-notes\"",
+    "package": "./internal/web",
+    "run": "^TestAccountSpoilerPreferencesAndFeedbackNotice$"
   }
 ]
