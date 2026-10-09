@@ -57,6 +57,7 @@ Password resets bind to current credentials and change passwords, revoke
 sessions and consume the link atomically. Suspension invalidates sessions and
 bearer links. Administration does not extend private music access.
 
-Comfylib supplies generic password confirmation and bounded image normalization.
-Apps retain terminal handling, password policy, storage and authorization.
+Comfylib supplies password confirmation, a terminal echo guard and bounded image
+normalization. Apps supply their terminal reader, prompt labels and password
+policy, and retain storage and authorization.
 Branding uploads normalize both assets before an atomic database update.

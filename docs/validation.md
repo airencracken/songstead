@@ -1,105 +1,72 @@
-# Earlier integration release validation (2026-10-08)
+# Administration release validation
 
-Comfylib v0.1.1, Songstead v0.1.0, Witmoot v0.14.0 and Imvault v0.16.0
-are published. All three applications
-resolve the real library tag and verified Go checksum database records with
-`GOWORK=off`; their go.mod files contain no local replacement. Development
-workspaces remain untracked and do not participate in release checks.
+Songstead 0.2.1, Imvault 0.16.2 and Witmoot 0.14.2 pin the published
+Comfylib v0.1.3 module and verified Go checksum database records. Release checks
+use `GOWORK=off`; no local module replacements participate in the builds.
 
-## Library and application checks
+## Shared library
 
-[Comfylib CI](https://github.com/airencracken/comfylib/actions/runs/37833555126)
-passes formatting, vet, complexity, lint, race tests, real Bubblewrap and
-nginx/Apache integration, API golden and license checks, fuzzing, the mutation
-engine and all 138 mutations. Additional handoff fuzzing completed 109,030
-executions. Port validation tests cover boundaries and generated inputs.
+[Comfylib release CI](https://github.com/airencracken/comfylib/actions/runs/37861496561)
+passes formatting, vet, complexity, lint, race tests, API golden checks,
+fuzzing, real sandbox/proxy integration, the mutation engine and all 144
+mutations. Password tests use real pseudo-terminals to verify echo is disabled
+before an action can show a prompt, unrelated flags are preserved, and terminal
+state is restored on success, error and panic. Invalid descriptors and restoration
+failures return no password. Property tests cover terminal flag combinations and
+confirmation values. Shared image normalization covers size limits, malformed
+images, metadata removal, transparency and decoding bounds.
 
-[Songstead release CI](https://github.com/airencracken/songstead/actions/workflows/release.yml)
-passes the complete standalone `make check build`: race-enabled Go tests,
-theme JavaScript checks, all 15 mutations, packaging contracts, vet, formatting
-and a static binary stamped `songstead 0.1.0`. The released source and Linux
-amd64/arm64 archives pass SHA-256 verification; the amd64 download reports the
-correct version and both binaries have the expected architecture.
+## Songstead
 
-Songstead tests cover group removal and direct-recipient isolation, shared and
-private duplicates, stable pagination, private music organization, migrations
-preserving privacy, schema constraints, annotation/response atomicity,
-randomized audience properties, timestamp/duration/token validation, recording
-selection, spoiler HTML suppression, manual listening positions, export privacy,
-unavailable providers, legacy and adversarial forms, CSRF and private drafts.
-The 11 packaging contracts cover service commands, private path setup, invalid
-paths before filesystem changes, failed directory setup, checksum pins, funding,
-release documentation and CI dependency isolation.
-
-The coordinated disposable-worktree mutations pass: credential-free shared
-URLs, Witmoot rejecting private album metadata and Imvault requiring current
-public-album visibility. This optional development check uses sibling source
-worktrees; ordinary tests and runtime do not require the other applications.
-
-Witmoot v0.14.0 passes local `make check build` with the race detector and all
-66 community, integration and sandbox mutations. Imvault v0.16.0 passes local
-`make check build`, the full race suite and all 104 mutations. Their new tests
-cover deliberate drafts, access and escaping, private/malformed/unavailable
-album previews, disconnection, public image counts, ownership, migration and
-configuration contracts.
-
-[Imvault release CI](https://github.com/airencracken/imvault/actions/runs/37835626055)
-also passes real Bubblewrap, nginx/Apache integration, and Ubuntu/Debian package
-lifecycle tests on amd64 and arm64 before publishing the verified artifacts.
-[Witmoot release CI](https://github.com/airencracken/witmoot/actions/runs/37835796165)
-passes the same repository, sandbox, proxy and amd64/arm64 package lifecycle
-gates before publishing its verified artifacts.
-
-## Funding
-
-Songstead's `ko_fi: airencracken` funding configuration matches Witmoot and
-Imvault. Its README links the same Ko-fi destination, and GitHub Sponsorships
-is enabled. The overlay's live funding tests verify GitHub's recognized links,
-enabled setting and actual public Sponsor sidebar for all five repositories.
-
-## Website
-
-The complete website check passes: 12 content and Songstead contracts, nine
-production HTTP checks, six deployment checks, Caddy configuration validation
-and 306 Chromium checks. Browser coverage includes both palettes at four
-widths, accessibility, full square Songstead artwork and keyboard operation of
-its privacy FAQ without JavaScript. Desktop/mobile screenshots were reviewed.
-The release copy links published source, downloads and deployment instructions.
-Updating the website repository does not deploy the live document root.
-
-## Gentoo packaging
-
-Dependency bundles resolve and verify published modules with `GOWORK=off` and
-refuse to replace existing outputs. Tests cover exclusive publication,
-concurrent creators, symlinks, failures, malformed versions and inherited
-workspaces. Installation mutations reject public data directories, exposed
-configuration, wrong service commands, missing logging and compressed examples.
-Recipe checks cover compile versions, release/live parity and exact Manifest
-schemas. Manifest hashes are generated by Portage from the real archives.
-
-In an official Gentoo stage3 container, Songstead 0.1.0, Witmoot 0.14.0 and
-Imvault 0.16.0 build, pass upstream Go tests and install through Portage with
-dedicated accounts and private data/configuration permissions. All three pass
-with the container's external Docker network disconnected. The installed binaries pass service startup, health routes and account
-provisioning. Songstead passes backup/restore smoke checks; Imvault's preview
-API rejects unauthenticated requests and Witmoot's draft route requires login.
-Portage QA identified a dependency-version spelling notice; the release/live
-recipes now specify `>=dev-lang/go-1.26.0`. pkgcheck reports no errors; older
-versions retain existing redundant-version and identical-distfile warnings.
-Real Bubblewrap namespace checks run in GitHub CI rather than
-this Docker container.
-
-Publication changes repositories and release artifacts; host deployment is separate.
-
-## Administration
+[Native release CI](https://github.com/airencracken/songstead/actions/runs/37861732901)
+and [master checks](https://github.com/airencracken/songstead/actions/runs/37861732844)
+pass standalone race tests, JavaScript checks, all 34 mutations, 15 packaging
+contracts, real terminal provisioning, Bubblewrap, formatting and vet.
+The published source and amd64 binary pass SHA-256 verification. Source module
+inputs and migration 005 match the tag used to prepare the dependency bundle.
+The downloaded executable reports `songstead 0.2.1` and passes terminal prompt
+checks. A separate stress run passed 25 consecutive immediate-input provisions.
 
 Store and HTTP tests cover invitation expiry, use limits, creator permissions,
-concurrent joining, failed consumption rollback, owner-only settings and account
-changes, last-owner concurrency, suspension, reset replacement and replay,
-password/session atomicity, schema 4 migration, schema validation, route and CSRF
-contracts, draft escaping, multipart bounds and transactional branding uploads.
-The browser suite exercises the rendered owner settings, invitation/join/recovery
-flows, mobile layout, keyboard navigation and accessibility. Mutation tests
-remove critical guards and require these regressions to fail. Comfylib checks
-its shared normalization and password prompts separately, including API goldens,
-property tests, adversarial images and failures without secret output.
+concurrent joining and rollback, owner-only settings and account changes,
+last-owner protection across separate database handles, suspension, recovery
+replacement and replay, password/session atomicity, older-schema migration,
+schema validation, route and CSRF contracts, multipart bounds and atomic branding.
+Audience property tests preserve private recommendations, groups and listening
+notes across administration changes. Owners retain the same private access rules.
+
+Chromium passes 28 administration checks across desktop/light and mobile/dark
+layouts, including settings, invitation creation and joining, recovery, replay,
+keyboard operation, overflow checks and accessibility. No JavaScript errors or
+accessibility violations were found in the checked pages.
+
+## Companions
+
+Imvault and Witmoot pass local release checks, full race suites and real terminal
+provisioning. Their terminal regression runner is copied byte-for-byte from the
+pinned Comfylib release and checked against that module. Applications retain their
+own prompt labels, password policies, storage and authorization.
+
+[Imvault release workflow](https://github.com/airencracken/imvault/actions/runs/37861950521)
+and [Witmoot release workflow](https://github.com/airencracken/witmoot/actions/runs/37861855967)
+gate publication on repository tests, all mutation tables, real Bubblewrap,
+nginx/Apache integration and Ubuntu/Debian package lifecycle checks on amd64
+and arm64. Imvault has 104 deliberate mutations; Witmoot has 66.
+
+## Gentoo and website
+
+All three exact patch tags and dependency bundles build and pass internal Go
+tests in an official Gentoo stage3 container with networking disabled. The
+versioned and live recipes pass the unprivileged installation harness for
+service commands, private paths, configuration permissions, logging and sandbox
+examples. This harness exercises recipe output; it does not replace full Portage
+installation and account ownership checks. Manifests record the BLAKE2B/SHA512
+hashes of actual published sources and dependency archives.
+
+[Website CI](https://github.com/airencracken/comfyware_org/actions/runs/37862094888)
+passes content, HTTP, deployment, Caddy and 322 Chromium browser checks.
+The Songstead screenshot uses the actual 0.2.1 executable with fictional music
+and disposable accounts. Funding links match the companion applications.
+
+Publication updates repositories and release artifacts. Upgrading services and
+deploying the website document root remain host operations.
