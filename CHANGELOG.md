@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1
+
+- Show compact cached thumbnails and artwork fallbacks in List, including Shelf
+  and History. Refresh pending artwork in both List and Tiles.
+- Separate view/discovery switches, genre/tag pickers and advanced filters into
+  clear rows. Apply secondary filters together without losing current choices.
+- Rename Account to Your settings and add shortcuts to profile, animation,
+  spoiler, discovery, password and data preferences.
+- Keep schema 7 and the existing Comfylib 0.1.4 dependency.
+
 ## 0.4.0
 
 - Preview titles, artists and thumbnails when pasting supported music links.

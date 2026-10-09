@@ -366,5 +366,21 @@
     "after": "referrerpolicy=\"no-referrer\"",
     "package": "./internal/web",
     "run": "^TestPreviewContractsPrivacyAndRateLimit$"
+  },
+  {
+    "name": "list artwork holder",
+    "file": "internal/web/templates/list.html",
+    "before": "{{else}}list-artwork{{end}}",
+    "after": "{{else}}missing-artwork{{end}}",
+    "package": "./internal/web",
+    "run": "^TestLabelsDiscoveryAndLayoutHTTPContracts$"
+  },
+  {
+    "name": "personal settings discovery",
+    "file": "internal/web/templates/layout.html",
+    "before": ">Your settings</a>",
+    "after": ">Account</a>",
+    "package": "./internal/web",
+    "run": "^TestAccountSpoilerPreferencesAndFeedbackNotice$"
   }
 ]

@@ -24,7 +24,7 @@
     <nav aria-label="Main navigation">
       {{if .User}}<a href="/recent" {{if .Recent}}aria-current="page"{{end}}>Recent</a><a href="/shelf" {{if and (eq .View "list") (not .History) (not .Recent)}}aria-current="page"{{end}}>Shelf</a><a href="/history">History</a><a href="/groups">Groups</a><a class="button" href="/recommendations/new">Share music</a>{{end}}
       <span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span>
-      {{if .User}}{{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{end}}{{if or (eq .User.Role "owner") .User.CanInvite}}<a href="/invites">Invites</a>{{end}}<a href="/account">Account</a><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>{{end}}
+      {{if .User}}{{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{end}}{{if or (eq .User.Role "owner") .User.CanInvite}}<a href="/invites">Invites</a>{{end}}<a href="/account" {{if eq .View "account"}}aria-current="page"{{end}}>Your settings</a><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>{{end}}
     </nav>
   </header>
   <main id="main" class="page" tabindex="-1">

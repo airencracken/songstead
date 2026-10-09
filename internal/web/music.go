@@ -111,7 +111,7 @@ func (a *App) showAccount(w http.ResponseWriter, r *http.Request, status int, p 
 		a.fail(w, r, err)
 		return
 	}
-	p.View, p.Title = "account", "Your account"
+	p.View, p.Title = "account", "Your settings"
 	if status == http.StatusOK && r.Method == http.MethodGet {
 		switch r.URL.Query().Get("saved") {
 		case "annotations":

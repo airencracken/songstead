@@ -12,17 +12,18 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.4.0
+## Songstead 0.4.1
 
 Pasting a supported music link now previews its title, artist and artwork before
 sharing. Pending artwork refreshes automatically, and YouTube artwork can be
-fetched even when its metadata endpoint is unavailable. Chips/Tiles switches
-immediately; compact genre/tag pickers sit beneath the main controls. Music links
+fetched even when its metadata endpoint is unavailable. List and Tiles switch
+immediately and both show artwork. View and discovery switches sit above genre/tag
+pickers; additional dropdowns stay under More filters. Music links
 open in a new tab, and the YouTube player sends only the site origin to satisfy
 its client-identification requirement.
 
 Accounts can upload PNG, JPEG or animated GIF profile pictures. Every animation
-has a still version; viewers can disable animations in Account, and browser
+has a still version; viewers can disable animations in Your settings, and browser
 reduced-motion preferences select stills automatically. External sharing cards
 show the instance branding without exposing private recommendations.
 
@@ -31,8 +32,8 @@ by music, person, group or each recommendation. Duplicate provider identities
 keep each sender's words while sharing your private listening organization.
 Recommendations are gifts: there is no need to keep up.
 
-Recent shows what people shared with everyone on the instance. Chips is the
-default layout; choose Tiles for artwork. It starts newest first, with optional
+Recent shows what people shared with everyone on the instance. List is the
+default layout; both List and Tiles include artwork. It starts newest first, with optional
 private preferences to exclude genres or tags and bring favorites to the top.
 Choose an audience before posting; private friend and group gifts stay out of
 Recent. All views require sign-in. Sharing does not fill anyone else's shelf.
@@ -47,7 +48,7 @@ Add an optional freeform genre and comma-separated tags when sharing, or edit
 them on your own recommendation later. These descriptions follow that
 recommendation's audience. Private-send labels never carry over to another
 share of the same music. Listening feedback stays private and saves show an
-inline confirmation. **Account** includes spoiler and discovery preferences.
+inline confirmation. **Your settings** includes profile pictures, animation, spoiler and discovery preferences.
 
 YouTube, Spotify and SoundCloud metadata can include artwork, cached locally so
 viewing music does not contact image providers from your browser. Unsupported
@@ -123,7 +124,7 @@ only in case. Existing accounts stay members during upgrade. Owners have the
 same music privacy boundaries as members. Sign in as an owner and open
 **Admin** to configure the instance, invite people, manage account roles and
 suspension, and issue one-hour password recovery links. Members can change
-their own passwords from **Your account**.
+their own passwords from **Your settings**.
 
 Joining is invitation-only by default. Owners can delegate invitation
 permission or choose closed or open joining. Public joining never makes music

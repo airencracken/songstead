@@ -1,7 +1,7 @@
-# Songstead 0.4.0 validation
+# Songstead 0.4.1 validation
 
 `GOWORK=off make check` passes race-enabled Go tests, JavaScript tests, all
-46 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
+48 deliberate mutations, 15 packaging checks, CLI integration, vet and formatting.
 New tests exercise metadata API contracts and bounded artwork fetching, provider
 and DNS allowlists, private thumbnail routes, audience-scoped labels, sender-only
 editing, genre/tag validation, failed-write rollback, schema upgrades through 7,
@@ -14,12 +14,14 @@ layout switching with and without JavaScript, and the actual origin-only referre
 sent to the YouTube iframe. Property checks cover label normalization; adversarial tests cover URLs, images,
 SQL punctuation, invalid forms and unauthorized mutations.
 
-The Chromium suites pass 56 music/preferences checks and 28 administration
+The Chromium suites pass 71 music/preferences checks and 28 administration
 checks across desktop/light and mobile/dark views. Both native and HTMX forms
 save preferences and listening feedback, confirmations remain in view, unsaved
 edits clear old confirmations, and another account cannot read private notes.
-Tiles use authenticated local artwork with a fallback and preserve the compact
-Chips default. Tested pages have no horizontal overflow or automated WCAG A/AA
+List and Tiles use authenticated local artwork with a fallback. List remains
+the default, with compact responsive thumbnails. Collapsed advanced filters
+apply together, while direct view and discovery switches preserve applied filters.
+User settings have a clear navigation link and working section shortcuts. Tested pages have no horizontal overflow or automated WCAG A/AA
 violations, and no external thumbnail requests or JavaScript errors occur.
 
 Live smoke checks retrieve normalized artwork from YouTube, Spotify and

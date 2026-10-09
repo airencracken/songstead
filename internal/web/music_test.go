@@ -27,7 +27,7 @@ func TestAccountSpoilerPreferencesAndFeedbackNotice(t *testing.T) {
 	}
 	path := "/recommendations/" + strconv.FormatInt(id, 10)
 	w := b.request("GET", "/account", nil)
-	for _, want := range []string{`>Account</a>`, `name="mode"`, `Spoiler preferences`, `action="/account/annotations"`} {
+	for _, want := range []string{`>Your settings</a>`, `aria-label="Your settings sections"`, `href="#discovery-preferences"`, `id="change-password"`, `id="your-data"`, `name="mode"`, `Spoiler preferences`, `action="/account/annotations"`} {
 		if w.Code != 200 || !strings.Contains(w.Body.String(), want) {
 			t.Fatal("undiscoverable preferences", want, w.Code)
 		}
@@ -121,7 +121,15 @@ func TestLabelsDiscoveryAndLayoutHTTPContracts(t *testing.T) {
 			t.Fatal("all music or layout missing", w.Code, w.Body.String())
 		}
 		if (layout == "tiles") != strings.Contains(w.Body.String(), `class="tile-artwork"`) {
-			t.Fatal("tile fallback missing or leaked into chips")
+			t.Fatal("tile fallback missing or leaked into list")
+		}
+		if (layout == "chips") != strings.Contains(w.Body.String(), `class="list-artwork"`) || !strings.Contains(w.Body.String(), `data-artwork-holder`) || !strings.Contains(w.Body.String(), `class="artwork-placeholder"`) {
+			t.Fatal("list artwork or fallback missing", layout)
+		}
+		for _, want := range []string{`class="browse-toolbar"`, `class="filter-grid"`, `>Apply filters</button>`, `>For you</a>`, `>All music</a>`, `href="/account#discovery-preferences"`} {
+			if !strings.Contains(w.Body.String(), want) {
+				t.Fatal("browse controls missing", want)
+			}
 		}
 	}
 	w = alice.request("GET", "/recent", nil)
@@ -179,7 +187,23 @@ func TestThumbnailRoutesAccessAndHeaders(t *testing.T) {
 	if !strings.Contains(w.Body.String(), `class="detail-artwork" src="`+path+`/thumbnail"`) || !strings.Contains(w.Header().Get("Content-Security-Policy"), "img-src 'self' blob:;") {
 		t.Fatal("detail missed local artwork", w.Code, w.Body.String())
 	}
+	for _, route := range []string{"/shelf", "/inbox", "/history"} {
+		if route == "/history" {
+			if w := b.request("POST", path+"/reaction", url.Values{"listening": {"listened"}, "rating": {"0"}}); w.Code != 303 {
+				t.Fatal("prepare history", w.Code)
+			}
+		}
+		for _, view := range []string{"music", "person", "group", "recommendations"} {
+			w := b.request("GET", route+"?view="+view, nil)
+			if w.Code != 200 || !strings.Contains(w.Body.String(), `class="list-artwork"`) || !strings.Contains(w.Body.String(), `src="`+path+`/thumbnail"`) {
+				t.Fatal("list artwork missing", route, view, w.Code)
+			}
+		}
+	}
 	carol := login(t, a, "carol")
+	if w := carol.request("GET", "/shelf", nil); w.Code != 200 || strings.Contains(w.Body.String(), `src="`+path+`/thumbnail"`) {
+		t.Fatal("private artwork appeared in stranger list", w.Code)
+	}
 	if w := carol.request("GET", path+"/thumbnail", nil); w.Code != 404 || bytes.Contains(w.Body.Bytes(), imageBytes.Bytes()) {
 		t.Fatal("thumbnail exposed to stranger", w.Code)
 	}

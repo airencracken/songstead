@@ -60,7 +60,7 @@ referring to several album tracks. Changes cannot shorten a duration below an
 already stored reference. A known duration yields a proportional interactive
 SVG timeline; offset links also work without JavaScript or a known duration.
 
-Choose **Account → Spoiler preferences** to set the account-wide mode:
+Choose **Your settings → Spoiler preferences** to set the account-wide mode:
 immediate, spoiler-free or hidden. The same selector on a recommendation updates
 this global preference, and both forms confirm a successful save.
 Spoiler-free comments appear only after your manually indicated position reaches
@@ -111,18 +111,18 @@ sensitivity. Descriptions follow each recommendation's audience and only its
 sender can edit them. Labels on a private send stay within that send, including
 when the same provider recording appears in another recommendation.
 
-Recent defaults to **Chips**. Choose **Tiles** and Browse for artwork cards;
+Recent defaults to **List** with compact covers. Choose **Tiles** for larger artwork cards;
 filters, audiences, grouping and pagination work in either layout. Shelf and
 History also offer both layouts. Genre and tag filters match exact names without
 case sensitivity. Pagination preserves the current layout and filters.
 
-In **Account → Discovery preferences**, list genres and tags to exclude or
+In **Your settings → Discovery preferences**, list genres and tags to exclude or
 prefer. These preferences are private, persisted per account and included in
 your export. They apply to Recent: an exclusion hides a matching recommendation
 from that view, even when another label is a favorite. Remaining favorites come
 first, then other music; each tier uses newest-first order. Unlabeled music stays
 visible. A preference neither changes access nor removes music from your shelf
-or history. Choose **All music, newest first** to temporarily bypass exclusions
+or history. Choose **All music** to temporarily bypass exclusions
 and favorites; clear preference fields and save to remove them permanently.
 
 YouTube, Spotify track/album/artist links and SoundCloud track/set links use
@@ -143,6 +143,19 @@ the new schema.
 Listening saves confirm beside the form and keep invalid drafts for correction.
 Export format 3 adds accessible labels and the exporting user's own discovery
 preferences. It never includes another user's preferences or private feedback.
+
+## Browsing controls and your settings
+
+Choose List or Tiles to change the layout immediately; both include locally cached
+artwork. For you uses your private exclusions and favorites, while All music
+browses everything shared here in newest-first order. Genre and tag buttons
+filter immediately. Open More filters to choose music kind, person, group or
+listening status, then Apply filters. These controls preserve applied choices.
+
+Open **Your settings** in the top navigation, or visit `/account`. Shortcuts on
+that page lead to your profile picture and animation preference, spoilers,
+genre/tag discovery preferences, password and history export. Instance owners
+configure their service separately through Admin.
 
 ## Link previews and profile pictures
 
