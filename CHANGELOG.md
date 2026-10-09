@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+- Add members-only profile pages, linked from recommendation senders and comment authors.
+- Let members optionally save a name, a plain-text bio and five labeled HTTP/HTTPS links in Your settings.
+- Keep credentials, private listening feedback and viewer preferences off profile pages.
+- Preserve drafts on validation errors and confirm successful saves; clearing all fields is supported.
+- Validate shared profile fields through Comfylib 0.1.5, without fetching external links.
+- Apply schema 8 and include only the exporting member’s profile details in account export format 5.
+
+
 ## 0.6.0
 
 - Add Recent → Comments for chronological reactions on music shared with everyone.

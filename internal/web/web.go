@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/airencracken/comfylib/clientip"
+	"github.com/airencracken/comfylib/memberprofile"
 	"github.com/airencracken/comfylib/reference"
 	"github.com/airencracken/comfylib/token"
 	"github.com/airencracken/songstead/internal/annotations"
@@ -67,6 +68,9 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
+	Biography                                                                           memberprofile.Profile
+	BiographyDraft                                                                      *memberprofile.Profile
+	ProfileMember                                                                       store.MemberProfile
 	AvailableGenres, AvailableTags                                                      []string
 	Profile                                                                             store.Profile
 	SocialImage                                                                         string
@@ -109,7 +113,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 			}
 		}
 	}
-	tmpl, err := template.New("pages").Funcs(template.FuncMap{
+	tmpl, err := template.New("pages").Funcs(template.FuncMap{"linkNumber": func(i int) int { return i + 1 },
 		"supportsMetadata": media.SupportsMetadata,
 		"browseURL":        browseURL,
 		"joinLabels":       func(values []string) string { return strings.Join(values, ", ") },
@@ -166,6 +170,8 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /recommendations/{id}/preview", a.signedIn(a.savedPreview))
 	mux.HandleFunc("POST /recommendations/{id}/preview", a.signedIn(a.retryPreview))
 	mux.HandleFunc("GET /users/{id}/picture", a.signedIn(a.profilePicture))
+	mux.HandleFunc("GET /members/{id}", a.signedIn(a.memberProfile))
+	mux.HandleFunc("POST /account/profile", a.signedIn(a.saveMemberProfile))
 	mux.HandleFunc("POST /account/picture", a.signedIn(a.saveProfilePicture))
 	mux.HandleFunc("POST /account/animation", a.signedIn(a.saveAnimationPreference))
 	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.detail))
@@ -280,7 +286,10 @@ func (a *App) middleware(next http.Handler) http.Handler {
 				}
 				return
 			}
-			for _, values := range r.PostForm {
+			for name, values := range r.PostForm {
+				if r.URL.Path == "/account/profile" && (name == "profile_link_label" || name == "profile_link_url") && len(values) <= memberprofile.MaxLinks {
+					continue
+				}
 				if len(values) != 1 {
 					http.Error(w, "duplicate form fields", 400)
 					return

@@ -186,7 +186,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	if err != nil || user.ID != id {
 		t.Fatal("migration changed data")
 	}
-	if _, err := s.db.Exec("PRAGMA user_version=8"); err != nil {
+	if _, err := s.db.Exec("PRAGMA user_version=9"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()
@@ -200,7 +200,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	defer db.Close()
 	var version int
 	db.QueryRow("PRAGMA user_version").Scan(&version)
-	if version != 8 {
+	if version != 9 {
 		t.Fatal("modified newer schema")
 	}
 }
@@ -440,7 +440,7 @@ func TestConcurrentSubmissionsRemainDistinctAndComplete(t *testing.T) {
 
 func TestSnapshotSchemaValidation(t *testing.T) {
 	ctx := context.Background()
-	for _, table := range []string{"sessions", "comments", "metadata_jobs"} {
+	for _, table := range []string{"sessions", "comments", "metadata_jobs", "member_profiles"} {
 		path := filepath.Join(t.TempDir(), "snapshot.db")
 		s, err := Open(path)
 		if err != nil {

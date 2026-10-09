@@ -352,11 +352,38 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.getByText('SECRET feed annotation at 0:40',{exact:true}).waitFor();
   check(!(await bobby.locator('main').innerText()).includes('SECRET private feed conversation'),'Immediate annotation mode keeps private comments out');
 
+  // Optional member profiles work through HTMX and ordinary browser forms.
+  for (const member of [bobby,native]) {
+    await member.goto(base+'/account');
+    await member.getByLabel('Name (optional)',{exact:true}).fill('A demo name');
+    await member.getByLabel('Bio (optional)',{exact:true}).fill('A short bio.\nMusic, books and rainy walks.');
+    await member.locator('input[name="profile_link_label"]').first().fill('My music');
+    await member.locator('input[name="profile_link_url"]').first().fill('https://music.example.org/');
+    await member.getByRole('button',{name:'Save profile',exact:true}).click();
+    await member.waitForURL('**/account?saved=profile*');
+    await member.getByRole('status').filter({hasText:'Profile saved.'}).waitFor();
+    check(await member.getByLabel('Name (optional)',{exact:true}).inputValue()==='A demo name','Profile name survives save');
+    await member.getByRole('link',{name:'View your profile',exact:true}).click();
+    await member.waitForURL('**/members/2');
+    check(await member.getByRole('heading',{name:'bobby',exact:true}).count()===1,'Username remains the profile identity');
+    const link=member.getByRole('link',{name:'My music',exact:true});
+    check(await link.getAttribute('target')==='_blank' && (await link.getAttribute('rel')).includes('noopener'),'Profile links open safely');
+    check((await member.locator('main').innerText()).includes('Music, books and rainy walks.'),'Profile bio is visible');
+    await member.getByRole('link',{name:'Edit your profile',exact:true}).click();
+    await member.waitForURL('**/account#your-profile');
+  }
+  await alice.goto(base+'/members/2');
+  check(await alice.getByRole('link',{name:'Edit your profile',exact:true}).count()===0,'Members cannot edit someone else’s profile');
+  await bobby.goto(base+'/recent/comments');
+  await bobby.locator('.comment-copy strong a').first().click();
+  await bobby.waitForURL('**/members/2');
+  check((await bobby.locator('main').innerText()).includes('A demo name'),'Comment authors lead to profiles');
+
   for (const [width,theme] of [[1280,'light'],[390,'dark']]) {
     await bobby.setViewportSize({width,height:1000});
     await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);
     await bobby.getByLabel('Color theme',{exact:true}).selectOption(theme);
-    for (const route of ['/recent?layout=tiles&discovery=all','/recent','/recent/comments',favorite,'/account']) {
+    for (const route of ['/recent?layout=tiles&discovery=all','/recent','/recent/comments','/members/2',favorite,'/account']) {
       await bobby.goto(base+route);
       check(await bobby.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`No overflow on ${route} at ${width}`);
       if (route==='/recent') {

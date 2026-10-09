@@ -12,7 +12,7 @@ without Witmoot accounts, direct drafts and native local comments.
 
 Tests also exercise metadata API contracts and bounded artwork fetching, provider
 and DNS allowlists, private thumbnail routes, audience-scoped labels, sender-only
-editing, genre/tag validation, failed-write rollback, schema upgrades through 7,
+editing, genre/tag validation, failed-write rollback, schema upgrades through 8,
 backup compatibility, exports, persisted preferences, favorite ordering and
 pagination, exclusions, account spoiler settings and saved-feedback notices.
 Tests also cover preview API and authorization contracts, account motion settings,
@@ -37,7 +37,7 @@ SoundCloud sample recordings. Spotify supports both its documented image host
 and the current CDN returned by its public oEmbed endpoint.
 
 Real Bubblewrap integration passes with the new schema and static executable.
-The URL parser also passes a bounded fuzz run. Comfylib is pinned at v0.1.4;
+The URL parser also passes a bounded fuzz run. Comfylib is pinned at v0.1.5;
 its new profile-image package keeps validated GIF animations and PNG stills.
 Existing artwork uses the shared brand-image normalizer. Companion apps retain
 their own pins and require no changes.
@@ -114,3 +114,8 @@ and disposable accounts. Funding links match the companion applications.
 
 Publication updates repositories and release artifacts. Upgrading services and
 deploying the website document root remain host operations.
+
+Member profile checks cover optional fields, member-only routes, identity isolation,
+Unicode boundaries, unsafe links, duplicate fields, atomic rollback, upgrade defaults,
+account exports, disabled accounts and linked authors. Browser checks exercise profile
+editing with and without JavaScript, responsive layouts and accessibility.

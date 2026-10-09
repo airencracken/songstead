@@ -34,8 +34,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 7 {",
-    "after": "if version > 8 {",
+    "before": "if version > 8 {",
+    "after": "if version > 9 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -194,8 +194,8 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 7 {",
-    "after": "if false && currentOnly && version != 7 {",
+    "before": "if currentOnly && version != 8 {",
+    "after": "if false && currentOnly && version != 8 {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
   },
@@ -486,5 +486,45 @@
     "after": "<a href=\"/recommendations/{{.RecommendationID}}\">View comment &amp; conversation</a>",
     "package": "./internal/web",
     "run": "^TestRecentCommentsRoutesPrivacySpoilersAndPagination$"
+  },
+  {
+    "name": "member profile authentication",
+    "file": "internal/web/web.go",
+    "before": "a.signedIn(a.memberProfile)",
+    "after": "a.memberProfile",
+    "package": "./internal/web",
+    "run": "^TestMemberProfileRoutesOwnershipPrivacyAndExport$"
+  },
+  {
+    "name": "member profile actor ownership",
+    "file": "internal/web/member_profiles.go",
+    "before": "a.store.SetMemberProfile(r.Context(), state(r).User.ID, p)",
+    "after": "a.store.SetMemberProfile(r.Context(), state(r).User.ID+1, p)",
+    "package": "./internal/web",
+    "run": "^TestMemberProfileRoutesOwnershipPrivacyAndExport$"
+  },
+  {
+    "name": "member profile active write boundary",
+    "file": "internal/store/member_profiles.go",
+    "before": "SELECT id,?,?,? FROM users WHERE id=? AND suspended=0",
+    "after": "SELECT id,?,?,? FROM users WHERE id=?",
+    "package": "./internal/store",
+    "run": "^TestMemberProfileStorageAtomicitySchemaAndProperties$"
+  },
+  {
+    "name": "member profile normalization before write",
+    "file": "internal/store/member_profiles.go",
+    "before": "p, err := memberprofile.Normalize(p)",
+    "after": "p, err := p, error(nil)",
+    "package": "./internal/store",
+    "run": "^TestMemberProfileStorageAtomicitySchemaAndProperties$"
+  },
+  {
+    "name": "member profile repeated fields route boundary",
+    "file": "internal/web/web.go",
+    "before": "r.URL.Path == \"/account/profile\" && (name ==",
+    "after": "true && (name ==",
+    "package": "./internal/web",
+    "run": "^TestMemberProfileFormArraysAreRouteScoped$"
   }
 ]

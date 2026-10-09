@@ -2,7 +2,11 @@
 
 package store
 
-import "context"
+import (
+	"context"
+
+	"github.com/airencracken/comfylib/memberprofile"
+)
 
 type ExportRecording struct {
 	MediaID int64
@@ -13,17 +17,18 @@ type ExportDiscussion struct {
 	URL     string
 }
 type Archive struct {
-	Profile              Profile              `json:"profile"`
-	DiscoveryPreferences DiscoveryPreferences `json:"discovery_preferences"`
-	AnnotationMode       string               `json:"annotation_mode"`
-	Recordings           []ExportRecording    `json:"recordings"`
-	Groups               []Group              `json:"groups"`
-	Discussions          []ExportDiscussion   `json:"discussions"`
-	Format               string               `json:"format"`
-	Version              int                  `json:"version"`
-	User                 User                 `json:"user"`
-	Recommendations      []Recommendation     `json:"recommendations"`
-	Comments             []ExportComment      `json:"comments"`
+	Biography            memberprofile.Profile `json:"profile_details"`
+	Profile              Profile               `json:"profile"`
+	DiscoveryPreferences DiscoveryPreferences  `json:"discovery_preferences"`
+	AnnotationMode       string                `json:"annotation_mode"`
+	Recordings           []ExportRecording     `json:"recordings"`
+	Groups               []Group               `json:"groups"`
+	Discussions          []ExportDiscussion    `json:"discussions"`
+	Format               string                `json:"format"`
+	Version              int                   `json:"version"`
+	User                 User                  `json:"user"`
+	Recommendations      []Recommendation      `json:"recommendations"`
+	Comments             []ExportComment       `json:"comments"`
 }
 type ExportComment struct {
 	RecommendationID int64
@@ -34,12 +39,17 @@ type ExportComment struct {
 // reactions and personal notes, and comments they authored. Credentials and
 // other people's private reactions never enter the archive types.
 func (s *Store) Export(ctx context.Context, user User) (Archive, error) {
-	archive := Archive{Format: "songstead-account", Version: 4, User: user, Recommendations: []Recommendation{}, Comments: []ExportComment{}}
+	archive := Archive{Format: "songstead-account", Version: 5, User: user, Recommendations: []Recommendation{}, Comments: []ExportComment{}}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return archive, err
 	}
 	defer tx.Rollback()
+	member, err := readMemberProfile(ctx, tx, user.ID)
+	if err != nil {
+		return archive, err
+	}
+	archive.Biography = member.Biography
 	archive.Profile, err = readProfile(ctx, tx, user.ID)
 	if err != nil {
 		return archive, err

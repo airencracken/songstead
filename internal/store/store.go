@@ -105,14 +105,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 7 {
+	if version > 8 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 7 {
+	if currentOnly && version != 8 {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 7; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql"}[next]
+	for next := version + 1; next <= 8; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err

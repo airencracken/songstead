@@ -148,7 +148,7 @@ func TestSchemaSixUpgradeRetriesMissingArtwork(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.Exec("UPDATE metadata_jobs SET attempts=3; DROP TABLE user_profiles; PRAGMA user_version=6"); err != nil {
+	if _, err = s.db.Exec("UPDATE metadata_jobs SET attempts=3; DROP TABLE member_profiles; DROP TABLE user_profiles; PRAGMA user_version=6"); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "old.db")

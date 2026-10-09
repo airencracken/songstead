@@ -134,7 +134,7 @@ func TestOwnerMigrationAndLegacySnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec("DROP TABLE user_profiles; DROP TABLE media_artwork; DROP TABLE recommendation_labels; DROP TABLE discovery_preferences; DROP TABLE branding_assets; DROP TABLE password_resets; DROP TABLE invitations; DROP TABLE instance_settings; ALTER TABLE users DROP COLUMN invited_by; ALTER TABLE users DROP COLUMN can_invite; ALTER TABLE users DROP COLUMN suspended; ALTER TABLE users DROP COLUMN role; PRAGMA user_version=3;"); err != nil {
+	if _, err := s.db.Exec("DROP TABLE member_profiles; DROP TABLE user_profiles; DROP TABLE media_artwork; DROP TABLE recommendation_labels; DROP TABLE discovery_preferences; DROP TABLE branding_assets; DROP TABLE password_resets; DROP TABLE invitations; DROP TABLE instance_settings; ALTER TABLE users DROP COLUMN invited_by; ALTER TABLE users DROP COLUMN can_invite; ALTER TABLE users DROP COLUMN suspended; ALTER TABLE users DROP COLUMN role; PRAGMA user_version=3;"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()

@@ -101,7 +101,7 @@ and animation while retaining transparency. Invalid images leave both assets
 unchanged.
 
 Songstead follows Witmoot and Imvault's owner settings, invitation creation and
-recovery patterns. Comfylib v0.1.4 supplies shared password confirmation and image
+recovery patterns. Comfylib v0.1.5 supplies shared password confirmation and image
 normalization, alongside existing tokens, session CSRF, trusted proxy resolution,
 service configuration and privilege dropping. Application roles, SQLite schemas,
 joining policy and music access rules remain in Songstead.
@@ -113,3 +113,12 @@ Recent, alongside password changes and export. Users can exclude genres or tags
 or bring favorites to the top. These are personal settings, separate from owner
 instance settings. Senders manage their recommendation's shared genre and tags;
 these labels follow its audience. See [music and annotation behavior](quiet-inbox.md).
+
+## Your member profile
+
+Your settings includes Your profile: optionally save a name, a plain-text bio
+and up to five labeled HTTP/HTTPS links. View your profile previews what other
+signed-in members can see. Usernames stay unchanged; blank fields are allowed.
+Clear both a link’s label and address to remove it. Names in recommendations and
+comments link to profiles. Profiles omit private music, listening feedback, email,
+credentials and preferences. Your own export includes your profile.

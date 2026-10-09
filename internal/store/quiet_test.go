@@ -199,7 +199,7 @@ func TestAccountExportRetainsPrivateAnnotationSettingsAndReferences(t *testing.T
 	s.SetAnnotationMode(t.Context(), u[1], "hidden")
 	s.LinkDiscussion(t.Context(), u[1], id, "https://board.example/topics/2")
 	a, err := s.Export(t.Context(), User{ID: u[1], Username: "bobby"})
-	if err != nil || a.Version != 4 || a.AnnotationMode != "hidden" || len(a.Comments) != 1 || len(a.Comments[0].Offsets) != 1 || len(a.Recordings) != 1 || a.Recordings[0].Position != 200 || len(a.Discussions) != 1 {
+	if err != nil || a.Version != 5 || a.AnnotationMode != "hidden" || len(a.Comments) != 1 || len(a.Comments[0].Offsets) != 1 || len(a.Recordings) != 1 || a.Recordings[0].Position != 200 || len(a.Discussions) != 1 {
 		t.Fatal(a, err)
 	}
 }

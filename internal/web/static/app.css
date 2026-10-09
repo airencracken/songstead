@@ -120,3 +120,8 @@ main p a { text-decoration:underline; }
 .comment-copy p { margin-bottom:.6rem; }
 .comment-copy h2 { overflow-wrap:anywhere; }
 @media(max-width:480px) { .comment-activity { gap:.75rem; } .comment-artwork { flex-basis:56px; } .comment-artwork img { width:56px; height:42px; } }
+
+.member-profile { overflow-wrap:anywhere; }
+.profile-link-fields { border:1px solid var(--border); border-radius:.5rem; padding:.75rem; display:grid; gap:.5rem; min-width:0; }
+
+.member-profile .avatar, .member-profile .avatar img { width:72px; height:72px; }

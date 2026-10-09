@@ -12,7 +12,15 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.6.0
+## Songstead 0.7.0
+
+Members have a profile page linked from recommendations and comments. In Your
+settings, optionally add a name, a plain-text bio and up to five labeled web
+links. Profiles are visible only to signed-in members and never show private
+listening feedback, preferences or credentials. Your account export includes your
+own profile. Clear the fields to remove them; usernames stay unchanged.
+Back up the data directory before the schema 8 upgrade.
+
 
 Open **Recent → Comments** to discover conversations on music shared with everyone
 here. The feed is chronological, includes profile pictures and music artwork, and
@@ -21,8 +29,7 @@ stay out. Timestamped comments follow your saved spoiler preference and indicate
 listening positions. Older pages remain stable as new comments arrive.
 
 The feed includes earlier local comments when your host chooses Witmoot for new
-posts. Witmoot discussions remain on Witmoot. This release retains schema 7,
-export format 4 and Comfylib 0.1.4.
+posts. Witmoot discussions remain on Witmoot. This release uses schema 8, export format 5 and Comfylib 0.1.5.
 
 
 Owners choose **Discussion location** in Admin: Songstead for comments here,
@@ -83,7 +90,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.1.4 and verified module checksums.
+Release builds use published Comfylib v0.1.5 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh

@@ -27,7 +27,7 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	}
 	// Previous releases used schemas 3 and 4. Restore them unchanged; the
 	// server applies forward migrations on its next start.
-	if version != 3 && version != 4 && version != 5 && version != 6 && version != 7 {
+	if version != 3 && version != 4 && version != 5 && version != 6 && version != 7 && version != 8 {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string
@@ -130,6 +130,15 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 			if err := rows.Close(); err != nil {
 				return err
 			}
+		}
+	}
+	if version >= 8 {
+		rows, err := db.QueryContext(ctx, "SELECT user_id,name,bio,links FROM member_profiles LIMIT 0")
+		if err != nil {
+			return err
+		}
+		if err = rows.Close(); err != nil {
+			return err
 		}
 	}
 	if version >= 7 {
