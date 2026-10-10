@@ -142,7 +142,7 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertFalse([p for p in tracked if "__pycache__/" in p or p.endswith((".pyc",".pyo"))])
     def test_agpl_stack_and_version(self):
         self.assertIn("GNU AFFERO GENERAL PUBLIC LICENSE", (ROOT/"LICENSE").read_text())
-        self.assertEqual((ROOT/"VERSION").read_text().strip(),"0.7.0")
+        self.assertEqual((ROOT/"VERSION").read_text().strip(),"0.8.0")
         self.assertIn("modernc.org/sqlite",(ROOT/"go.mod").read_text())
         self.assertTrue((ROOT/"internal/web/static/htmx.min.js").is_file())
         make=(ROOT/"Makefile").read_text()
@@ -171,9 +171,9 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
 
     def test_release_guides_and_library_pin_are_self_contained(self):
         guide = (ROOT / "docs/releases.md").read_text()
-        for requirement in ("songstead_0.7.0_linux_amd64.tar.gz", "songstead_0.7.0_checksums.txt",
+        for requirement in ("songstead_0.8.0_linux_amd64.tar.gz", "songstead_0.8.0_checksums.txt",
                             "sha256sum --check --ignore-missing", "GOWORK=off make check build",
-                            "=www-apps/songstead-0.7.0::comfyware"):
+                            "=www-apps/songstead-0.8.0::comfyware"):
             self.assertIn(requirement, guide)
         module = (ROOT / "go.mod").read_text()
         self.assertIn("github.com/airencracken/comfylib v0.1.5", module)

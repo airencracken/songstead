@@ -119,3 +119,14 @@ Member profile checks cover optional fields, member-only routes, identity isolat
 Unicode boundaries, unsafe links, duplicate fields, atomic rollback, upgrade defaults,
 account exports, disabled accounts and linked authors. Browser checks exercise profile
 editing with and without JavaScript, responsive layouts and accessibility.
+
+## Search
+
+Search regression tests cover every audience, active and suspended viewers,
+Unicode case mapping, literal SQL/wildcard input, query bounds, read-only export
+stability, and stable cursors after new music/comments arrive. Comment search is
+compared against the detail page's spoiler projection over all three preferences
+and listening positions 0–65. Hidden comments cannot crowd out pages. Browser
+checks exercise boosted and native forms, thumbnails, mobile layouts and
+accessibility. Mutation tests remove authentication, spoiler rules, viewer checks,
+Unicode mapping and cursor boundaries, and attempt to search private reaction notes.

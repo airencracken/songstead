@@ -125,3 +125,6 @@ main p a { text-decoration:underline; }
 .profile-link-fields { border:1px solid var(--border); border-radius:.5rem; padding:.75rem; display:grid; gap:.5rem; min-width:0; }
 
 .member-profile .avatar, .member-profile .avatar img { width:72px; height:72px; }
+
+.search-form { display:grid; gap:.6rem; max-width:48rem; margin-bottom:1rem; }
+.search-form input { min-width:0; }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0
+
+- Add signed-in search for music titles, artists, genres, tags and shared messages.
+- Search authorized conversations, including private sends and groups, with spoiler rules applied before pagination.
+- Match literal substrings with Unicode-aware case mapping; exclude personal listening notes and ratings.
+- Include thumbnails, stable older-result links and native browser forms.
+- Preserve schema 8 and Comfylib 0.1.5.
+
+
 ## 0.7.0
 
 - Add members-only profile pages, linked from recommendation senders and comment authors.

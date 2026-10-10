@@ -15,7 +15,7 @@ const directory = await mkdtemp(resolve(tmpdir(), 'songstead-music-browser-'));
 const environment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('SONGSTEAD_')));
 const password = 'a-browser-test-password';
 let app, browser, checks = 0;
-const check = (condition, message) => { assert.ok(condition, message); checks++; };
+const check = (condition, message) => { assert.ok(condition, message); checks++; if (process.env.BROWSER_PROGRESS) console.log(`Check ${checks}: ${message}`); };
 const failures = [], external = [];
 try {
   for (const [command, username] of [['create-owner','alice'], ['create-user','bobby']]) {
@@ -352,6 +352,30 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.getByText('SECRET feed annotation at 0:40',{exact:true}).waitFor();
   check(!(await bobby.locator('main').innerText()).includes('SECRET private feed conversation'),'Immediate annotation mode keeps private comments out');
 
+  // Search navigation and results work through HTMX and native GET forms.
+  for (const member of [bobby,await session('bobby',false)]) {
+    await member.goto(`${base}/recent`);
+    await member.getByRole('link',{name:'Search',exact:true}).click();
+    await member.waitForURL('**/search');
+    await member.getByLabel('Search words',{exact:true}).fill('Jazz');
+    await member.getByRole('button',{name:'Search',exact:true}).click();
+    await member.waitForURL('**/search?**');
+    check(await member.getByRole('heading',{name:'Porchlight sessions',exact:true}).count()===1,'Search finds music with native and boosted forms');
+    check(await member.locator('.list-artwork img[src$="/thumbnail"]').count()>0,'Search results include thumbnails');
+    await member.getByLabel('Search in',{exact:true}).selectOption('comments');
+    await member.getByLabel('Search words',{exact:true}).fill('no-matching-comment');
+    await member.getByRole('button',{name:'Search',exact:true}).click();
+    await member.getByRole('heading',{name:'No matching comments.',exact:true}).waitFor();
+    check((await member.locator('main').innerText()).includes('spoiler preference'),'Search explains comment visibility');
+    for (const width of [320,390,1280]) {
+      await member.setViewportSize({width,height:900});
+      check(await member.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Search fits narrow screens');
+    }
+    if (member===bobby) {
+      const audit=await new AxeBuilder({page:member}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
+      check(audit.violations.length===0,'Search has no accessibility violations');
+    }
+  }
   // Optional member profiles work through HTMX and ordinary browser forms.
   for (const member of [bobby,native]) {
     await member.goto(base+'/account');

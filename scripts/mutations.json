@@ -526,5 +526,69 @@
     "after": "true && (name ==",
     "package": "./internal/web",
     "run": "^TestMemberProfileFormArraysAreRouteScoped$"
+  },
+  {
+    "name": "search music authentication",
+    "file": "internal/web/web.go",
+    "before": "a.signedIn(a.search)",
+    "after": "a.search",
+    "package": "./internal/web",
+    "run": "^TestSearchRoutesPrivacySpoilersAndPagination$"
+  },
+  {
+    "name": "search comments honors spoiler visibility",
+    "file": "internal/store/search.go",
+    "before": "commentVisible",
+    "after": "\"1=1\"",
+    "package": "./internal/store",
+    "run": "^TestSearchSpoilerPropertiesAndCursorPagination$"
+  },
+  {
+    "name": "search excludes personal reaction notes",
+    "file": "internal/store/search.go",
+    "before": "songstead_fold(r.note)",
+    "after": "songstead_fold(x.note)",
+    "package": "./internal/store",
+    "run": "^TestSearchAudienceLiteralUnicodeAndReadOnly$"
+  },
+  {
+    "name": "search music active viewer",
+    "file": "internal/store/search.go",
+    "before": "v.suspended=0)\n",
+    "after": "v.suspended>=0)\n",
+    "package": "./internal/store",
+    "run": "^TestSearchAudienceLiteralUnicodeAndReadOnly$"
+  },
+  {
+    "name": "search comment cursor excludes previous boundary",
+    "file": "internal/store/search.go",
+    "before": "c.id<?",
+    "after": "c.id<=?",
+    "package": "./internal/store",
+    "run": "^TestSearchSpoilerPropertiesAndCursorPagination$"
+  },
+  {
+    "name": "search music cursor excludes previous boundary",
+    "file": "internal/store/search.go",
+    "before": "r.id<?",
+    "after": "r.id<=?",
+    "package": "./internal/store",
+    "run": "^TestSearchSpoilerPropertiesAndCursorPagination$"
+  },
+  {
+    "name": "search Unicode case mapping",
+    "file": "internal/store/search.go",
+    "before": "return strings.ToLower(value), nil",
+    "after": "return value, nil",
+    "package": "./internal/store",
+    "run": "^TestSearchAudienceLiteralUnicodeAndReadOnly$"
+  },
+  {
+    "name": "search duplicate query parameters",
+    "file": "internal/web/search.go",
+    "before": "if len(values[key]) > 1 {",
+    "after": "if len(values[key]) > 2 {",
+    "package": "./internal/web",
+    "run": "^TestSearchRoutesPrivacySpoilersAndPagination$"
   }
 ]

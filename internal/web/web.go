@@ -68,6 +68,8 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
+	Query, SearchKind string
+
 	Biography                                                                           memberprofile.Profile
 	BiographyDraft                                                                      *memberprofile.Profile
 	ProfileMember                                                                       store.MemberProfile
@@ -161,6 +163,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /{$}", a.signedIn(a.shelf))
 	mux.HandleFunc("GET /inbox", a.signedIn(a.shelf))
 	mux.HandleFunc("GET /shelf", a.signedIn(a.shelf))
+	mux.HandleFunc("GET /search", a.signedIn(a.search))
 	mux.HandleFunc("GET /recent", a.signedIn(a.recent))
 	mux.HandleFunc("GET /recent/comments", a.signedIn(a.recentComments))
 	mux.HandleFunc("GET /history", a.signedIn(a.history))
@@ -348,7 +351,9 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	_, _ = w.Write(buf.Bytes())
+	if r.Method != http.MethodHead {
+		_, _ = w.Write(buf.Bytes())
+	}
 }
 func (a *App) fail(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.Is(err, store.ErrForbidden) {

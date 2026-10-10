@@ -12,6 +12,15 @@ type RecentComment struct {
 	HasArtwork       bool
 }
 
+const commentVisible = `NOT EXISTS (
+  SELECT 1 FROM annotation_offsets o WHERE o.comment_id=c.id
+  AND v.annotation_mode<>'immediate'
+  AND (v.annotation_mode<>'spoiler-free' OR NOT EXISTS (
+   SELECT 1 FROM listening_positions p WHERE p.user_id=v.id
+   AND p.recording_id=o.recording_id AND p.seconds>=o.seconds
+  ))
+ )`
+
 // RecentComments follows Recent's explicit instance audience. Apply spoiler
 // rules before LIMIT so concealed comments cannot crowd out a page or disclose
 // their existence through pagination. Comment IDs give stable append order even
@@ -30,14 +39,7 @@ func (s *Store) RecentComments(ctx context.Context, viewer, before int64, limit 
  JOIN users v ON v.id=? AND v.suspended=0
  WHERE r.visibility='members' AND `+visible+`
  AND (?=0 OR c.id<?)
- AND NOT EXISTS (
-  SELECT 1 FROM annotation_offsets o WHERE o.comment_id=c.id
-  AND v.annotation_mode<>'immediate'
-  AND (v.annotation_mode<>'spoiler-free' OR NOT EXISTS (
-   SELECT 1 FROM listening_positions p WHERE p.user_id=v.id
-   AND p.recording_id=o.recording_id AND p.seconds>=o.seconds
-  ))
- )
+ AND `+commentVisible+`
  ORDER BY c.id DESC LIMIT ?`, viewer, viewer, viewer, viewer, before, before, limit)
 	if err != nil {
 		return nil, err

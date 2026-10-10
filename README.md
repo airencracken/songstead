@@ -12,7 +12,17 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.7.0
+## Songstead 0.8.0
+
+Use **Search** in the navigation to find titles, artists, genres, tags, or words
+from shared messages. Choose **Comments** to search conversations, including
+private sends and groups you can access. Queries match literal substrings,
+ignoring case with Unicode-aware letter mapping. Personal listening notes and
+ratings are never searched. Timestamped comments follow your spoiler preference
+and listening positions before pagination; search never reveals them on its own.
+Older matches use stable cursors and both result types include local thumbnails.
+Search works with or without JavaScript and needs no new database migration.
+
 
 Members have a profile page linked from recommendations and comments. In Your
 settings, optionally add a name, a plain-text bio and up to five labeled web
