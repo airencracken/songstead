@@ -12,7 +12,10 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.8.0
+## Songstead 0.9.0
+
+The running service now makes bounded compressed backups automatically.
+See [automatic backups](docs/automatic-backups.md) for recovery and limits.
 
 Use **Search** in the navigation to find titles, artists, genres, tags, or words
 from shared messages. Choose **Comments** to search conversations, including
@@ -39,7 +42,7 @@ stay out. Timestamped comments follow your saved spoiler preference and indicate
 listening positions. Older pages remain stable as new comments arrive.
 
 The feed includes earlier local comments when your host chooses Witmoot for new
-posts. Witmoot discussions remain on Witmoot. This release uses schema 8, export format 5 and Comfylib 0.1.5.
+posts. Witmoot discussions remain on Witmoot. This release uses schema 8, export format 5 and Comfylib 0.1.6.
 
 
 Owners choose **Discussion location** in Admin: Songstead for comments here,
@@ -100,7 +103,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.1.5 and verified module checksums.
+Release builds use published Comfylib v0.1.6 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh
@@ -250,3 +253,11 @@ built-in imagegen artwork. HTMX's license is bundled; see
 You can [support Songstead on Ko-fi](https://ko-fi.com/airencracken).
 
 See [Bubblewrap service isolation](docs/sandbox.md) for the optional confined launcher and native service settings.
+
+## Automatic backups
+
+Songstead 0.9.0 backs itself up daily while running, using zstd when
+available and gzip otherwise. It keeps at most seven copies within a 10 GiB
+archive cap and bounds each uncompressed copy to 5 GiB. Owners can check status
+in instance settings. See [automatic backups](docs/automatic-backups.md) for
+configuration, retention, off-host copies and recovery.

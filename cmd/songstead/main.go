@@ -67,6 +67,8 @@ set-password revokes all sessions. list-users prints account IDs, names, and rol
 Account and backup commands discover the installed service's data directory unless
 --data-dir or SONGSTEAD_DATA_DIR is set. Root invocations run as the service user.
 Service settings: /etc/conf.d/songstead (OpenRC), /etc/songstead/songstead.env (systemd).
+Built-in backups: SONGSTEAD_BACKUP_INTERVAL (24h; 0 disables), SONGSTEAD_BACKUP_KEEP (7),
+SONGSTEAD_BACKUP_MAX_BYTES (10 GiB), SONGSTEAD_BACKUP_COPY_MAX_BYTES (5 GiB).
 Environment: SONGSTEAD_DATA_DIR, SONGSTEAD_ADDR, SONGSTEAD_SECURE_COOKIES,
 SONGSTEAD_TRUSTED_PROXIES (comma-separated proxy IPs or CIDRs),
 SONGSTEAD_BASE_URL, SONGSTEAD_WITMOOT_URL (optional discussion handoffs), SONGSTEAD_BWRAP.
@@ -255,7 +257,7 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 	case "backup":
 		return backup(ctx, s, output)
 	default:
-		return serve(ctx, s, addr)
+		return serve(ctx, s, addr, *data)
 	}
 }
 
@@ -274,7 +276,7 @@ func readPassword(in io.Reader) (string, error) {
 	return password, nil
 }
 
-func serve(ctx context.Context, s *store.Store, addr string) error {
+func serve(ctx context.Context, s *store.Store, addr, dataDir string) error {
 	secure := false
 	if value := os.Getenv("SONGSTEAD_SECURE_COOKIES"); value != "" {
 		var err error
@@ -287,14 +289,19 @@ func serve(ctx context.Context, s *store.Store, addr string) error {
 	if err != nil {
 		return err
 	}
-	a, err := web.New(s, web.Config{Version: version, WitmootURL: os.Getenv("SONGSTEAD_WITMOOT_URL"), BaseURL: os.Getenv("SONGSTEAD_BASE_URL"), SecureCookies: secure, TrustedProxies: trusted})
+	backups, err := automaticBackups(s, dataDir)
+	if err != nil {
+		return err
+	}
+	a, err := web.New(s, web.Config{Backups: backups, Version: version, WitmootURL: os.Getenv("SONGSTEAD_WITMOOT_URL"), BaseURL: os.Getenv("SONGSTEAD_BASE_URL"), SecureCookies: secure, TrustedProxies: trusted})
 	if err != nil {
 		return err
 	}
 	server := &http.Server{Addr: addr, Handler: a, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16384}
 	workerCtx, cancel := context.WithCancel(ctx)
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
+	go func() { defer wg.Done(); backups.Run(workerCtx) }()
 	go func() { defer wg.Done(); metadataWorker(workerCtx, s) }()
 	defer func() { cancel(); wg.Wait() }()
 	done := make(chan error, 1)

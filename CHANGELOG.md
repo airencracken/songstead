@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.0
+
+Daily compressed automatic backups with bounded retention and owner-only status.
+See [automatic backups](docs/automatic-backups.md). No new schema migration.
+
 ## 0.8.0
 
 - Add signed-in search for music titles, artists, genres, tags and shared messages.

@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/airencracken/comfylib/autobackup"
 	"html/template"
 	"io/fs"
 	"log/slog"
@@ -35,6 +36,8 @@ import (
 var assets embed.FS
 
 type Config struct {
+	Backups *autobackup.Runner
+
 	WitmootURL, BaseURL, Version string
 	SecureCookies                bool
 	TrustedProxies               []netip.Prefix
@@ -68,6 +71,8 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
+	Backups autobackup.Status
+
 	Query, SearchKind string
 
 	Biography                                                                           memberprofile.Profile
@@ -323,6 +328,9 @@ func (a *App) signedIn(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page) {
+	if p.View == "settings" {
+		p.Backups = a.config.Backups.Status()
+	}
 	st := state(r)
 	p.User, p.CSRF = st.User, st.CSRF
 	p.Settings = st.Settings

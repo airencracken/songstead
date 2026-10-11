@@ -64,7 +64,7 @@ func (a *App) inviter(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 func (a *App) settingsForm(w http.ResponseWriter, r *http.Request) {
-	p := page{View: "settings", Title: "Instance settings"}
+	p := page{Backups: a.config.Backups.Status(), View: "settings", Title: "Instance settings"}
 	if r.URL.Query().Get("saved") == "1" {
 		p.Notice = "Settings saved. Changes are already in effect."
 	}

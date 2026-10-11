@@ -37,7 +37,7 @@ SoundCloud sample recordings. Spotify supports both its documented image host
 and the current CDN returned by its public oEmbed endpoint.
 
 Real Bubblewrap integration passes with the new schema and static executable.
-The URL parser also passes a bounded fuzz run. Comfylib is pinned at v0.1.5;
+The URL parser also passes a bounded fuzz run. Comfylib is pinned at v0.1.6;
 its new profile-image package keeps validated GIF animations and PNG stills.
 Existing artwork uses the shared brand-image normalizer. Companion apps retain
 their own pins and require no changes.

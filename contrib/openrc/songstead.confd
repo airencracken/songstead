@@ -11,3 +11,10 @@ SONGSTEAD_DATA_DIR="/var/lib/songstead"
 # Opt in to whole-service isolation with sys-apps/bubblewrap installed.
 SONGSTEAD_SANDBOX="false"
 # SONGSTEAD_BWRAP="/usr/bin/bwrap"
+
+# Built-in compressed backups: daily, seven copies, 10 GiB archive cap,
+# 5 GiB maximum uncompressed snapshot. Set interval to 0 to disable.
+# SONGSTEAD_BACKUP_INTERVAL="24h"
+# SONGSTEAD_BACKUP_KEEP="7"
+# SONGSTEAD_BACKUP_MAX_BYTES="10737418240"
+# SONGSTEAD_BACKUP_COPY_MAX_BYTES="5368709120"

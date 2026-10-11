@@ -5,7 +5,7 @@ HTML, HTMX, CSS and mascot assets. There is no asset server or required external
 service. Go 1.26 is needed to build; static binaries have no C library requirement.
 
 `make build` prepares a 0.5.0 binary in `bin/songstead`. Run
-`bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.5; see
+`bin/songstead --version` to inspect its build stamp. Published source builds use Comfylib v0.1.6; see
 [the release installation guide](releases.md).
 
 Create a service account and group named `songstead`, install the binary, and
@@ -110,3 +110,6 @@ See [administration](administration.md) for invitations and account recovery.
 Schema 6 adds recommendation labels, private discovery preferences and cached artwork.
 Existing supported links are queued for artwork after upgrade; original URLs and
 manual metadata remain intact. Restart the updated service before CLI commands.
+
+The running service also makes bounded compressed backups automatically; see
+[automatic backups](automatic-backups.md) for defaults, status and recovery.

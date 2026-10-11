@@ -590,5 +590,21 @@
     "after": "if len(values[key]) > 2 {",
     "package": "./internal/web",
     "run": "^TestSearchRoutesPrivacySpoilersAndPagination$"
+  },
+  {
+    "name": "automatic snapshot database cap",
+    "file": "internal/store/automatic_backup.go",
+    "before": "autobackup.CheckDatabase(ctx, s.db, limit)",
+    "after": "autobackup.CheckDatabase(ctx, s.db, 1<<62)",
+    "package": "./internal/store",
+    "run": "^TestAutomaticBackupRestoresPrivateStateAndRejectsCap$"
+  },
+  {
+    "name": "automatic snapshot verification",
+    "file": "internal/store/automatic_backup.go",
+    "before": "return ValidateSnapshot(ctx, path)",
+    "after": "return nil",
+    "package": "./internal/store",
+    "run": "^TestAutomaticBackupRejectsInvalidForeignKeys$"
   }
 ]
