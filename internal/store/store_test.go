@@ -67,7 +67,7 @@ func TestRecommendationsAndIndependentReactions(t *testing.T) {
 		t.Fatalf("revision: %+v %v", item, err)
 	}
 	other, err := s.Recommendation(ctx, u[0], id)
-	if err != nil || other.Listening != "unheard" || other.Rating != 0 || other.PersonalNote != "" {
+	if err != nil || other.Listening != "listened" || other.Rating != 0 || other.PersonalNote != "" {
 		t.Fatal("reaction leaked to sender", other, err)
 	}
 	duplicate, err := s.Recommendation(ctx, u[1], second)
@@ -119,14 +119,14 @@ func TestPermissions(t *testing.T) {
 func TestRecommendationAtomicity(t *testing.T) {
 	s, u := fixture(t)
 	ctx := context.Background()
-	for _, table := range []string{"recommendation_destinations", "metadata_jobs"} {
+	for _, table := range []string{"recommendation_destinations", "music_states", "metadata_jobs"} {
 		if _, err := s.db.Exec("CREATE TRIGGER refuse_insert BEFORE INSERT ON " + table + " BEGIN SELECT RAISE(ABORT,'injected failure'); END"); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := s.Recommend(ctx, u[0], u[1], "https://youtu.be/dQw4w9WgXcQ", "note"); err == nil {
 			t.Fatal("injected failure accepted")
 		}
-		for _, target := range []string{"media", "recommendations", "recommendation_destinations", "metadata_jobs"} {
+		for _, target := range []string{"media", "recommendations", "recommendation_destinations", "music_states", "metadata_jobs"} {
 			var n int
 			if err := s.db.QueryRow("SELECT count(*) FROM " + target).Scan(&n); err != nil || n != 0 {
 				t.Fatal("partial submission survived", target, n, err)
@@ -159,6 +159,10 @@ func TestSchemaConstraints(t *testing.T) {
 		{"INSERT INTO reactions VALUES(?,?, 'listened',2,'',1)", []any{id, u[1]}},
 		{"INSERT INTO reactions VALUES(999999,?,'listened',0,'',1)", []any{u[1]}},
 		{"INSERT INTO comments(recommendation_id,author_id,body,created_at) VALUES(?,?,'',1)", []any{id, u[0]}},
+		{"UPDATE music_states SET listening='invalid' WHERE user_id=?", []any{u[0]}},
+		{"UPDATE music_states SET user_id=999999 WHERE user_id=?", []any{u[0]}},
+		{"UPDATE music_states SET media_id=999999 WHERE user_id=?", []any{u[0]}},
+		{"INSERT INTO music_states SELECT * FROM music_states WHERE user_id=?", []any{u[0]}},
 	}
 	for _, q := range queries {
 		if _, err := s.db.Exec(q.sql, q.args...); err == nil {

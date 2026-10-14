@@ -57,7 +57,7 @@ func TestRecentAudienceIsolationAndPrivateState(t *testing.T) {
 	}
 	for _, viewer := range []int64{u[0], u[2]} {
 		item, err := s.Recommendation(ctx, viewer, shared)
-		if err != nil || item.PersonalNote != "" || item.Rating != 0 || item.Listening != "unheard" {
+		if err != nil || item.PersonalNote != "" || item.Rating != 0 || item.Listening != "listened" {
 			t.Fatal("shared post disclosed someone else's private state", item, err)
 		}
 		comments, err := s.Comments(ctx, viewer, shared)
@@ -78,8 +78,8 @@ func TestRecentAudienceIsolationAndPrivateState(t *testing.T) {
 		t.Fatal("shared posts delivered as inbox assignments", rows, err)
 	}
 	rows, err = s.Browse(ctx, u[2], true, Filter{}, 10, 0)
-	if err != nil || len(rows) != 2 || rows[0].ID != second || rows[1].ID != private {
-		t.Fatal("untouched shared posts inserted into personal history", rows, err)
+	if err != nil || len(rows) != 3 || rows[0].ID != second || rows[1].ID != private || rows[2].ID != shared {
+		t.Fatal("listened music missing from personal history", rows, err)
 	}
 	for _, viewer := range []int64{0, -1, 999999} {
 		if rows, err := s.Browse(ctx, viewer, false, Filter{Recent: true}, 10, 0); err != nil || len(rows) != 0 {
@@ -109,7 +109,7 @@ func TestRecentAudienceIsolationAndPrivateState(t *testing.T) {
 		t.Fatal("export visibility", archive, err)
 	}
 	for _, item := range archive.Recommendations {
-		if item.ID == groupGift || item.PersonalNote != "" || item.Listening != "unheard" {
+		if item.ID == groupGift || item.PersonalNote != "" || item.Listening != "listened" {
 			t.Fatal("export leaks private context/state", item)
 		}
 	}

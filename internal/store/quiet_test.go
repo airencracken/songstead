@@ -60,7 +60,7 @@ func TestDuplicateMusicKeepsContextAndPrivateState(t *testing.T) {
 		t.Fatal(r, err)
 	}
 	sender, _ := s.Recommendation(ctx, u[2], two)
-	if sender.Listening != "unheard" {
+	if sender.Listening != "listened" {
 		t.Fatal("private state leaked")
 	}
 	rows, err := s.Browse(ctx, u[1], false, Filter{Person: u[2]}, 10, 0)

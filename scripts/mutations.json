@@ -606,5 +606,29 @@
     "after": "return nil",
     "package": "./internal/store",
     "run": "^TestAutomaticBackupRejectsInvalidForeignKeys$"
+  },
+  {
+    "file": "internal/store/inbox.go",
+    "package": "./internal/store",
+    "run": "^(TestPostingMarksAuthorListened|TestPostingListeningProperties)$",
+    "name": "posting counts as listened",
+    "before": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at",
+    "after": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'unheard',?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at"
+  },
+  {
+    "file": "internal/store/inbox.go",
+    "package": "./internal/store",
+    "run": "^(TestPostingMarksAuthorListened|TestPostingListeningProperties)$",
+    "name": "posting updates only the author",
+    "before": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at`, mid, sender, time.Now().Unix()",
+    "after": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at`, mid, recipient, time.Now().Unix()"
+  },
+  {
+    "file": "internal/store/inbox.go",
+    "package": "./internal/store",
+    "run": "^(TestPostingMarksAuthorListened|TestPostingListeningProperties)$",
+    "name": "reposting updates existing listening state",
+    "before": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at",
+    "after": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO NOTHING"
   }
 ]

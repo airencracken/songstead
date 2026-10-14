@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+
+- Mark music as listened for the sender when posting a recommendation to any audience.
+  Preserve other people's listening status and existing ratings and personal notes.
+
 ## 0.9.0
 
 Daily compressed automatic backups with bounded retention and owner-only status.

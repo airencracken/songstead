@@ -204,6 +204,10 @@ func (s *Store) recommend(ctx context.Context, sender, recipient, group int64, r
 	if _, err = tx.ExecContext(ctx, "INSERT INTO recommendation_destinations VALUES(?,?)", id, recipient); err != nil {
 		return 0, err
 	}
+	// Posting music counts as having listened, across all of the sender's contexts.
+	if _, err = tx.ExecContext(ctx, `INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at`, mid, sender, time.Now().Unix()); err != nil {
+		return 0, err
+	}
 	if media.SupportsMetadata(raw) {
 		if _, err = tx.ExecContext(ctx, "INSERT INTO metadata_jobs(media_id) SELECT ? WHERE NOT EXISTS(SELECT 1 FROM media_artwork WHERE media_id=?) ON CONFLICT DO NOTHING", mid, mid); err != nil {
 			return 0, err

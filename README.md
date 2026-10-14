@@ -12,7 +12,11 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.9.0
+## Songstead 0.9.1
+
+Posting a recommendation marks the music as listened for you, including private
+sends and group posts. Ratings, personal notes and other members' listening
+status stay unchanged. No schema migration is needed.
 
 The running service now makes bounded compressed backups automatically.
 See [automatic backups](docs/automatic-backups.md) for recovery and limits.

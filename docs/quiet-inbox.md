@@ -1,7 +1,7 @@
 # Music left for your people
 
 Recommendations are gifts. There are no deadlines, streaks, completion counts,
-read receipts, automatic listening changes or reminders. The shelf uses arrival
+read receipts or reminders. The shelf uses arrival
 order and defaults to a music view. Person, group and individual recommendation
 views are filters over the same recommendations, not separate copies.
 
@@ -41,6 +41,11 @@ Saved, explored, listened and dismissed are optional, private organization.
 Unheard and revisit remain accepted for existing clients. Organization applies
 to a person's music identity; ratings and personal notes remain attached to the
 individual recommendation. Nobody else's state appears in a recipient's view.
+Posting a recommendation marks that music as listened for its sender, including
+when it was already saved under another recommendation or provider URL variant.
+Recipients keep their own status, and ratings and personal notes stay unchanged.
+You can change your listening status again after posting. A failed post leaves
+your status unchanged.
 
 # Timestamp annotations
 
