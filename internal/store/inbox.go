@@ -21,6 +21,7 @@ type Group struct {
 type Filter struct {
 	Recent         bool
 	GroupByMusic   bool
+	Liked          bool
 	Status, Kind   string
 	Genre, Tag     string
 	UsePreferences bool
@@ -247,12 +248,15 @@ func (s *Store) Browse(ctx context.Context, viewer int64, history bool, f Filter
 	args := []any{viewer, viewer, viewer, viewer, viewer}
 	if f.Recent {
 		where += ` AND r.visibility='members'`
-	} else if !history {
+	} else if !history && !f.Liked {
 		where += ` AND (r.group_id IS NOT NULL OR (r.visibility='private' AND d.user_id=?))`
 		args = append(args, viewer)
-	} else {
+	} else if history {
 		where += ` AND (r.visibility='private' OR r.sender_id=? OR ms.user_id IS NOT NULL OR EXISTS(SELECT 1 FROM comments c WHERE c.recommendation_id=r.id AND c.author_id=?))`
 		args = append(args, viewer, viewer)
+	}
+	if f.Liked {
+		where += " AND ms.liked=1"
 	}
 	if f.Status != "" {
 		where += " AND coalesce(ms.listening,'unheard')=?"

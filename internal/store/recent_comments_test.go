@@ -186,7 +186,7 @@ func TestRecentCommentsSchemaReadOnlyAndCommentAtomicity(t *testing.T) {
 		t.Fatal("partial annotation appeared in feed", after, err)
 	}
 	var version, count int
-	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 8 {
+	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 9 {
 		t.Fatal("feed changed schema", version, err)
 	}
 	if err := s.db.QueryRow("SELECT count(*) FROM comments").Scan(&count); err != nil || count != 1 {

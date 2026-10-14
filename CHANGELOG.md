@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0
+
+- Add private song likes and a Liked songs filter across URL duplicates.
+- Group Recent by music by default, keeping each recommendation's sender, date,
+  note and conversation within its audience. Each recommendation remains an option.
+- Migrate existing private feedback with schema 9 and include song likes in
+  account export format 6. Cross-provider matching remains unchanged.
+
 ## 0.9.1
 
 - Mark music as listened for the sender when posting a recommendation to any audience.

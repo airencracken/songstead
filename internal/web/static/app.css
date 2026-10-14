@@ -128,3 +128,6 @@ main p a { text-decoration:underline; }
 
 .search-form { display:grid; gap:.6rem; max-width:48rem; margin-bottom:1rem; }
 .search-form input { min-width:0; }
+
+.song-like-form { margin-block:.5rem 1rem; }
+.song-like-button[aria-pressed="true"] { background:var(--soft); border-color:var(--accent); }

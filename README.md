@@ -6,17 +6,23 @@ Good music, from your people.
 
 Songstead is a small, self-hosted recommendation shelf for friends. Paste a link,
 share it with everyone here or choose a friend or group privately, and add a note. Listen when you have a moment, keep your own
-listening state and rating, and talk about it together.
+listening state and private likes, and talk about it together.
 
 It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.9.1
+## Songstead 0.10.0
+
+Like songs privately and find them through **Liked songs**. Matching URLs share
+one song like across recommendations. Recent now defaults to one card per song,
+with each recommendation's sender, date, note and conversation preserved.
+Different providers stay separate. Schema 9 migrates existing private feedback;
+back up your data before upgrading.
 
 Posting a recommendation marks the music as listened for you, including private
 sends and group posts. Ratings, personal notes and other members' listening
-status stay unchanged. No schema migration is needed.
+status stay unchanged.
 
 The running service now makes bounded compressed backups automatically.
 See [automatic backups](docs/automatic-backups.md) for recovery and limits.
@@ -36,7 +42,7 @@ settings, optionally add a name, a plain-text bio and up to five labeled web
 links. Profiles are visible only to signed-in members and never show private
 listening feedback, preferences or credentials. Your account export includes your
 own profile. Clear the fields to remove them; usernames stay unchanged.
-Back up the data directory before the schema 8 upgrade.
+Back up the data directory before the schema 9 upgrade.
 
 
 Open **Recent → Comments** to discover conversations on music shared with everyone
@@ -46,7 +52,7 @@ stay out. Timestamped comments follow your saved spoiler preference and indicate
 listening positions. Older pages remain stable as new comments arrive.
 
 The feed includes earlier local comments when your host chooses Witmoot for new
-posts. Witmoot discussions remain on Witmoot. This release uses schema 8, export format 5 and Comfylib 0.1.6.
+posts. Witmoot discussions remain on Witmoot. The current source uses schema 9, export format 6 and Comfylib 0.1.6.
 
 
 Owners choose **Discussion location** in Admin: Songstead for comments here,

@@ -34,8 +34,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 8 {",
-    "after": "if version > 9 {",
+    "before": "if version > 9 {",
+    "after": "if version > 10 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -194,8 +194,8 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 8 {",
-    "after": "if false && currentOnly && version != 8 {",
+    "before": "if currentOnly && version != 9 {",
+    "after": "if false && currentOnly && version != 9 {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
   },
@@ -630,5 +630,53 @@
     "name": "reposting updates existing listening state",
     "before": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at",
     "after": "INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'listened',?) ON CONFLICT(media_id,user_id) DO NOTHING"
+  },
+  {
+    "name": "private song like access checks",
+    "file": "internal/store/likes.go",
+    "before": "WHERE r.id=? AND `+visible+` AND EXISTS",
+    "after": "WHERE r.id=? AND (? >= 0 OR ? >= 0 OR ? >= 0) AND EXISTS",
+    "package": "./internal/store",
+    "run": "^TestSongLikePermissionsSchemaAndAtomicity$"
+  },
+  {
+    "name": "song likes preserve listening state",
+    "file": "internal/store/likes.go",
+    "before": "DO UPDATE SET liked=excluded.liked,updated_at=excluded.updated_at",
+    "after": "DO UPDATE SET liked=excluded.liked,updated_at=excluded.updated_at,listening=excluded.listening",
+    "package": "./internal/store",
+    "run": "^TestSongLikesArePrivateAndSharedAcrossRecommendations$"
+  },
+  {
+    "name": "liked song filter isolates viewer choices",
+    "file": "internal/store/inbox.go",
+    "before": "where += \" AND ms.liked=1\"",
+    "after": "where += \" AND ms.liked>=0\"",
+    "package": "./internal/store",
+    "run": "^TestLikedSongFilterPaginationAndURLProperties$"
+  },
+  {
+    "name": "song likes constrained to boolean values",
+    "file": "internal/store/migrations/009_song_likes.sql",
+    "before": "CHECK(liked IN (0,1))",
+    "after": "CHECK(liked IN (0,1,2))",
+    "package": "./internal/store",
+    "run": "^TestSongLikePermissionsSchemaAndAtomicity$"
+  },
+  {
+    "name": "initial song like follows latest rating",
+    "file": "internal/store/migrations/009_song_likes.sql",
+    "before": "ORDER BY x.updated_at DESC,x.recommendation_id DESC LIMIT 1",
+    "after": "ORDER BY x.updated_at ASC,x.recommendation_id ASC LIMIT 1",
+    "package": "./internal/store",
+    "run": "^TestSongLikesMigrationAndSnapshots$"
+  },
+  {
+    "name": "song deduplication is the default view",
+    "file": "internal/web/web.go",
+    "before": "perspective = \"music\"",
+    "after": "perspective = \"recommendations\"",
+    "package": "./internal/web",
+    "run": "^TestDefaultSongDeduplicationKeepsDatedProvenance$"
   }
 ]

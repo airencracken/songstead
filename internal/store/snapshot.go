@@ -27,7 +27,7 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	}
 	// Previous releases used schemas 3 and 4. Restore them unchanged; the
 	// server applies forward migrations on its next start.
-	if version != 3 && version != 4 && version != 5 && version != 6 && version != 7 && version != 8 {
+	if version != 3 && version != 4 && version != 5 && version != 6 && version != 7 && version != 8 && version != 9 {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string
@@ -148,6 +148,15 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 		}
 		if err = rows.Close(); err != nil {
 			return err
+		}
+	}
+	if version >= 9 {
+		var invalid int
+		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM music_states WHERE liked IS NULL OR liked NOT IN (0,1)").Scan(&invalid); err != nil {
+			return err
+		}
+		if invalid != 0 {
+			return errors.New("snapshot has invalid song likes")
 		}
 	}
 	return nil

@@ -19,8 +19,12 @@ adds a shared-only predicate before sorting and pagination; it never reads
 private provenance for display. A schema constraint prevents a group context
 from being combined with instance sharing. Shared posts use one destination row
 without manufacturing individual gifts.
-Music organization belongs to a viewer, while per-recommendation ratings and
-personal notes remain separate. Neither is publicized.
+Music organization and song likes belong to a viewer and music identity.
+Personal notes and legacy ratings stay with their recommendation; none of this
+feedback is publicized. Schema 9 adds a constrained private liked flag to
+music_states. Like mutations check current recommendation access and save with
+one atomic SQL statement. Music views paginate identities before returning each
+matching recommendation, retaining dated provenance inside its original audience.
 
 Recordings are explicit identities linked to tracks or named album tracks.
 Annotation offsets belong to comments and recordings, with byte spans into the

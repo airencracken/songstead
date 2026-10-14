@@ -20,6 +20,9 @@ func browseURL(p page, field, value string) string {
 		path = "/history"
 	}
 	query := url.Values{"layout": {p.Layout}, "genre": {p.Genre}, "tag": {p.Tag}, "discovery": {p.Discovery}, "view": {p.Perspective}, "kind": {p.Kind}, "person": {strconv.FormatInt(p.Person, 10)}, "group": {strconv.FormatInt(p.GroupID, 10)}, "status": {p.Status}}
+	if p.Liked {
+		query.Set("liked", "1")
+	}
 	query.Set(field, value)
 	return path + "?" + query.Encode()
 }

@@ -49,6 +49,7 @@ type Recommendation struct {
 	Rating                                                                          int
 	PersonalNote                                                                    string
 	HasArtwork                                                                      bool
+	Liked                                                                           bool
 	Genre                                                                           string
 	Tags                                                                            []string
 }
@@ -105,14 +106,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 8 {
+	if version > 9 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 8 {
+	if currentOnly && version != 9 {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 8; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql"}[next]
+	for next := version + 1; next <= 9; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -290,7 +291,7 @@ const legacySelectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sende
  LEFT JOIN music_states ms ON ms.media_id=m.id AND ms.user_id=?
  LEFT JOIN groups g ON g.id=r.group_id `
 
-var selectRecommendation = strings.Replace(legacySelectRecommendation, "r.visibility\n", "r.visibility,EXISTS(SELECT 1 FROM media_artwork art WHERE art.media_id=m.id),coalesce(l.genre,''),coalesce(l.tags,'[]')\n", 1) + ` LEFT JOIN recommendation_labels l ON l.recommendation_id=r.id `
+var selectRecommendation = strings.Replace(legacySelectRecommendation, "r.visibility\n", "r.visibility,EXISTS(SELECT 1 FROM media_artwork art WHERE art.media_id=m.id),coalesce(l.genre,''),coalesce(l.tags,'[]'),coalesce(ms.liked,0)\n", 1) + ` LEFT JOIN recommendation_labels l ON l.recommendation_id=r.id `
 
 // The same visibility predicate protects details, comments and mutations.
 const visible = `((r.group_id IS NULL AND (r.sender_id=? OR EXISTS(SELECT 1 FROM users v WHERE v.id=? AND (r.visibility='members' OR d.user_id=v.id)))) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`
@@ -300,7 +301,7 @@ type scanner interface{ Scan(...any) error }
 func scanRecommendation(row scanner) (Recommendation, error) {
 	var r Recommendation
 	var tags string
-	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote, &r.GroupID, &r.Group, &r.Kind, &r.Visibility, &r.HasArtwork, &r.Genre, &tags)
+	err := row.Scan(&r.ID, &r.MediaID, &r.SenderID, &r.RecipientID, &r.Sender, &r.Recipient, &r.URL, &r.Provider, &r.Title, &r.Artist, &r.Thumbnail, &r.Type, &r.VideoID, &r.Note, &r.CreatedAt, &r.Listening, &r.Rating, &r.PersonalNote, &r.GroupID, &r.Group, &r.Kind, &r.Visibility, &r.HasArtwork, &r.Genre, &tags, &r.Liked)
 	if err == nil {
 		err = json.Unmarshal([]byte(tags), &r.Tags)
 	}
@@ -348,7 +349,7 @@ func (s *Store) React(ctx context.Context, viewer, id int64, reaction Reaction) 
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO music_states VALUES(?,?,?,?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at`, mid, viewer, reaction.Listening, time.Now().Unix())
+	_, err = tx.ExecContext(ctx, `INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,?,?) ON CONFLICT(media_id,user_id) DO UPDATE SET listening=excluded.listening,updated_at=excluded.updated_at`, mid, viewer, reaction.Listening, time.Now().Unix())
 	if err != nil {
 		return err
 	}

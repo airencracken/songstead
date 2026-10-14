@@ -90,7 +90,7 @@ func TestMemberProfileRoutesOwnershipPrivacyAndExport(t *testing.T) {
 		Version   int
 		Biography memberprofile.Profile `json:"profile_details"`
 	}
-	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &archive) != nil || archive.Version != 5 || !reflect.DeepEqual(archive.Biography, before.Biography) {
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &archive) != nil || archive.Version != 6 || !reflect.DeepEqual(archive.Biography, before.Biography) {
 		t.Fatal("own profile export", w.Code, w.Body.String())
 	}
 	if w := bobby.request("GET", "/account/export", nil); strings.Contains(w.Body.String(), "short bio") {

@@ -22,8 +22,10 @@ Older forms that omit the new audience field still send privately.
 Shared posts do not fan out into personal shelves. Your history includes your direct and
 group gifts, shared posts you wrote, and shared music you chose to organize or
 comment on. Merely opening a shared recommendation records no participation.
-Recent defaults to each recommendation; its optional music view groups matching
-shared music while keeping every sender's words. There are no badges, unread
+Recent defaults to one card per matching music URL, keeping a dated entry for
+every recommendation with its sender, note, audience and conversation link.
+The shelf and history use the same music view; **Each recommendation** remains
+available under More filters. There are no badges, unread
 counts, automatic refresh, reminders or ranking.
 
 The personal view is Your shelf at `/shelf`. Existing `/inbox` links and filters
@@ -39,8 +41,17 @@ recommendation contexts for each displayed identity.
 
 Saved, explored, listened and dismissed are optional, private organization.
 Unheard and revisit remain accepted for existing clients. Organization applies
-to a person's music identity; ratings and personal notes remain attached to the
-individual recommendation. Nobody else's state appears in a recipient's view.
+to a person's music identity; personal notes stay with each recommendation.
+Nobody else's state appears in a recipient's view.
+
+**Like song** and **Unlike song** change your private song like across matching
+URLs. **Liked songs** filters your shelf, Recent or history; your shelf's liked
+view also includes shared songs you liked. Likes have no public counts, rankings
+or notifications and do not change listening status. Saving notes or reposting
+a song preserves its like. Schema 9 carries over existing feedback: the latest
+private recommendation rating determines the initial song like, with positive
+ratings becoming liked songs. Original ratings and notes remain in account
+exports; export format 6 also records your song likes.
 Posting a recommendation marks that music as listened for its sender, including
 when it was already saved under another recommendation or provider URL variant.
 Recipients keep their own status, and ratings and personal notes stay unchanged.

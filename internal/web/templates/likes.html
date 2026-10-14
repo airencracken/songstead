@@ -1,0 +1,1 @@
+{{define "like-button"}}<input type="hidden" name="liked" value="{{if .Liked}}0{{else}}1{{end}}"><button class="button song-like-button" type="submit" aria-pressed="{{.Liked}}">{{if .Liked}}Unlike song{{else}}Like song{{end}}</button>{{end}}

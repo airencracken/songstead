@@ -151,7 +151,15 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.goto(base+favorite);
   check(await bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}).inputValue()==='spoiler-free','Account preference applies on music pages');
   await bobby.getByRole('combobox',{name:'Listening status',exact:true}).selectOption('listened');
-  await bobby.getByRole('combobox',{name:'What did you think?',exact:true}).selectOption('1');
+  await bobby.getByRole('button',{name:'Like song',exact:true}).click();
+  await bobby.waitForURL(`**${favorite}?saved=like*`);
+  check(await bobby.getByRole('button',{name:'Unlike song',exact:true}).getAttribute('aria-pressed')==='true','Song like is saved privately');
+  await bobby.goto(base+privatePath);
+  check(await bobby.getByRole('button',{name:'Unlike song',exact:true}).count()===1,'Song like follows URL duplicates across recommendation contexts');
+  await bobby.goto(`${base}/shelf?liked=1`);
+  check(await bobby.locator('[data-song-id]').count()===1,'Liked songs filter groups duplicate recommendations');
+  await bobby.goto(base+favorite);
+  await bobby.getByRole('combobox',{name:'Listening status',exact:true}).selectOption('listened');
   await bobby.getByRole('textbox',{name:'Personal notes',exact:true}).fill('Private listening thought');
   await bobby.getByRole('button',{name:'Save your reaction',exact:true}).click();
   await bobby.waitForURL(`**${favorite}?saved=feedback*`);
@@ -163,6 +171,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.goto(base+favorite);
   check(await bobby.getByRole('textbox',{name:'Personal notes',exact:true}).inputValue()==='Private listening thought','Feedback persists without saving the draft');
   await alice.goto(base+favorite);
+  check(await alice.getByRole('button',{name:'Like song',exact:true}).count()===1,'Song likes stay private to each member');
   check(await alice.getByRole('textbox',{name:'Personal notes',exact:true}).inputValue()==='','Private feedback is absent for sender');
   await alice.getByLabel('Genre',{exact:true}).fill('New jazz');
   await alice.getByRole('button',{name:'Save genre and tags',exact:true}).click();
@@ -402,6 +411,18 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.locator('.comment-copy strong a').first().click();
   await bobby.waitForURL('**/members/2');
   check((await bobby.locator('main').innerText()).includes('A demo name'),'Comment authors lead to profiles');
+
+  await share('Porchlight sessions','New jazz','Instrumental, warm','members','porchlight-sessions');
+  await bobby.goto(`${base}/recent?discovery=all`);
+  const song = bobby.locator('[data-song-id]').filter({has:bobby.getByRole('heading',{name:'Porchlight sessions',exact:true})});
+  check(await song.count()===1,'Duplicate URL recommendations share one card by default');
+  check(await song.locator('.recommendation-copy').count()===2,'Grouped card preserves both recommendation entries');
+  check(await song.locator('time[datetime]').count()===2,'Every recommendation keeps its date');
+  check(await song.getByRole('button',{name:'Unlike song',exact:true}).count()===1,'Grouped song has one private like control');
+  await song.getByRole('button',{name:'Unlike song',exact:true}).click();
+  await bobby.waitForURL('**/recent?discovery=all');
+  await bobby.goto(`${base}/shelf?liked=1`);
+  check(await bobby.locator('[data-song-id]').count()===0,'Unlike removes the song from liked songs across duplicates');
 
   for (const [width,theme] of [[1280,'light'],[390,'dark']]) {
     await bobby.setViewportSize({width,height:1000});

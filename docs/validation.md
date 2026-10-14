@@ -130,3 +130,13 @@ and listening positions 0–65. Hidden comments cannot crowd out pages. Browser
 checks exercise boosted and native forms, thumbnails, mobile layouts and
 accessibility. Mutation tests remove authentication, spoiler rules, viewer checks,
 Unicode mapping and cursor boundaries, and attempt to search private reaction notes.
+
+## Private song likes and grouped recommendations
+
+Store and HTTP tests cover song-level like privacy, URL identity, repeated
+like/unlike requests, listening and note preservation, schema 8 upgrades, atomic
+migration and mutation failures, schema and snapshot validation, export privacy,
+CSRF, request identity, malformed inputs and safe return URLs. Property tests
+exercise liked-song pagination with duplicate contexts and independent viewers.
+Browser checks cover Like/Unlike, the Liked songs filter, duplicate cards with
+dated recommendation entries, and responsive accessibility in both layouts.

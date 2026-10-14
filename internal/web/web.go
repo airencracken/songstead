@@ -90,6 +90,9 @@ type page struct {
 	SecretURL, Notice, Secret, Version                                                  string
 	Audience                                                                            string
 	Recent                                                                              bool
+	Liked                                                                               bool
+	ReturnTo                                                                            string
+	LikeNotice                                                                          string
 	CommentDraft                                                                        string
 	Bundles                                                                             []bundle
 	Perspective, Kind, MusicTitle, Artist, AnnotationMode, Handoff, Members             string
@@ -186,6 +189,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /recommendations/{id}/thumbnail", a.signedIn(a.thumbnail))
 	mux.HandleFunc("POST /recommendations/{id}/labels", a.signedIn(a.saveLabels))
 	mux.HandleFunc("POST /recommendations/{id}/reaction", a.signedIn(a.react))
+	mux.HandleFunc("POST /recommendations/{id}/like", a.signedIn(a.likeSong))
 	mux.HandleFunc("POST /recommendations/{id}/comments", a.signedIn(a.comment))
 	mux.HandleFunc("GET /groups", a.signedIn(a.groups))
 	mux.HandleFunc("POST /groups", a.signedIn(a.saveGroup))
@@ -480,6 +484,11 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		}
 	}
 	status := r.URL.Query().Get("status")
+	liked := r.URL.Query().Get("liked")
+	if len(r.URL.Query()["liked"]) > 1 || liked != "" && liked != "0" && liked != "1" {
+		http.Error(w, "invalid likes filter", 400)
+		return
+	}
 	person, _ := strconv.ParseInt(r.URL.Query().Get("person"), 10, 64)
 	group, _ := strconv.ParseInt(r.URL.Query().Get("group"), 10, 64)
 	for _, key := range []string{"person", "group"} {
@@ -499,15 +508,12 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 	perspective := r.URL.Query().Get("view")
 	if perspective == "" {
 		perspective = "music"
-		if recent {
-			perspective = "recommendations"
-		}
 	}
 	if perspective != "music" && perspective != "person" && perspective != "group" && perspective != "recommendations" {
 		http.Error(w, "invalid view", 400)
 		return
 	}
-	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Recent: recent, Status: status, Person: person, Group: group, Kind: kind, Genre: genre, Tag: tag, UsePreferences: recent && discovery == "preferences", GroupByMusic: perspective == "music"}, 51, offset)
+	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Recent: recent, Liked: liked == "1", Status: status, Person: person, Group: group, Kind: kind, Genre: genre, Tag: tag, UsePreferences: recent && discovery == "preferences", GroupByMusic: perspective == "music"}, 51, offset)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -525,6 +531,16 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 	}
 	p.Person, p.GroupID, p.Kind, p.Perspective = person, group, kind, perspective
 	p.Layout, p.Genre, p.Tag, p.Discovery = layout, genre, tag, discovery
+	p.Liked, p.ReturnTo = liked == "1", r.URL.RequestURI()
+	if r.URL.Path == "/inbox" {
+		p.ReturnTo = strings.Replace(p.ReturnTo, "/inbox", "/shelf", 1)
+	}
+	if r.URL.Path == "/" {
+		p.ReturnTo = "/shelf" + strings.TrimPrefix(p.ReturnTo, "/")
+	}
+	if p.Liked && !recent {
+		p.Title = "Your liked songs"
+	}
 	p.AvailableGenres, p.AvailableTags, err = a.store.LabelChoices(r.Context(), state(r).User.ID, recent)
 	if err != nil {
 		a.fail(w, r, err)
@@ -742,6 +758,11 @@ func (a *App) showDetail(w http.ResponseWriter, r *http.Request, id int64, statu
 			p.AnnotationNotice = "Spoiler preference saved for your account."
 		case "labels":
 			p.LabelsNotice = "Genre and tags saved."
+		case "like":
+			p.LikeNotice = "Song removed from your likes."
+			if item.Liked {
+				p.LikeNotice = "Song liked. Private to you."
+			}
 		}
 	}
 	if status == 422 && strings.HasSuffix(r.URL.Path, "/reaction") {

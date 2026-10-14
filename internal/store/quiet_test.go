@@ -199,7 +199,7 @@ func TestAccountExportRetainsPrivateAnnotationSettingsAndReferences(t *testing.T
 	s.SetAnnotationMode(t.Context(), u[1], "hidden")
 	s.LinkDiscussion(t.Context(), u[1], id, "https://board.example/topics/2")
 	a, err := s.Export(t.Context(), User{ID: u[1], Username: "bobby"})
-	if err != nil || a.Version != 5 || a.AnnotationMode != "hidden" || len(a.Comments) != 1 || len(a.Comments[0].Offsets) != 1 || len(a.Recordings) != 1 || a.Recordings[0].Position != 200 || len(a.Discussions) != 1 {
+	if err != nil || a.Version != 6 || a.AnnotationMode != "hidden" || len(a.Comments) != 1 || len(a.Comments[0].Offsets) != 1 || len(a.Recordings) != 1 || a.Recordings[0].Position != 200 || len(a.Discussions) != 1 {
 		t.Fatal(a, err)
 	}
 }
@@ -217,7 +217,7 @@ func TestQuietSchemaConstraints(t *testing.T) {
 			t.Fatal("invalid schema offset accepted", args)
 		}
 	}
-	if _, err := s.db.Exec("INSERT INTO music_states VALUES(?,?,'overdue',0)", id, u[1]); err == nil {
+	if _, err := s.db.Exec("INSERT INTO music_states(media_id,user_id,listening,updated_at) VALUES(?,?,'overdue',0)", id, u[1]); err == nil {
 		t.Fatal("obligation state accepted")
 	}
 	g, err := s.SaveGroup(t.Context(), u[0], 0, "Room", []int64{u[1]})
