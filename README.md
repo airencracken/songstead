@@ -12,7 +12,13 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
-## Songstead 0.10.0
+## Songstead 0.11.0
+
+Open your own post to edit its music details and note, or delete it through a
+confirmation page. Corrections preserve the original audience and leave other
+recommendations unchanged. YouTube album playlist links now support automatic
+titles and artwork. Schema 10 stores per-post corrections and retries missing
+previews; back up your data before upgrading.
 
 Like songs privately and find them through **Liked songs**. Matching URLs share
 one song like across recommendations. Recent now defaults to one card per song,
@@ -42,7 +48,7 @@ settings, optionally add a name, a plain-text bio and up to five labeled web
 links. Profiles are visible only to signed-in members and never show private
 listening feedback, preferences or credentials. Your account export includes your
 own profile. Clear the fields to remove them; usernames stay unchanged.
-Back up the data directory before the schema 9 upgrade.
+Back up the data directory before the schema 10 upgrade.
 
 
 Open **Recent → Comments** to discover conversations on music shared with everyone
@@ -52,7 +58,7 @@ stay out. Timestamped comments follow your saved spoiler preference and indicate
 listening positions. Older pages remain stable as new comments arrive.
 
 The feed includes earlier local comments when your host chooses Witmoot for new
-posts. Witmoot discussions remain on Witmoot. The current source uses schema 9, export format 6 and Comfylib 0.1.6.
+posts. Witmoot discussions remain on Witmoot. The current source uses schema 10, export format 6 and Comfylib 0.1.6.
 
 
 Owners choose **Discussion location** in Admin: Songstead for comments here,

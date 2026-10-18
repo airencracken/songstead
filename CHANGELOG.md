@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.0
 
 - Let authors edit a post's music link, title, artist, kind, note, genre and tags,
   with corrections scoped to that post and its existing audience.

@@ -5,10 +5,17 @@ and SHA-256 checksums in [GitHub Releases](https://github.com/airencracken/songs
 The binary includes SQLite, templates, JavaScript, and the jukebox artwork.
 It needs no Go installation, C library, frontend build, or streaming account.
 
-## Upgrade from 0.9.x
+## Upgrade from 0.10.x
 
-Version 0.10.0 applies schema 9 at server startup. Back up the stopped data
-directory first. The latest private recommendation rating for each song sets
+Version 0.11.0 applies schema 10 at server startup. Back up the stopped data
+directory first. Post corrections are stored separately from shared music metadata;
+existing audiences, comments, likes and listening history are preserved. Missing
+previews are queued again, including previously unsupported YouTube playlists.
+Account export format 6 is unchanged. A downgrade requires the pre-upgrade database
+backup as well as the earlier binary.
+
+When upgrading from 0.9.x or earlier, schema 9 is applied first. The latest
+private recommendation rating for each song sets
 its initial song like; existing listening status, ratings and notes are preserved.
 Account export format 6 includes your private song likes. A downgrade requires
 the pre-upgrade database backup as well as the earlier binary.
@@ -19,12 +26,12 @@ Choose the archive for your machine and download the matching checksum file.
 For this release on amd64, using the GitHub CLI:
 
 ```sh
-gh release download v0.10.0 --repo airencracken/songstead \
-    --pattern songstead_0.10.0_linux_amd64.tar.gz \
-    --pattern songstead_0.10.0_checksums.txt
-sha256sum --check --ignore-missing songstead_0.10.0_checksums.txt
-tar -xzf songstead_0.10.0_linux_amd64.tar.gz
-cd songstead_0.10.0_linux_amd64
+gh release download v0.11.0 --repo airencracken/songstead \
+    --pattern songstead_0.11.0_linux_amd64.tar.gz \
+    --pattern songstead_0.11.0_checksums.txt
+sha256sum --check --ignore-missing songstead_0.11.0_checksums.txt
+tar -xzf songstead_0.11.0_linux_amd64.tar.gz
+cd songstead_0.11.0_linux_amd64
 ./songstead --version
 ```
 
@@ -43,7 +50,7 @@ After accepting its testing keywords according to the overlay guide:
 
 ```sh
 emaint sync -r comfyware
-emerge --ask =www-apps/songstead-0.10.0::comfyware
+emerge --ask =www-apps/songstead-0.11.0::comfyware
 ```
 
 See [deployment.md](deployment.md) for native services and optional Witmoot
@@ -55,7 +62,7 @@ Source builds need Go 1.26 or newer. Release builds resolve Comfylib v0.1.6 from
 its published module rather than a sibling checkout:
 
 ```sh
-git clone --branch v0.10.0 https://github.com/airencracken/songstead.git
+git clone --branch v0.11.0 https://github.com/airencracken/songstead.git
 cd songstead
 GOWORK=off make check build
 ```
