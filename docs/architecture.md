@@ -55,6 +55,13 @@ keys before installing a snapshot into an empty private directory.
 
 Genres and tags describe individual recommendations, preserving private-send
 boundaries across duplicate provider identities. Only the sender edits them.
+Schema 10 adds optional title, artist and kind corrections on the recommendation.
+Detail, browsing, search, comment feeds and exports use these corrections without
+changing shared provider metadata. Post edits and deletion check the current
+author and audience inside the write transaction. Deleting a post cascades its
+comments, offsets, reactions, labels and destination, retaining shared music and
+private music state. Changing music identity is rejected when the post contains
+timestamp offsets, preserving their original recording association.
 Per-user discovery preferences filter Recent before pagination and sort matching
 favorites ahead of other music. Exclusions win; each tier retains newest-first
 order. SQL parameters bind normalized names as JSON arrays. Shelf, history and

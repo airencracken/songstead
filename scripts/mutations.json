@@ -1,5 +1,37 @@
 [
   {
+    "name": "post author ownership",
+    "file": "internal/store/posts.go",
+    "before": "AND r.sender_id=? AND EXISTS",
+    "after": "AND ?>0 AND EXISTS",
+    "package": "./internal/store",
+    "run": "^TestPostEditingIsolationAndDeletion$"
+  },
+  {
+    "name": "post edit rollback",
+    "file": "internal/store/posts.go",
+    "before": "defer tx.Rollback()\n\told, err := ownPost",
+    "after": "defer tx.Commit()\n\told, err := ownPost",
+    "package": "./internal/store",
+    "run": "^TestPostEditsRollbackAndSnapshots$"
+  },
+  {
+    "name": "post title projection",
+    "file": "internal/store/store.go",
+    "before": "\"m.title\", \"coalesce(r.title_override,m.title)\"",
+    "after": "\"m.title\", \"m.title\"",
+    "package": "./internal/store",
+    "run": "^TestPostEditingIsolationAndDeletion$"
+  },
+  {
+    "name": "playlist metadata support",
+    "file": "internal/media/metadata.go",
+    "before": "if link.PlaylistID != \"\" {",
+    "after": "if false {",
+    "package": "./internal/media",
+    "run": "^TestYouTubePlaylistMetadata$"
+  },
+  {
     "name": "private recommendation visibility",
     "file": "internal/store/store.go",
     "before": "const visible = `((r.group_id IS NULL AND (r.sender_id=? OR EXISTS(SELECT 1 FROM users v WHERE v.id=? AND (r.visibility='members' OR d.user_id=v.id)))) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`",
@@ -34,8 +66,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 9 {",
-    "after": "if version > 10 {",
+    "before": "if version > 10 {",
+    "after": "if version > 11 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -194,8 +226,8 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 9 {",
-    "after": "if false && currentOnly && version != 9 {",
+    "before": "if currentOnly && version != 10 {",
+    "after": "if false && currentOnly && version != 10 {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
   },

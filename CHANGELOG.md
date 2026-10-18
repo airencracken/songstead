@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Let authors edit a post's music link, title, artist, kind, note, genre and tags,
+  with corrections scoped to that post and its existing audience.
+- Add author-only post deletion with a confirmation page. Other recommendations
+  and private music likes and listening history remain intact.
+- Recognize YouTube album playlists and fetch playlist titles and artwork.
+  Retry missing previews on upgrade, including previously unsupported playlists.
+- Apply schema 10 for per-post music corrections; preserve older backups.
+
 ## 0.10.0
 
 - Add private song likes and a Liked songs filter across URL duplicates.

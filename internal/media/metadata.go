@@ -158,6 +158,9 @@ func metadataEndpoint(raw string) (endpoint, provider, id string) {
 	if link.VideoID != "" {
 		return "", "youtube", link.VideoID
 	}
+	if link.PlaylistID != "" {
+		return "https://www.youtube.com/oembed?" + url.Values{"url": {"https://www.youtube.com/playlist?list=" + link.PlaylistID}, "format": {"json"}}.Encode(), "youtube", ""
+	}
 	u, _ := url.Parse(raw)
 	if u.Scheme != "https" || u.Port() != "" {
 		return
@@ -222,13 +225,13 @@ func Fetch(ctx context.Context, client *http.Client, raw string) (Metadata, erro
 	}
 	var meta Metadata
 	var err error
-	if provider == "youtube" {
+	if provider == "youtube" && id != "" {
 		meta, err = YouTube(ctx, client, id)
 	} else {
 		meta, err = oembed(ctx, client, endpoint)
 	}
 	if err != nil {
-		if provider != "youtube" {
+		if provider != "youtube" || id == "" {
 			return Metadata{}, err
 		}
 		// Artwork does not depend on oEmbed availability (for example when a

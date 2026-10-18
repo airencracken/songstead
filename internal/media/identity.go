@@ -19,6 +19,13 @@ func Identity(raw string) (string, string, error) {
 	if link.VideoID != "" {
 		return "youtube:" + link.VideoID, "track", nil
 	}
+	if link.PlaylistID != "" {
+		kind := "link"
+		if link.Type == "album" {
+			kind = "album"
+		}
+		return "youtube:playlist:" + link.PlaylistID, kind, nil
+	}
 	u, _ := url.Parse(link.Original)
 	u.Fragment = ""
 	u.Scheme = strings.ToLower(u.Scheme)

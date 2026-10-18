@@ -276,7 +276,7 @@ func TestBrowsingMigrationSnapshotAndPersistence(t *testing.T) {
 	if err := s.SetAnnotationMode(t.Context(), u, "spoiler-free"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec("DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked; DROP TABLE member_profiles; DROP TABLE user_profiles; DROP TABLE media_artwork; DROP TABLE recommendation_labels; DROP TABLE discovery_preferences; DELETE FROM metadata_jobs; PRAGMA user_version=5"); err != nil {
+	if _, err := s.db.Exec("ALTER TABLE recommendations DROP COLUMN title_override; ALTER TABLE recommendations DROP COLUMN artist_override; ALTER TABLE recommendations DROP COLUMN kind_override; DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked; DROP TABLE member_profiles; DROP TABLE user_profiles; DROP TABLE media_artwork; DROP TABLE recommendation_labels; DROP TABLE discovery_preferences; DELETE FROM metadata_jobs; PRAGMA user_version=5"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()

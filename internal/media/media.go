@@ -14,10 +14,11 @@ import (
 )
 
 type Link struct {
-	Original, Provider, Title, Type, VideoID string
+	Original, Provider, Title, Type, VideoID, PlaylistID string
 }
 
 var videoID = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
+var playlistID = regexp.MustCompile(`^[A-Za-z0-9_-]{10,100}$`)
 
 // Parse preserves the submitted URL. Unsupported providers are valid links.
 func Parse(raw string) (Link, error) {
@@ -49,6 +50,12 @@ func Parse(raw string) (Link, error) {
 		link.VideoID = strings.TrimPrefix(u.Path, "/")
 	}
 	if host == "youtube.com" || host == "www.youtube.com" || host == "m.youtube.com" || host == "music.youtube.com" {
+		if u.Path == "/playlist" && len(u.Query()["list"]) == 1 && playlistID.MatchString(u.Query().Get("list")) {
+			link.PlaylistID = u.Query().Get("list")
+			if strings.HasPrefix(link.PlaylistID, "OLAK5uy_") {
+				link.Type = "album"
+			}
+		}
 		if u.Path == "/watch" {
 			link.VideoID = u.Query().Get("v")
 		}

@@ -150,7 +150,11 @@ func TestSandboxFailureDoesNotCreateDatabase(t *testing.T) {
 		t.Skip("sandbox requires an unprivileged service user")
 	}
 	data := privateDir(t)
-	for _, binary := range []string{"/missing/bwrap", "/usr/bin/false"} {
+	failing, _ := fakeBubblewrap(t)
+	if err := os.WriteFile(failing, []byte("#!/bin/sh\nexit 1\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, binary := range []string{"/missing/bwrap", failing} {
 		if err := run(context.Background(), []string{"sandbox", "--data-dir", data, "--check", "--bwrap", binary}, strings.NewReader(""), &bytes.Buffer{}); err == nil {
 			t.Fatal("failed sandbox accepted")
 		}

@@ -186,6 +186,10 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("POST /account/picture", a.signedIn(a.saveProfilePicture))
 	mux.HandleFunc("POST /account/animation", a.signedIn(a.saveAnimationPreference))
 	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.detail))
+	mux.HandleFunc("GET /recommendations/{id}/edit", a.signedIn(a.editRecommendation))
+	mux.HandleFunc("POST /recommendations/{id}/edit", a.signedIn(a.editRecommendation))
+	mux.HandleFunc("GET /recommendations/{id}/delete", a.signedIn(a.deleteRecommendation))
+	mux.HandleFunc("POST /recommendations/{id}/delete", a.signedIn(a.deleteRecommendation))
 	mux.HandleFunc("GET /recommendations/{id}/thumbnail", a.signedIn(a.thumbnail))
 	mux.HandleFunc("POST /recommendations/{id}/labels", a.signedIn(a.saveLabels))
 	mux.HandleFunc("POST /recommendations/{id}/reaction", a.signedIn(a.react))
@@ -752,6 +756,8 @@ func (a *App) showDetail(w http.ResponseWriter, r *http.Request, id int64, statu
 	}
 	if status == 200 && r.Method == http.MethodGet {
 		switch r.URL.Query().Get("saved") {
+		case "post":
+			p.Notice = "Post saved."
 		case "feedback":
 			p.FeedbackNotice = "Listening feedback saved."
 		case "annotations":

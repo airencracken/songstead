@@ -180,7 +180,7 @@ func TestSongLikesMigrationAndSnapshots(t *testing.T) {
 	if err := s.React(ctx, users[0], first, Reaction{"listened", 1, "sender positive"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec("UPDATE reactions SET updated_at=recommendation_id; DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked; PRAGMA user_version=8"); err != nil {
+	if _, err := s.db.Exec("UPDATE reactions SET updated_at=recommendation_id; ALTER TABLE recommendations DROP COLUMN title_override; ALTER TABLE recommendations DROP COLUMN artist_override; ALTER TABLE recommendations DROP COLUMN kind_override; DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked; PRAGMA user_version=8"); err != nil {
 		t.Fatal(err)
 	}
 	old := filepath.Join(t.TempDir(), "old.db")
@@ -240,7 +240,7 @@ func TestSongLikeMigrationFailureIsAtomic(t *testing.T) {
 	if err := s.React(t.Context(), users[1], id, Reaction{"saved", 1, "Keep this note"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec(`DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked;
+	if _, err := s.db.Exec(`ALTER TABLE recommendations DROP COLUMN title_override; ALTER TABLE recommendations DROP COLUMN artist_override; ALTER TABLE recommendations DROP COLUMN kind_override; DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked;
  PRAGMA user_version=8;
  CREATE TRIGGER refuse_migration BEFORE UPDATE ON music_states BEGIN SELECT RAISE(ABORT,'test failure'); END;`); err != nil {
 		t.Fatal(err)

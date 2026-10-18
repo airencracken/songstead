@@ -58,7 +58,7 @@ func (s *Store) SearchMusic(ctx context.Context, viewer int64, raw string, befor
 	rows, err := s.db.QueryContext(ctx, selectRecommendation+` WHERE `+visible+`
  AND EXISTS(SELECT 1 FROM users v WHERE v.id=? AND v.suspended=0)
  AND (?=0 OR r.id<?)
- AND (instr(songstead_fold(m.title),?)>0 OR instr(songstead_fold(m.artist),?)>0
+ AND (instr(songstead_fold(coalesce(r.title_override,m.title)),?)>0 OR instr(songstead_fold(coalesce(r.artist_override,m.artist)),?)>0
  OR instr(songstead_fold(r.note),?)>0 OR instr(songstead_fold(coalesce(l.genre,'')),?)>0
  OR EXISTS(SELECT 1 FROM json_each(coalesce(l.tags,'[]')) t WHERE instr(songstead_fold(t.value),?)>0))
  ORDER BY r.id DESC LIMIT ?`, viewer, viewer, viewer, viewer, viewer, viewer, before, before, query, query, query, query, query, limit)
@@ -87,7 +87,7 @@ func (s *Store) SearchComments(ctx context.Context, viewer int64, raw string, be
 	if query == "" {
 		return out, nil
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT c.id,c.author_id,c.created_at,u.username,c.body,r.id,m.title,m.artist,
+	rows, err := s.db.QueryContext(ctx, `SELECT c.id,c.author_id,c.created_at,u.username,c.body,r.id,coalesce(r.title_override,m.title),coalesce(r.artist_override,m.artist),
  EXISTS(SELECT 1 FROM media_artwork a WHERE a.media_id=m.id)
  FROM comments c JOIN recommendations r ON r.id=c.recommendation_id
  JOIN recommendation_destinations d ON d.recommendation_id=r.id JOIN media m ON m.id=r.media_id

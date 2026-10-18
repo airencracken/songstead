@@ -29,7 +29,7 @@ func (s *Store) RecentComments(ctx context.Context, viewer, before int64, limit 
 	if viewer <= 0 || before < 0 || limit < 1 || limit > 100 {
 		return nil, ErrInvalid
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT c.id,c.author_id,c.created_at,u.username,c.body,r.id,m.title,m.artist,
+	rows, err := s.db.QueryContext(ctx, `SELECT c.id,c.author_id,c.created_at,u.username,c.body,r.id,coalesce(r.title_override,m.title),coalesce(r.artist_override,m.artist),
  EXISTS(SELECT 1 FROM media_artwork a WHERE a.media_id=m.id)
  FROM comments c
  JOIN recommendations r ON r.id=c.recommendation_id

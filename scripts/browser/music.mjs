@@ -424,6 +424,50 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.goto(`${base}/shelf?liked=1`);
   check(await bobby.locator('[data-song-id]').count()===0,'Unlike removes the song from liked songs across duplicates');
 
+  for (const javaScriptEnabled of [true,false]) {
+    const post = await share('A post to correct','Metal','New');
+    const author = javaScriptEnabled ? alice : await session('alice',false);
+    await bobby.goto(base+post);
+    check(await bobby.getByRole('link',{name:'Edit post',exact:true}).count()===0,'Other members have no post editing controls');
+    await author.goto(base+post);
+    await author.getByRole('link',{name:'Edit post',exact:true}).click();
+    await author.waitForURL('**/edit');
+    check(await author.getByLabel('Music link',{exact:true}).inputValue()==='https://music.example/a-post-to-correct','Edit form keeps the original link');
+    check(await author.getByRole('combobox',{name:'Who can see this?',exact:true}).count()===0,'Editing preserves the original audience');
+    await author.getByLabel('Title, if you know it',{exact:true}).fill('Corrected album title');
+    await author.getByRole('combobox',{name:'Music kind',exact:true}).selectOption('album');
+    await author.getByLabel('A note, if you like',{exact:true}).fill('Updated recommendation note');
+    for (const width of [390,1280]) {
+      await author.setViewportSize({width,height:1000});
+      check(await author.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Edit form fits mobile and desktop');
+      if (javaScriptEnabled) {
+        const audit=await new AxeBuilder({page:author}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
+        check(audit.violations.length===0,'Edit form has no accessibility violations');
+      }
+    }
+    await author.getByRole('button',{name:'Save changes',exact:true}).click();
+    await author.waitForURL('**?saved=post');
+    check((await author.getByRole('status').filter({hasText:'Post saved.'}).innerText()).includes('Post saved.'),'Post edit confirms the save');
+    await bobby.goto(base+post);
+    check(await bobby.getByRole('heading',{name:'Corrected album title',exact:true}).count()===1,'Other members see the corrected title');
+    check((await bobby.locator('main').innerText()).includes('Updated recommendation note'),'Other members see the corrected note');
+    await author.getByRole('link',{name:'Delete post',exact:true}).click();
+    await author.waitForURL('**/delete');
+    check(await author.getByRole('heading',{name:'Corrected album title',exact:true}).count()===1,'Deletion confirmation identifies the post');
+    if (javaScriptEnabled) {
+      const audit=await new AxeBuilder({page:author}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
+      check(audit.violations.length===0,'Deletion confirmation has no accessibility violations');
+    }
+    await author.getByRole('link',{name:'Cancel',exact:true}).click();
+    await author.waitForURL('**'+post);
+    check(await author.getByRole('heading',{name:'Corrected album title',exact:true}).count()===1,'Cancel keeps the post');
+    await author.getByRole('link',{name:'Delete post',exact:true}).click();
+    await author.waitForURL('**/delete');
+    await author.getByRole('button',{name:'Delete post permanently',exact:true}).click();
+    await author.waitForURL('**/history');
+    check((await bobby.request.get(base+post)).status()===404,'Confirmed deletion removes the post');
+  }
+
   for (const [width,theme] of [[1280,'light'],[390,'dark']]) {
     await bobby.setViewportSize({width,height:1000});
     await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);

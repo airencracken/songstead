@@ -106,14 +106,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 9 {
+	if version > 10 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 9 {
+	if currentOnly && version != 10 {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 9; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql"}[next]
+	for next := version + 1; next <= 10; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql", 10: "migrations/010_post_edits.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -126,7 +126,7 @@ func (s *Store) migrate(currentOnly bool) error {
 				return err
 			}
 		}
-		if next == 6 || next == 7 {
+		if next == 6 || next == 7 || next == 10 {
 			if err := queueArtwork(tx); err != nil {
 				return err
 			}
@@ -291,7 +291,7 @@ const legacySelectRecommendation = `SELECT r.id,m.id,r.sender_id,d.user_id,sende
  LEFT JOIN music_states ms ON ms.media_id=m.id AND ms.user_id=?
  LEFT JOIN groups g ON g.id=r.group_id `
 
-var selectRecommendation = strings.Replace(legacySelectRecommendation, "r.visibility\n", "r.visibility,EXISTS(SELECT 1 FROM media_artwork art WHERE art.media_id=m.id),coalesce(l.genre,''),coalesce(l.tags,'[]'),coalesce(ms.liked,0)\n", 1) + ` LEFT JOIN recommendation_labels l ON l.recommendation_id=r.id `
+var selectRecommendation = strings.NewReplacer("m.title", "coalesce(r.title_override,m.title)", "m.artist", "coalesce(r.artist_override,m.artist)", "m.kind", "coalesce(r.kind_override,m.kind)").Replace(strings.Replace(legacySelectRecommendation, "r.visibility\n", "r.visibility,EXISTS(SELECT 1 FROM media_artwork art WHERE art.media_id=m.id),coalesce(l.genre,''),coalesce(l.tags,'[]'),coalesce(ms.liked,0)\n", 1)) + ` LEFT JOIN recommendation_labels l ON l.recommendation_id=r.id `
 
 // The same visibility predicate protects details, comments and mutations.
 const visible = `((r.group_id IS NULL AND (r.sender_id=? OR EXISTS(SELECT 1 FROM users v WHERE v.id=? AND (r.visibility='members' OR d.user_id=v.id)))) OR (r.group_id IS NOT NULL AND EXISTS(SELECT 1 FROM group_members gm WHERE gm.group_id=r.group_id AND gm.user_id=?)))`

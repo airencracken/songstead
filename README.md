@@ -93,6 +93,19 @@ indicate yourself. Songstead neither tracks playback nor connects streaming
 accounts. Explicit Witmoot drafts and saved discussion links keep conversation
 optional. Every application remains usable on its own.
 
+Open your own post and choose **Edit post** to correct its link, title, artist,
+music kind, note, genre or tags. Corrections stay with that post and preserve its
+audience. A post with timestamped comments must keep the same music identity so
+those references remain attached to their recording. **Delete post** opens a
+confirmation page before permanently removing the post and its comments; other
+recommendations and private song likes and listening history remain. Both actions
+work without JavaScript and are available only to the author.
+
+YouTube playlist links support automatic titles and artwork. YouTube album
+playlists are recognized as albums; a video link with a playlist parameter still
+identifies the individual track. Provider availability can limit previews, and
+you can always enter or correct the details yourself.
+
 Add an optional freeform genre and comma-separated tags when sharing, or edit
 them on your own recommendation later. These descriptions follow that
 recommendation's audience. Private-send labels never carry over to another

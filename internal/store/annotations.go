@@ -63,7 +63,7 @@ func (s *Store) AddRecording(ctx context.Context, viewer, id int64, raw, title s
 	defer tx.Rollback()
 	var mid int64
 	var musicKind string
-	err = tx.QueryRowContext(ctx, `SELECT r.media_id,m.kind FROM recommendations r JOIN media m ON m.id=r.media_id JOIN recommendation_destinations d ON d.recommendation_id=r.id WHERE r.id=? AND `+visible, id, viewer, viewer, viewer).Scan(&mid, &musicKind)
+	err = tx.QueryRowContext(ctx, `SELECT r.media_id,coalesce(r.kind_override,m.kind) FROM recommendations r JOIN media m ON m.id=r.media_id JOIN recommendation_destinations d ON d.recommendation_id=r.id WHERE r.id=? AND `+visible, id, viewer, viewer, viewer).Scan(&mid, &musicKind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrMissing
 	}
@@ -119,7 +119,7 @@ func (s *Store) Annotate(ctx context.Context, viewer, id, track int64, body stri
 	defer tx.Rollback()
 	var mid int64
 	var kind string
-	err = tx.QueryRowContext(ctx, `SELECT r.media_id,m.kind FROM recommendations r JOIN media m ON m.id=r.media_id JOIN recommendation_destinations d ON d.recommendation_id=r.id WHERE r.id=? AND `+visible, id, viewer, viewer, viewer).Scan(&mid, &kind)
+	err = tx.QueryRowContext(ctx, `SELECT r.media_id,coalesce(r.kind_override,m.kind) FROM recommendations r JOIN media m ON m.id=r.media_id JOIN recommendation_destinations d ON d.recommendation_id=r.id WHERE r.id=? AND `+visible, id, viewer, viewer, viewer).Scan(&mid, &kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrMissing
 	}

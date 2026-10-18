@@ -271,7 +271,7 @@ func (s *Store) Browse(ctx context.Context, viewer int64, history bool, f Filter
 		args = append(args, f.Group)
 	}
 	if f.Kind != "" {
-		where += " AND m.kind=?"
+		where += " AND coalesce(r.kind_override,m.kind)=?"
 		args = append(args, f.Kind)
 	}
 	if f.Genre != "" {
