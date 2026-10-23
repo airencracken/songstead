@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-VERSION ?= 0.11.0
+VERSION ?= $(shell cat VERSION)
 GOCACHE ?= /tmp/songstead-go-cache
 export GOCACHE
 
@@ -20,7 +20,7 @@ test-mutations:
 	python3 scripts/mutate.py scripts/mutations.json
 test-cli: build
 	python3 scripts/test_cli.py
-check: test-race test-js test-mutations test-packaging test-cli
+check: test-containers test-race test-js test-mutations test-packaging test-cli
 	go vet ./...
 	@test -z "$$(gofmt -l cmd internal scripts)" || { echo 'Run gofmt on cmd, internal and scripts'; exit 1; }
 demo: build
@@ -31,3 +31,14 @@ test-sandbox:
 
 test-browser: build
 	cd scripts/browser && npm ci && npm test
+
+.PHONY: test-containers test-container-lifecycle
+test-containers: ## Check container release, schema, mutation and publication contracts
+	python3 -m unittest discover -s scripts/containers -p 'test_*.py' -v
+
+test-container-lifecycle: ## Exercise a local image (build it first; needs Docker)
+	python3 scripts/containers/lifecycle.py --image songstead:local --version "$(VERSION)" --upgrade
+
+.PHONY: test-container-registry
+test-container-registry: ## Exercise real multi-platform publication in an isolated local registry
+	python3 scripts/containers/check_registry.py

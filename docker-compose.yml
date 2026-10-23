@@ -1,0 +1,27 @@
+services:
+  songstead:
+    image: ${SONGSTEAD_IMAGE:-ghcr.io/airencracken/songstead:v0.11.1}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SONGSTEAD_PORT:-8083}:8080"
+    volumes:
+      - songstead-data:/data
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 25s
+    environment:
+      SONGSTEAD_BASE_URL: "${SONGSTEAD_BASE_URL:-http://localhost:${SONGSTEAD_PORT:-8083}}"
+      SONGSTEAD_SECURE_COOKIES: "${SONGSTEAD_SECURE_COOKIES:-false}"
+      SONGSTEAD_TRUSTED_PROXIES: "${SONGSTEAD_TRUSTED_PROXIES:-}"
+      SONGSTEAD_WITMOOT_URL: "${SONGSTEAD_WITMOOT_URL:-}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  songstead-data:

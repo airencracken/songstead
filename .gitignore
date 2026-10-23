@@ -11,3 +11,5 @@ __pycache__/
 *.py[cod]
 
 node_modules/
+
+/container-artifacts/

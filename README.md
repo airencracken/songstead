@@ -12,6 +12,14 @@ It is part of Comfyware: software for a small community, run by the people using
 it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
 quiet blue panels, with a little jukebox to keep the songs company.
 
+Run a published image with Docker Compose: [container installation, upgrades, and backups](docs/containers.md).
+
+## Songstead 0.11.1
+
+Published container images now support Linux amd64 and arm64, with private
+persistent storage and tested upgrades and restores. See the
+[container guide](docs/containers.md). Schema 10 and export format 6 are unchanged.
+
 ## Songstead 0.11.0
 
 Open your own post to edit its music details and note, or delete it through a

@@ -1,7 +1,9 @@
 name: Release
 on:
   push:
+    branches: ['**']
     tags: ['v*']
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,11 +12,12 @@ env:
 defaults:
   run:
     shell: bash --noprofile --norc {0}
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  release:
+  build:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -31,15 +34,73 @@ jobs:
         env:
           RELEASE_REF: ${{ github.ref }}
         run: |
-          case "$RELEASE_REF" in refs/tags/v*) ;; *) echo 'Release requires a version tag'; exit 1 ;; esac
-          git merge-base --is-ancestor HEAD origin/master || exit 1
-          test "$RELEASE_REF" = "refs/tags/v$(cat VERSION)" || exit 1
+          case "$RELEASE_REF" in
+            refs/tags/v*)
+              git merge-base --is-ancestor HEAD origin/master || exit 1
+              test "$RELEASE_REF" = "refs/tags/v$(cat VERSION)" || exit 1
+              ;;
+          esac
           go mod download || exit 1
           git diff --exit-code -- go.mod go.sum || exit 1
           make check test-sandbox build || exit 1
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
           version: v2.18.2
-          args: release --clean
+          install-only: true
+      - name: Build native archives without publishing
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          goreleaser check || exit 1
+          case "$RELEASE_REF" in
+            refs/tags/v*) goreleaser release --clean --skip=publish || exit 1 ;;
+            *) goreleaser release --snapshot --clean --skip=publish || exit 1 ;;
+          esac
+      - name: Verify release archives and source documentation
+        run: python3 scripts/containers/check_artifacts.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-packages
+          if-no-files-found: error
+          compression-level: 0
+          path: |
+            dist/*.tar.gz
+            dist/*_checksums.txt
+
+
+  containers:
+    needs: [build]
+    uses: ./.github/workflows/containers.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      publish: ${{ startsWith(github.ref, 'refs/tags/v') && github.repository == 'airencracken/songstead' }}
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v') && github.repository == 'airencracken/songstead'
+    needs: [build, containers]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-packages
+          path: dist
+      - name: Publish tested artifacts to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft > release-draft; then
+            [ "$(cat release-draft)" = true ] || { echo 'Release already published; refusing to replace it.' >&2; exit 1; }
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --generate-notes --title "songstead $RELEASE_TAG" || exit 1
+          fi
+          gh release upload "$RELEASE_TAG" dist/* --clobber || exit 1
+          case "$RELEASE_TAG" in
+            *-*) gh release edit "$RELEASE_TAG" --draft=false --prerelease || exit 1 ;;
+            *) gh release edit "$RELEASE_TAG" --draft=false || exit 1 ;;
+          esac

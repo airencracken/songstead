@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.1
+
+- Publish tested amd64 and arm64 images to GitHub Container Registry.
+- Add a non-root container, hardened Compose setup, and upgrade/restore guide.
+- Gate publication on native image lifecycle and registry atomicity tests.
+- Preserve schema 10 and account export format 6.
+
 ## 0.11.0
 
 - Let authors edit a post's music link, title, artist, kind, note, genre and tags,
