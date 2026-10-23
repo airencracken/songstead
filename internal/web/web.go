@@ -87,6 +87,8 @@ type page struct {
 	Settings                                                                            store.Settings
 	SettingsDraft                                                                       *store.Settings
 	Invitations                                                                         []store.Invitation
+	InvitationNow                                                                       int64
+	InvitationLabel, InvitationUses, InvitationDays                                     string
 	SecretURL, Notice, Secret, Version                                                  string
 	Audience                                                                            string
 	Recent                                                                              bool

@@ -1,0 +1,67 @@
+{{define "invites"}}
+<section class="invitation-page">
+  <header class="invitation-header">
+    <h1>Invitations</h1>
+    <p class="muted">Create a link to invite someone to join. New accounts join as members.</p>
+    {{if eq .User.Role "owner"}}{{template "admin-nav" .}}{{end}}
+  </header>
+  <p class="muted">{{if eq .User.Role "owner"}}You can see and revoke everyone's invitations.{{else}}You can manage your own invitations.{{end}}</p>
+  {{if .SecretURL}}
+  <section class="invitation-result" role="status" aria-labelledby="invitation-ready">
+    <h2 id="invitation-ready">Copy this invitation now</h2>
+    <p class="muted">Send the link privately to the person you're inviting. It cannot be shown again.</p>
+    <label for="invitation-link">Invitation link</label>
+    <input id="invitation-link" readonly value="{{.SecretURL}}" autocomplete="off">
+  </section>
+  {{end}}
+  <div class="invitation-layout">
+    <section class="invitation-create" aria-labelledby="create-invitation">
+      <h2 id="create-invitation">Create an invitation</h2>
+      {{if eq .Settings.JoinMode "closed"}}
+      <p class="muted">Joining is closed.{{if eq .User.Role "owner"}} Enable invitations in <a href="/admin/settings">instance settings</a>.{{end}}</p>
+      {{else}}
+      <form action="/invites" method="post">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <div class="invitation-field">
+          <label for="invite-label">Label (optional)</label>
+          <input id="invite-label" name="label" maxlength="64" placeholder="e.g. for Sam" value="{{.InvitationLabel}}">
+        </div>
+        <div class="invitation-fields">
+          <div class="invitation-field">
+            <label for="invite-uses">Uses</label>
+            <input id="invite-uses" name="max_uses" type="number" min="0" max="10000" value="{{.InvitationUses}}" required aria-describedby="invite-uses-help">
+            <p id="invite-uses-help" class="muted">0 for no limit.</p>
+          </div>
+          <div class="invitation-field">
+            <label for="invite-days">Expires after (days)</label>
+            <input id="invite-days" name="days" type="number" min="0" max="3650" value="{{.InvitationDays}}" required aria-describedby="invite-days-help">
+            <p id="invite-days-help" class="muted">0 for no expiry.</p>
+          </div>
+        </div>
+        <button class="button primary" type="submit">Create invitation</button>
+      </form>
+      {{end}}
+    </section>
+    <section class="invitation-list" aria-labelledby="existing-invitations">
+      <h2 id="existing-invitations">Existing invitations</h2>
+      {{range .Invitations}}
+      <article class="invitation-record">
+        <div class="invitation-record-head">
+          <h3>{{if .Label}}{{.Label}}{{else}}Invitation {{.Prefix}}{{end}}</h3>
+          <span class="invitation-status">{{if .Revoked}}Revoked{{else if and .ExpiresAt (le .ExpiresAt $.InvitationNow)}}Expired{{else if and .MaxUses (ge .Uses .MaxUses)}}Used up{{else}}Open{{end}}</span>
+        </div>
+        <dl class="invitation-meta">
+          <div><dt>Uses</dt><dd>{{.Uses}}{{if .MaxUses}} of {{.MaxUses}}{{else}} · unlimited{{end}}</dd></div>
+          <div><dt>Expires</dt><dd>{{if .ExpiresAt}}<time datetime="{{isoDate .ExpiresAt}}">{{date .ExpiresAt}}</time>{{else}}Never{{end}}</dd></div>
+          <div><dt>Created by</dt><dd>{{.Creator}}</dd></div>
+          <div><dt>Code prefix</dt><dd><code>{{.Prefix}}</code></dd></div>
+          <div><dt>Created</dt><dd><time datetime="{{isoDate .CreatedAt}}">{{date .CreatedAt}}</time></dd></div>
+        </dl>
+        {{if not .Revoked}}<form action="/invites/{{.ID}}/revoke" method="post"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="button" type="submit" aria-label="Revoke invitation {{if .Label}}{{.Label}}{{else}}{{.Prefix}}{{end}}">Revoke invitation</button></form>{{end}}
+      </article>
+      {{else}}<p class="muted invitation-empty">No invitations yet. Create one to invite someone to join.</p>{{end}}
+      <nav class="pagination" aria-label="Invitation pages">{{if .HasPrevious}}<a href="/invites?offset={{.Previous}}">Previous</a>{{end}}{{if .HasNext}}<a href="/invites?offset={{.Next}}">Next</a>{{end}}</nav>
+    </section>
+  </div>
+</section>
+{{end}}

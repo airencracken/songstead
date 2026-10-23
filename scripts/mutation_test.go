@@ -167,6 +167,11 @@ func mutationTables(t *testing.T) []string {
 	if err != nil || len(tables) == 0 {
 		t.Fatalf("no mutation tables: %v", err)
 	}
+	design, err := filepath.Glob("mutations/*.json")
+	if err != nil || len(design) == 0 {
+		t.Fatalf("no design mutation tables: %v", err)
+	}
+	tables = append(tables, design...)
 	return tables
 }
 

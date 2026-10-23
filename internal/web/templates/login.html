@@ -1,6 +1,6 @@
 {{define "login"}}<section class="welcome">
-  <div><p class="eyebrow">A place for the music your friends send.</p><h1>{{.Settings.WelcomeTitle}}</h1><p class="intro">{{.Settings.WelcomeText}}</p><img class="mascot" src="{{if .Settings.Mascot}}/branding/mascot{{else}}/static/jukebox.png{{end}}" width="240" height="240" alt="Songstead's smiling little blue jukebox"></div>
-  <div class="panel"><h2>Welcome back</h2><form action="/login" method="post" class="stack">
+  <div><h1>{{.Settings.WelcomeTitle}}</h1><p class="intro">{{.Settings.WelcomeText}}</p><img class="mascot" src="{{if .Settings.Mascot}}/branding/mascot{{else}}/static/jukebox.png{{end}}" width="240" height="240" alt="Songstead's smiling little blue jukebox"></div>
+  <div class="panel account-page"><h2>Sign in</h2><form action="/login" method="post" class="stack">
     <input type="hidden" name="csrf" value="{{.CSRF}}">
     <label>Username<input name="username" value="{{.Username}}" autocomplete="username" required maxlength="24"></label>
     <label>Password<input name="password" type="password" autocomplete="current-password" required maxlength="72"></label>

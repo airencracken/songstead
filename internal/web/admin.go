@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func (a *App) adminRoutes(mux *http.ServeMux) {
@@ -185,7 +186,11 @@ func (a *App) showInvites(w http.ResponseWriter, r *http.Request, status int, se
 	if more {
 		invites = invites[:50]
 	}
-	a.render(w, r, status, page{View: "invites", Title: "Invitations", Invitations: invites, SecretURL: secret, Error: message, Offset: int(offset), Previous: max(0, int(offset)-50), Next: int(offset) + 50, HasPrevious: offset > 0, HasNext: more})
+	label, uses, days := "", "1", "7"
+	if status == http.StatusUnprocessableEntity {
+		label, uses, days = r.PostForm.Get("label"), r.PostForm.Get("max_uses"), r.PostForm.Get("days")
+	}
+	a.render(w, r, status, page{View: "invites", Title: "Invitations", Invitations: invites, InvitationNow: time.Now().Unix(), InvitationLabel: label, InvitationUses: uses, InvitationDays: days, SecretURL: secret, Error: message, Offset: int(offset), Previous: max(0, int(offset)-50), Next: int(offset) + 50, HasPrevious: offset > 0, HasNext: more})
 }
 func (a *App) createInvite(w http.ResponseWriter, r *http.Request) {
 	uses, e1 := strconv.Atoi(r.PostForm.Get("max_uses"))

@@ -1,4 +1,4 @@
-{{define "compose"}}<section class="compose"><p class="eyebrow">Something they might love</p>{{if .Item.ID}}<h1>Edit your post.</h1><p class="muted">Correct the music details or your note. Your audience stays the same.</p>{{else}}<h1>Share some music.</h1><p class="muted">Leave something for everyone here, or send it privately. Add a few words if you like.</p>{{end}}
+{{define "compose"}}<section class="compose">{{if .Item.ID}}<h1>Edit your post.</h1><p class="muted">Correct the music details or your note. Your audience stays the same.</p>{{else}}<h1>Share some music.</h1><p class="muted">Leave something for everyone here, or send it privately. Add a few words if you like.</p>{{end}}
 <form action="{{if .Item.ID}}/recommendations/{{.Item.ID}}/edit{{else}}/recommendations/new{{end}}" method="post" class="panel stack" data-music-compose>
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <label>Music link<input type="url" name="url" value="{{.URL}}" placeholder="https://…" maxlength="4096" required></label>

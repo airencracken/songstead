@@ -1,6 +1,6 @@
 {{define "recent-tabs"}}<nav class="recent-tabs" aria-label="Recent activity"><a class="button" href="/recent" {{if eq .View "list"}}aria-current="page"{{end}}>Music</a><a class="button" href="/recent/comments" {{if eq .View "recent-comments"}}aria-current="page"{{end}}>Comments</a></nav>{{end}}
 {{define "recent-comments"}}
-<div class="page-head"><div><p class="eyebrow">Hear what people thought</p><h1>Recent comments</h1><p class="muted">Conversations on music shared with everyone here, newest first. Private sends and personal listening notes stay private.</p></div></div>
+<div class="page-head"><div><h1>Recent comments</h1><p class="muted">Conversations on music shared with everyone here, newest first. Private sends and personal listening notes stay private.</p></div></div>
 {{template "recent-tabs" .}}
 <p class="muted">Timestamped comments follow your <a href="/account#spoiler-preferences">spoiler preference</a> and indicated listening positions. Open a song to reveal annotations for that view.</p>
 {{if not .Settings.LocalComments}}<p class="muted">New comments are posted in Witmoot. Earlier comments here remain readable.</p>{{end}}

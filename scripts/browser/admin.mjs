@@ -9,6 +9,7 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
+import { checkInvitations } from './invitations.mjs';
 
 const binary = process.env.SONGSTEAD_BINARY || fileURLToPath(new URL('../../bin/songstead', import.meta.url));
 const directory = await mkdtemp(resolve(tmpdir(), 'songstead-browser-'));
@@ -65,6 +66,7 @@ try {
   check((await page.getByRole('status').innerText()).includes('already in effect'), 'Settings saved notice');
   check(await page.getByRole('combobox',{name:'Where can people comment?',exact:true}).inputValue()==='both','Owner discussion policy persists');
   check((await page.locator('main').innerText()).includes('No API key is needed'),'Connection explains separate accounts without keys');
+  await checkInvitations(browser, base, await ownerContext.storageState(), { app: 'songstead', screenshots: process.env.SONGSTEAD_SCREENSHOT_DIR });
   for (const [width, theme] of [[1280, 'light'], [390, 'dark']]) {
     await page.setViewportSize({ width, height: 960 });
     await page.getByLabel('Color theme', { exact: true }).selectOption(theme);
@@ -76,9 +78,9 @@ try {
     }
   }
   await page.goto(`${base}/invites`);
-  await page.getByLabel('Label', { exact: true }).fill('Browser guest');
+  await page.getByLabel('Label (optional)', { exact: true }).fill('Browser guest');
   await page.getByRole('button', { name: 'Create invitation', exact: true }).click();
-  const invite = await page.getByLabel('Private link', { exact: true }).inputValue();
+  const invite = await page.getByLabel('Invitation link', { exact: true }).inputValue();
   check(new URL(invite).origin === base, 'Invitation uses configured origin');
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();

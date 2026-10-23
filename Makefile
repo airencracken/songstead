@@ -20,7 +20,7 @@ test-mutations:
 	python3 scripts/mutate.py scripts/mutations.json
 test-cli: build
 	python3 scripts/test_cli.py
-check: test-containers test-race test-js test-mutations test-packaging test-cli
+check: test-design-mutations test-containers test-race test-js test-mutations test-packaging test-cli
 	go vet ./...
 	@test -z "$$(gofmt -l cmd internal scripts)" || { echo 'Run gofmt on cmd, internal and scripts'; exit 1; }
 demo: build
@@ -42,3 +42,7 @@ test-container-lifecycle: ## Exercise a local image (build it first; needs Docke
 .PHONY: test-container-registry
 test-container-registry: ## Exercise real multi-platform publication in an isolated local registry
 	python3 scripts/containers/check_registry.py
+
+.PHONY: test-design-mutations
+test-design-mutations: ## Verify invitation design regressions reject deliberate defects
+	GOWORK=off python3 scripts/mutate.py scripts/mutations/design.json
