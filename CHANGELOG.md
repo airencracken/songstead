@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.2
+
+- Align invitation and account screens with Imvault and Witmoot.
+- Remove decorative eyebrow labels and retain sharing context as ordinary text.
+- Show invitation availability and preserve drafts after validation errors.
+- Add responsive, accessibility, keyboard, and no-JavaScript regression checks.
+- Prime module dependencies before running offline design mutations.
+- Preserve schema 10 and account export format 6.
+
 ## 0.11.1
 
 - Publish tested amd64 and arm64 images to GitHub Container Registry.

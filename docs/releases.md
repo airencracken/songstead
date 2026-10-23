@@ -26,12 +26,12 @@ Choose the archive for your machine and download the matching checksum file.
 For this release on amd64, using the GitHub CLI:
 
 ```sh
-gh release download v0.11.1 --repo airencracken/songstead \
-    --pattern songstead_0.11.1_linux_amd64.tar.gz \
-    --pattern songstead_0.11.1_checksums.txt
-sha256sum --check --ignore-missing songstead_0.11.1_checksums.txt
-tar -xzf songstead_0.11.1_linux_amd64.tar.gz
-cd songstead_0.11.1_linux_amd64
+gh release download v0.11.2 --repo airencracken/songstead \
+    --pattern songstead_0.11.2_linux_amd64.tar.gz \
+    --pattern songstead_0.11.2_checksums.txt
+sha256sum --check --ignore-missing songstead_0.11.2_checksums.txt
+tar -xzf songstead_0.11.2_linux_amd64.tar.gz
+cd songstead_0.11.2_linux_amd64
 ./songstead --version
 ```
 
@@ -44,7 +44,7 @@ configuration and data private.
 
 ## Gentoo
 
-The overlay currently packages 0.11.0; the container release does not require Gentoo.
+The overlay provides a source-built package and offline dependency bundle.
 
 Use the [Comfyware overlay](https://github.com/airencracken/comfyware#add-the-overlay)
 for the binary, service account, OpenRC/systemd configuration, logging, and docs.
@@ -52,7 +52,7 @@ After accepting its testing keywords according to the overlay guide:
 
 ```sh
 emaint sync -r comfyware
-emerge --ask =www-apps/songstead-0.11.0::comfyware
+emerge --ask =www-apps/songstead-0.11.2::comfyware
 ```
 
 See [deployment.md](deployment.md) for native services and optional Witmoot
@@ -64,7 +64,7 @@ Source builds need Go 1.26 or newer. Release builds resolve Comfylib v0.1.6 from
 its published module rather than a sibling checkout:
 
 ```sh
-git clone --branch v0.11.1 https://github.com/airencracken/songstead.git
+git clone --branch v0.11.2 https://github.com/airencracken/songstead.git
 cd songstead
 GOWORK=off make check build
 ```

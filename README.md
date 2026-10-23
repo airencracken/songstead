@@ -14,6 +14,13 @@ quiet blue panels, with a little jukebox to keep the songs company.
 
 Run a published image with Docker Compose: [container installation, upgrades, and backups](docs/containers.md).
 
+## Songstead 0.11.2
+
+Invitation and account screens now use matching Comfyware layouts and controls,
+with compact forms, responsive invitation records, and fewer decorative labels.
+Invitation statuses and validation drafts are clearer. Schema 10 and export
+format 6 are unchanged.
+
 ## Songstead 0.11.1
 
 Published container images now support Linux amd64 and arm64, with private
