@@ -14,6 +14,12 @@ quiet blue panels, with a little jukebox to keep the songs company.
 
 Run a published image with Docker Compose: [container installation, upgrades, and backups](docs/containers.md).
 
+## Songstead 0.11.3
+
+Comfylib v0.1.7 now supplies the shared invitation/account styles, invitation
+availability and browser assertions. Long backup paths wrap on mobile settings
+pages. Schema 10 and account export format 6 are unchanged.
+
 ## Songstead 0.11.2
 
 Invitation and account screens now use matching Comfyware layouts and controls,
@@ -73,7 +79,7 @@ stay out. Timestamped comments follow your saved spoiler preference and indicate
 listening positions. Older pages remain stable as new comments arrive.
 
 The feed includes earlier local comments when your host chooses Witmoot for new
-posts. Witmoot discussions remain on Witmoot. The current source uses schema 10, export format 6 and Comfylib 0.1.6.
+posts. Witmoot discussions remain on Witmoot. The current source uses schema 10, export format 6 and Comfylib 0.1.7.
 
 
 Owners choose **Discussion location** in Admin: Songstead for comments here,
@@ -147,7 +153,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.1.6 and verified module checksums.
+Release builds use published Comfylib v0.1.7 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh
@@ -305,3 +311,11 @@ available and gzip otherwise. It keeps at most seven copies within a 10 GiB
 archive cap and bounds each uncompressed copy to 5 GiB. Owners can check status
 in instance settings. See [automatic backups](docs/automatic-backups.md) for
 configuration, retention, off-host copies and recovery.
+
+## Shared forms
+
+Invitation and account layouts use Comfylib's embedded `ui` styles, loaded after
+the app stylesheet so controls and responsive spacing stay aligned across the
+Comfyware apps. Comfylib also supplies invitation status calculation and shared
+browser assertions. Templates, palettes, permissions and atomic redemption remain
+in the application.

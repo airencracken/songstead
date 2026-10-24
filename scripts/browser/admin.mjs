@@ -12,7 +12,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { checkInvitations } from './invitations.mjs';
 
 const binary = process.env.SONGSTEAD_BINARY || fileURLToPath(new URL('../../bin/songstead', import.meta.url));
-const directory = await mkdtemp(resolve(tmpdir(), 'songstead-browser-'));
+const directory = await mkdtemp(resolve(tmpdir(), 'songstead-browser-long-directory-'.padEnd(120, 'x')));
 const environment = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('SONGSTEAD_')));
 const password = 'a-browser-test-password';
 let app, browser;
@@ -72,7 +72,8 @@ try {
     await page.getByLabel('Color theme', { exact: true }).selectOption(theme);
     for (const route of ['/admin/settings', '/admin/users', '/invites', '/account', '/about']) {
       await page.goto(base + route);
-      check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `No horizontal overflow on ${route} at ${width}`);
+      const overflow = await page.evaluate(() => [...document.querySelectorAll('main *')].filter(element => element.getBoundingClientRect().right > innerWidth).map(element => ({ tag: element.tagName, className: element.className, right: element.getBoundingClientRect().right })));
+      check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `No horizontal overflow on ${route} at ${width}: ${JSON.stringify(overflow)}`);
       const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
       assert.deepEqual(result.violations.map(v => ({ id: v.id, nodes: v.nodes.length })), [], `Accessibility on ${route}`); checks++;
     }

@@ -26,6 +26,7 @@ import (
 	"github.com/airencracken/comfylib/memberprofile"
 	"github.com/airencracken/comfylib/reference"
 	"github.com/airencracken/comfylib/token"
+	"github.com/airencracken/comfylib/ui"
 	"github.com/airencracken/songstead/internal/annotations"
 	"github.com/airencracken/songstead/internal/media"
 	"github.com/airencracken/songstead/internal/store"
@@ -127,6 +128,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	}
 	tmpl, err := template.New("pages").Funcs(template.FuncMap{"linkNumber": func(i int) int { return i + 1 },
 		"supportsMetadata": media.SupportsMetadata,
+		"invitationStatus": invitationStatus,
 		"browseURL":        browseURL,
 		"joinLabels":       func(values []string) string { return strings.Join(values, ", ") },
 		"labelLink": func(kind, value string) string {
@@ -156,6 +158,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		return nil, err
 	}
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
+	mux.Handle("GET /static/comfyware/", http.StripPrefix("/static/comfyware/", http.FileServerFS(ui.Assets())))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := s.Healthy(r.Context()); err != nil {
 			http.Error(w, "unavailable", 503)

@@ -48,7 +48,7 @@
       <article class="invitation-record">
         <div class="invitation-record-head">
           <h3>{{if .Label}}{{.Label}}{{else}}Invitation {{.Prefix}}{{end}}</h3>
-          <span class="invitation-status">{{if .Revoked}}Revoked{{else if and .ExpiresAt (le .ExpiresAt $.InvitationNow)}}Expired{{else if and .MaxUses (ge .Uses .MaxUses)}}Used up{{else}}Open{{end}}</span>
+          <span class="invitation-status">{{invitationStatus . $.InvitationNow}}</span>
         </div>
         <dl class="invitation-meta">
           <div><dt>Uses</dt><dd>{{.Uses}}{{if .MaxUses}} of {{.MaxUses}}{{else}} · unlimited{{end}}</dd></div>

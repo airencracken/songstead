@@ -25,10 +25,26 @@
   },
   {
     "name": "invitation expiry status",
-    "file": "internal/web/templates/invites.html",
-    "before": "(le .ExpiresAt $.InvitationNow)",
-    "after": "(lt .ExpiresAt $.InvitationNow)",
+    "file": "internal/web/invitation_status.go",
+    "before": "if i.ExpiresAt != 0 {",
+    "after": "if false {",
     "package": "./internal/web",
     "run": "^TestInvitationStatusesDescribeAvailability$"
+  },
+  {
+    "name": "shared account stylesheet route",
+    "file": "internal/web/web.go",
+    "before": "\"GET /static/comfyware/\"",
+    "after": "\"GET /static/missing-comfyware/\"",
+    "package": "./internal/web",
+    "run": "^TestSharedAccountAssets$"
+  },
+  {
+    "name": "shared stylesheet cascade order",
+    "file": "internal/web/templates/layout.html",
+    "before": "<link rel=\"stylesheet\" href=\"/static/comfyware/accounts.css\">",
+    "after": "",
+    "package": "./internal/web",
+    "run": "^TestSharedAccountAssets$"
   }
 ]

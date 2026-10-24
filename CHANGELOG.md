@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.3
+
+- Use published Comfylib v0.1.7 for invitation/account styles and availability.
+- Share invitation browser checks with the companion apps.
+- Verify shared static routes, stylesheet order, and inclusive invitation expiry.
+- Wrap long backup directory names on mobile settings pages.
+- Preserve schema 10 and account export format 6.
+
 ## 0.11.2
 
 - Align invitation and account screens with Imvault and Witmoot.

@@ -1,6 +1,6 @@
 services:
   songstead:
-    image: ${SONGSTEAD_IMAGE:-ghcr.io/airencracken/songstead:v0.11.2}
+    image: ${SONGSTEAD_IMAGE:-ghcr.io/airencracken/songstead:v0.11.3}
     restart: unless-stopped
     ports:
       - "127.0.0.1:${SONGSTEAD_PORT:-8083}:8080"
