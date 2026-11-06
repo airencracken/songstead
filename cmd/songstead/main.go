@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/airencracken/comfylib/clientip"
+	"github.com/airencracken/comfylib/password"
 	"github.com/airencracken/comfylib/privdrop"
 	"github.com/airencracken/comfylib/svcconfig"
 	"github.com/airencracken/songstead/internal/media"
@@ -48,11 +49,12 @@ func main() {
 const help = `Songstead: good music, from your people.
 
 Usage:
+  songstead setup [--data-dir DIRECTORY]
   songstead serve [--addr 127.0.0.1:8083] [--data-dir ./data]
   songstead sandbox [--check] [--data-dir ./data] [--bwrap bwrap]
-  songstead create-owner --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
-  songstead create-user --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
-  songstead set-password --username NAME (--password-prompt | --password-stdin) [--data-dir DIRECTORY]
+  songstead create-owner --username NAME [--password-prompt | --password-stdin | --password-file PATH] [--data-dir DIRECTORY]
+  songstead create-user --username NAME [--password-prompt | --password-stdin | --password-file PATH] [--data-dir DIRECTORY]
+  songstead set-password --username NAME [--password-prompt | --password-stdin | --password-file PATH] [--data-dir DIRECTORY]
   songstead list-users [--data-dir DIRECTORY]
   songstead set-role --username NAME --role owner|member [--data-dir DIRECTORY]
   songstead backup --output FILE [--data-dir ./data]
@@ -121,14 +123,13 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 	flags := commandFlags(command, out)
 	data := flags.String("data-dir", "", "private data directory (environment, then installed service, then ./data)")
 	var addr, name, output, input, role string
-	var stdin, prompt bool
+	var source *password.Source
 	switch command {
 	case "serve":
 		flags.StringVar(&addr, "addr", envDefault("SONGSTEAD_ADDR", "127.0.0.1:8083"), "listen address")
 	case "create-owner", "create-user", "set-password":
 		flags.StringVar(&name, "username", "", "account username (required)")
-		flags.BoolVar(&stdin, "password-stdin", false, "read one password line from standard input")
-		flags.BoolVar(&prompt, "password-prompt", false, "prompt twice without echoing (requires a terminal)")
+		source = password.Flags(flags)
 	case "set-role":
 		flags.StringVar(&name, "username", "", "existing account username (required)")
 		flags.StringVar(&role, "role", "", "owner or member (required)")
@@ -147,8 +148,8 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 		return errors.New("unexpected arguments")
 	}
 	account := command == "create-owner" || command == "create-user" || command == "set-password"
-	if account && (stdin == prompt || name == "") {
-		return errors.New("provide --username and exactly one of --password-prompt or --password-stdin")
+	if account && name == "" {
+		return errors.New("provide --username; password entry prompts by default")
 	}
 	if command == "set-role" && (store.ValidateUsername(name) != nil || (role != "owner" && role != "member")) {
 		return errors.New("provide a valid --username and --role owner or member")
@@ -170,11 +171,7 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 			return err
 		}
 		var err error
-		if prompt {
-			password, err = promptPassword(in, out)
-		} else {
-			password, err = readPassword(in)
-		}
+		password, err = source.Read(in, out)
 		if err != nil {
 			return err
 		}
@@ -229,6 +226,12 @@ func runWithPaths(ctx context.Context, args []string, in io.Reader, out io.Write
 		return err
 	}
 	switch command {
+	case "setup":
+		wizard, err := firstSetup(s, *data, os.Getenv("SONGSTEAD_BASE_URL"), envDefault("SONGSTEAD_ADDR", "127.0.0.1:8083"))
+		if err != nil {
+			return err
+		}
+		return wizard.Enable(ctx, out)
 	case "create-owner", "create-user", "set-password":
 		if command == "create-user" {
 			_, err = s.CreateUser(ctx, name, password)
@@ -297,11 +300,20 @@ func serve(ctx context.Context, s *store.Store, addr, dataDir string) error {
 	if err != nil {
 		return err
 	}
-	server := &http.Server{Addr: addr, Handler: a, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16384}
+	wizard, err := firstSetup(s, dataDir, os.Getenv("SONGSTEAD_BASE_URL"), addr)
+	if err != nil {
+		return err
+	}
+	server := &http.Server{Addr: addr, Handler: wizard.Wrap(a), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16384}
 	workerCtx, cancel := context.WithCancel(ctx)
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go func() { defer wg.Done(); backups.Run(workerCtx) }()
+	go func() {
+		defer wg.Done()
+		if wizard.Wait(workerCtx) == nil {
+			backups.Run(workerCtx)
+		}
+	}()
 	go func() { defer wg.Done(); metadataWorker(workerCtx, s) }()
 	defer func() { cancel(); wg.Wait() }()
 	done := make(chan error, 1)

@@ -18,6 +18,7 @@ import (
 )
 
 var commandDescriptions = map[string]string{
+	"setup":        "Show the private setup key for the browser first-owner page.",
 	"sandbox":      "Start the server confined by Bubblewrap, or verify isolation with --check.",
 	"serve":        "Start the HTTP server. Configuration uses SONGSTEAD_* environment variables.",
 	"create-owner": "Create a new owner locally. Existing accounts are never promoted or changed.",
@@ -30,6 +31,7 @@ var commandDescriptions = map[string]string{
 }
 
 var provisioningCommands = map[string]bool{
+	"setup":        true,
 	"create-owner": true, "create-user": true, "set-password": true,
 	"set-role": true, "list-users": true, "backup": true,
 }
@@ -41,7 +43,12 @@ func servicePaths() svcconfig.Paths {
 }
 
 func provisioningRequest(args []string, paths svcconfig.Paths) privdrop.Request {
-	return privdrop.Request{Args: args, Commands: provisioningCommands, Paths: paths, DefaultUser: "songstead"}
+	return privdrop.Request{Args: args, Commands: provisioningCommands, Paths: paths, DefaultUser: "songstead", Settings: func(command, dataDir string) (map[string]string, error) {
+		if command == "setup" {
+			return paths.Settings("SONGSTEAD_BASE_URL", "SONGSTEAD_ADDR")
+		}
+		return nil, nil
+	}}
 }
 
 func commandFlags(command string, out io.Writer) *flag.FlagSet {

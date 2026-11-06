@@ -710,5 +710,13 @@
     "after": "perspective = \"recommendations\"",
     "package": "./internal/web",
     "run": "^TestDefaultSongDeduplicationKeepsDatedProvenance$"
+  },
+  {
+    "name": "browser setup refuses a second owner",
+    "file": "internal/store/setup.go",
+    "before": "if present {",
+    "after": "if false && present {",
+    "package": "./internal/store",
+    "run": "^TestBrowserFirstOwnerContract$"
   }
 ]
