@@ -14,6 +14,13 @@ quiet blue panels, with a little jukebox to keep the songs company.
 
 Run a published image with Docker Compose: [container installation, upgrades, and backups](docs/containers.md).
 
+## Songstead 0.12.0
+
+First-run setup now works in the browser or terminal, using Comfylib v0.1.8.
+`setup` reveals the host key; `create-owner` and `set-password` share hidden
+confirmed prompts, stdin/file sources, and a data-directory override with the
+other Comfyware apps. See [setup](docs/setup.md).
+
 ## Songstead 0.11.3
 
 Comfylib v0.1.7 now supplies the shared invitation/account styles, invitation

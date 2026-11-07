@@ -1,5 +1,9 @@
 # Install a Songstead release
 
+For first-run accounts, use [browser or command-line setup](setup.md). Run
+`songstead setup` for the browser key, or `songstead create-owner --username NAME`
+for a hidden terminal prompt.
+
 Songstead publishes static Linux binaries for amd64 and arm64, a source archive,
 and SHA-256 checksums in [GitHub Releases](https://github.com/airencracken/songstead/releases).
 The binary includes SQLite, templates, JavaScript, and the jukebox artwork.
@@ -26,12 +30,12 @@ Choose the archive for your machine and download the matching checksum file.
 For this release on amd64, using the GitHub CLI:
 
 ```sh
-gh release download v0.11.3 --repo airencracken/songstead \
-    --pattern songstead_0.11.3_linux_amd64.tar.gz \
-    --pattern songstead_0.11.3_checksums.txt
-sha256sum --check --ignore-missing songstead_0.11.3_checksums.txt
-tar -xzf songstead_0.11.3_linux_amd64.tar.gz
-cd songstead_0.11.3_linux_amd64
+gh release download v0.12.0 --repo airencracken/songstead \
+    --pattern songstead_0.12.0_linux_amd64.tar.gz \
+    --pattern songstead_0.12.0_checksums.txt
+sha256sum --check --ignore-missing songstead_0.12.0_checksums.txt
+tar -xzf songstead_0.12.0_linux_amd64.tar.gz
+cd songstead_0.12.0_linux_amd64
 ./songstead --version
 ```
 
@@ -52,7 +56,7 @@ After accepting its testing keywords according to the overlay guide:
 
 ```sh
 emaint sync -r comfyware
-emerge --ask =www-apps/songstead-0.11.3::comfyware
+emerge --ask =www-apps/songstead-0.12.0::comfyware
 ```
 
 See [deployment.md](deployment.md) for native services and optional Witmoot
@@ -60,11 +64,11 @@ discussion configuration. Each application works independently.
 
 ## Build the published source
 
-Source builds need Go 1.26 or newer. Release builds resolve Comfylib v0.1.7 from
+Source builds need Go 1.26 or newer. Release builds resolve Comfylib v0.1.8 from
 its published module rather than a sibling checkout:
 
 ```sh
-git clone --branch v0.11.3 https://github.com/airencracken/songstead.git
+git clone --branch v0.12.0 https://github.com/airencracken/songstead.git
 cd songstead
 GOWORK=off make check build
 ```

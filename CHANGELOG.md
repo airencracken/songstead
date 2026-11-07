@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0
+
+- Add browser first-owner setup through `songstead setup`, with a private host key,
+  confirmed passwords, and setup closing once an owner exists.
+- Align `create-owner` and `set-password` across Comfyware: hidden confirmed input
+  by default, plus `--password-prompt`, `--password-stdin`, `--password-file`,
+  and `--data-dir`. Password changes end earlier signed-in sessions.
+- Use published Comfylib v0.1.8 and retain existing account command aliases.
+
 ## 0.11.3
 
 - Use published Comfylib v0.1.7 for invitation/account styles and availability.
