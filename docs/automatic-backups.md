@@ -19,10 +19,10 @@ Set these in `/etc/conf.d/songstead` for OpenRC or `/etc/songstead/songstead.env
 for systemd, then restart the service:
 
 ```sh
-SONGSTEAD_BACKUP_INTERVAL=24h
-SONGSTEAD_BACKUP_KEEP=7
-SONGSTEAD_BACKUP_MAX_BYTES=10737418240
-SONGSTEAD_BACKUP_COPY_MAX_BYTES=5368709120
+SONGSTEAD_BACKUP_INTERVAL="24h"
+SONGSTEAD_BACKUP_KEEP="7"
+SONGSTEAD_BACKUP_MAX_BYTES="10737418240"
+SONGSTEAD_BACKUP_COPY_MAX_BYTES="5368709120"
 ```
 
 - Interval: 1 hour through 365 days; `0` disables automatic backups.

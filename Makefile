@@ -22,7 +22,7 @@ test-cli: build
 	python3 scripts/test_cli.py
 	python3 "$$(go list -m -f '{{.Dir}}' github.com/airencracken/comfylib)/tools/check_password_cli.py" --binary bin/songstead --command create-owner --data-env SONGSTEAD_DATA_DIR --prompt "Password: " --confirmation "Confirm password: "
 	python3 "$$(go list -m -f '{{.Dir}}' github.com/airencracken/comfylib)/tools/check_setup.py" --binary bin/songstead --app songstead
-check: test-design-mutations test-containers test-race test-js test-mutations test-packaging test-cli
+check: test-config test-design-mutations test-containers test-race test-js test-mutations test-packaging test-cli
 	go vet ./...
 	@test -z "$$(gofmt -l cmd internal scripts)" || { echo 'Run gofmt on cmd, internal and scripts'; exit 1; }
 demo: build
@@ -49,3 +49,7 @@ test-container-registry: ## Exercise real multi-platform publication in an isola
 test-design-mutations: ## Verify invitation design regressions reject deliberate defects
 	GOWORK=off go mod download
 	GOWORK=off python3 scripts/mutate.py scripts/mutations/design.json
+
+.PHONY: test-config
+test-config:
+	python3 scripts/test_service_config.py

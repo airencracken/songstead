@@ -14,6 +14,18 @@ quiet blue panels, with a little jukebox to keep the songs company.
 
 Run a published image with Docker Compose: [container installation, upgrades, and backups](docs/containers.md).
 
+## Songstead 0.12.1
+
+- Standardize shipped service configs and documented environment examples on
+  `KEY="value"`, including numbers, booleans, and empty values.
+- Identify the service manager and installed config path in every template.
+- Check source and generated package configs, literal quoting, and OpenRC
+  environment inheritance during `make check`.
+- Pass ordinary backup override assignments to the OpenRC service process.
+
+Existing configuration values remain supported and local files are preserved.
+No database migration is introduced.
+
 ## Songstead 0.12.0
 
 First-run setup now works in the browser or terminal, using Comfylib v0.1.8.

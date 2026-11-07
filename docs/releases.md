@@ -30,12 +30,12 @@ Choose the archive for your machine and download the matching checksum file.
 For this release on amd64, using the GitHub CLI:
 
 ```sh
-gh release download v0.12.0 --repo airencracken/songstead \
-    --pattern songstead_0.12.0_linux_amd64.tar.gz \
-    --pattern songstead_0.12.0_checksums.txt
-sha256sum --check --ignore-missing songstead_0.12.0_checksums.txt
-tar -xzf songstead_0.12.0_linux_amd64.tar.gz
-cd songstead_0.12.0_linux_amd64
+gh release download v0.12.1 --repo airencracken/songstead \
+    --pattern songstead_0.12.1_linux_amd64.tar.gz \
+    --pattern songstead_0.12.1_checksums.txt
+sha256sum --check --ignore-missing songstead_0.12.1_checksums.txt
+tar -xzf songstead_0.12.1_linux_amd64.tar.gz
+cd songstead_0.12.1_linux_amd64
 ./songstead --version
 ```
 
@@ -56,7 +56,7 @@ After accepting its testing keywords according to the overlay guide:
 
 ```sh
 emaint sync -r comfyware
-emerge --ask =www-apps/songstead-0.12.0::comfyware
+emerge --ask =www-apps/songstead-0.12.1::comfyware
 ```
 
 See [deployment.md](deployment.md) for native services and optional Witmoot
@@ -68,7 +68,7 @@ Source builds need Go 1.26 or newer. Release builds resolve Comfylib v0.1.8 from
 its published module rather than a sibling checkout:
 
 ```sh
-git clone --branch v0.12.0 https://github.com/airencracken/songstead.git
+git clone --branch v0.12.1 https://github.com/airencracken/songstead.git
 cd songstead
 GOWORK=off make check build
 ```

@@ -1,3 +1,7 @@
+# OpenRC configuration: /etc/conf.d/songstead
+# Use KEY="value" for every setting; no export statements are needed.
+# systemd uses /etc/songstead/songstead.env instead.
+
 # /etc/conf.d/songstead -- shell syntax; restart after editing.
 SONGSTEAD_ADDR="127.0.0.1:8083"
 SONGSTEAD_DATA_DIR="/var/lib/songstead"
