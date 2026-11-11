@@ -1,0 +1,26 @@
+[
+  {
+    "name": "OIDC nonce verified",
+    "file": "internal/sharedoidc/provider.go",
+    "before": "identity.Nonce != nonce",
+    "after": "false",
+    "package": "./internal/sharedoidc",
+    "run": "^(TestOIDCSignatureAudienceNonceAndPKCE|TestSharedSignInExplicitMembershipSessionBindingAndAtomicity)$"
+  },
+  {
+    "name": "identity linking session bound",
+    "file": "internal/suite/auth.go",
+    "before": "binding == \"\" || subtle.ConstantTimeCompare(digest[:], flow.Binding[:]) != 1",
+    "after": "false && (binding == \"\" || subtle.ConstantTimeCompare(digest[:], flow.Binding[:]) != 1)",
+    "package": "./internal/sharedoidc",
+    "run": "^(TestOIDCSignatureAudienceNonceAndPKCE|TestSharedSignInExplicitMembershipSessionBindingAndAtomicity)$"
+  },
+  {
+    "name": "identity bindings cannot be reassigned",
+    "file": "internal/suite/auth.go",
+    "before": "INSERT INTO comfy_identities(issuer,subject,user_id) VALUES(?,?,?)",
+    "after": "INSERT OR REPLACE INTO comfy_identities(issuer,subject,user_id) VALUES(?,?,?)",
+    "package": "./internal/sharedoidc",
+    "run": "^(TestOIDCSignatureAudienceNonceAndPKCE|TestSharedSignInExplicitMembershipSessionBindingAndAtomicity)$"
+  }
+]

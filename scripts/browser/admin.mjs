@@ -1,3 +1,4 @@
+import { act } from '../browser-controls.mjs';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
@@ -47,21 +48,21 @@ try {
   const failures = [];
   page.on('pageerror', error => failures.push(error.message));
   await page.goto(`${base}/login`);
-  await page.getByLabel('Username', { exact: true }).fill('owner');
-  await page.getByLabel('Password', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await act(page.getByLabel('Username', { exact: true }), 'fill', 'owner');
+  await act(page.getByLabel('Password', { exact: true }), 'fill', password);
+  await act(page.getByRole('button', { name: 'Sign in', exact: true }), 'click');
   await page.waitForURL('**/shelf');
-  await page.getByRole('link', { name: 'Admin', exact: true }).click();
+  await act(page.getByRole('link', { name: 'Admin', exact: true }), 'click');
   await page.waitForURL('**/admin/settings');
-  await page.getByLabel('Site name', { exact: true }).fill('Music room');
-  await page.getByLabel('Welcome heading', { exact: true }).fill('Welcome to the music room');
-  await page.getByLabel('House rules', { exact: true }).fill('Be kind to your friends.');
-  await page.getByLabel('Owner contact').fill('Contact your host for help.');
-  await page.getByLabel('Public Songstead address').fill(base);
-  await page.getByLabel('Witmoot address').fill('https://boards.example.org');
+  await act(page.getByLabel('Site name', { exact: true }), 'fill', 'Music room');
+  await act(page.getByLabel('Welcome heading', { exact: true }), 'fill', 'Welcome to the music room');
+  await act(page.getByLabel('House rules', { exact: true }), 'fill', 'Be kind to your friends.');
+  await act(page.getByLabel('Owner contact'), 'fill', 'Contact your host for help.');
+  await act(page.getByLabel('Public Songstead address'), 'fill', base);
+  await act(page.getByLabel('Witmoot address'), 'fill', 'https://boards.example.org');
   check(await page.getByRole('combobox',{name:'Where can people comment?',exact:true}).inputValue()==='songstead','Local discussion is the default without a connection');
-  await page.getByRole('combobox',{name:'Where can people comment?',exact:true}).selectOption('both');
-  await page.getByRole('button', { name: 'Save settings', exact: true }).click();
+  await act(page.getByRole('combobox',{name:'Where can people comment?',exact:true}), 'selectOption', 'both');
+  await act(page.getByRole('button', { name: 'Save settings', exact: true }), 'click');
   await page.waitForURL('**/admin/settings?saved=1');
   check((await page.getByRole('status').innerText()).includes('already in effect'), 'Settings saved notice');
   check(await page.getByRole('combobox',{name:'Where can people comment?',exact:true}).inputValue()==='both','Owner discussion policy persists');
@@ -69,7 +70,7 @@ try {
   await checkInvitations(browser, base, await ownerContext.storageState(), { app: 'songstead', screenshots: process.env.SONGSTEAD_SCREENSHOT_DIR });
   for (const [width, theme] of [[1280, 'light'], [390, 'dark']]) {
     await page.setViewportSize({ width, height: 960 });
-    await page.getByLabel('Color theme', { exact: true }).selectOption(theme);
+    await act(page.getByLabel('Color theme', { exact: true }), 'selectOption', theme);
     for (const route of ['/admin/settings', '/admin/users', '/invites', '/account', '/about']) {
       await page.goto(base + route);
       const overflow = await page.evaluate(() => [...document.querySelectorAll('main *')].filter(element => element.getBoundingClientRect().right > innerWidth).map(element => ({ tag: element.tagName, className: element.className, right: element.getBoundingClientRect().right })));
@@ -79,34 +80,34 @@ try {
     }
   }
   await page.goto(`${base}/invites`);
-  await page.getByLabel('Label (optional)', { exact: true }).fill('Browser guest');
-  await page.getByRole('button', { name: 'Create invitation', exact: true }).click();
+  await act(page.getByLabel('Label (optional)', { exact: true }), 'fill', 'Browser guest');
+  await act(page.getByRole('button', { name: 'Create invitation', exact: true }), 'click');
   const invite = await page.getByLabel('Invitation link', { exact: true }).inputValue();
   check(new URL(invite).origin === base, 'Invitation uses configured origin');
   const guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
   await guest.goto(invite);
-  await guest.getByLabel('Username', { exact: true }).fill('guest');
-  await guest.getByLabel('New password', { exact: true }).fill(password);
-  await guest.getByLabel('Confirm password', { exact: true }).fill(password);
-  await guest.getByRole('button', { name: 'Create account', exact: true }).click();
+  await act(guest.getByLabel('Username', { exact: true }), 'fill', 'guest');
+  await act(guest.getByLabel('New password', { exact: true }), 'fill', password);
+  await act(guest.getByLabel('Confirm password', { exact: true }), 'fill', password);
+  await act(guest.getByRole('button', { name: 'Create account', exact: true }), 'click');
   await guest.waitForURL('**/login?joined=1');
-  await guest.getByLabel('Username', { exact: true }).fill('guest');
-  await guest.getByLabel('Password', { exact: true }).fill(password);
-  await guest.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await act(guest.getByLabel('Username', { exact: true }), 'fill', 'guest');
+  await act(guest.getByLabel('Password', { exact: true }), 'fill', password);
+  await act(guest.getByRole('button', { name: 'Sign in', exact: true }), 'click');
   await guest.waitForURL('**/shelf');
-  check(await guest.getByRole('link', { name: 'Admin', exact: true }).count() === 0, 'Guest has no owner navigation');
+  check(await guest.getByRole('link', { name: 'Admin', exact: true, includeHidden: true }).count() === 0, 'Guest has no owner navigation');
   await guest.goto(invite);
   check((await guest.getByRole('alert').innerText()).includes('unavailable'), 'Used invite rejected');
   await page.goto(`${base}/admin/users`);
   const account = page.locator('section').filter({ has: page.getByRole('heading', { name: 'guest', exact: true }) });
   check((await account.innerText()).includes('Invited by owner'), 'Inviter attributed');
-  await account.getByRole('button', { name: 'Create password recovery link', exact: true }).click();
+  await act(account.getByRole('button', { name: 'Create password recovery link', exact: true }), 'click');
   const recovery = await page.getByLabel('Private link', { exact: true }).inputValue();
   await guest.goto(recovery);
-  await guest.getByLabel('New password', { exact: true }).fill('a-new-browser-password');
-  await guest.getByLabel('Confirm password', { exact: true }).fill('a-new-browser-password');
-  await guest.getByRole('button', { name: 'Reset password', exact: true }).click();
+  await act(guest.getByLabel('New password', { exact: true }), 'fill', 'a-new-browser-password');
+  await act(guest.getByLabel('Confirm password', { exact: true }), 'fill', 'a-new-browser-password');
+  await act(guest.getByRole('button', { name: 'Reset password', exact: true }), 'click');
   await guest.waitForURL('**/login?reset=1');
   await guest.goto(recovery);
   check((await guest.getByRole('alert').innerText()).includes('unavailable'), 'Recovery is single use');

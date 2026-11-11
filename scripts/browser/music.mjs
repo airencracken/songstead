@@ -1,3 +1,4 @@
+import { act, checkSuiteControls } from '../browser-controls.mjs';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
@@ -27,6 +28,7 @@ try {
   const port = listener.address().port;
   await new Promise((done,reject) => listener.close(error => error ? reject(error) : done()));
   const base = `http://127.0.0.1:${port}`;
+  environment.SONGSTEAD_APPS = '[{"id":"witmoot","url":"https://suite.example.org"}]';
   app = spawn(binary, ['serve','--addr',`127.0.0.1:${port}`,'--data-dir',directory], { env: environment, stdio:['ignore','ignore','pipe'] });
   let errors = ''; app.stderr.on('data',chunk => { errors += chunk; });
   let ready = false;
@@ -46,24 +48,27 @@ try {
     });
     const page = await context.newPage(); page.on('pageerror',error => failures.push(error.message));
     await page.goto(`${base}/login`);
-    await page.getByLabel('Username',{exact:true}).fill(username);
-    await page.getByLabel('Password',{exact:true}).fill(password);
-    await page.getByRole('button',{name:'Sign in',exact:true}).click();
+    await act(page.getByLabel('Username',{exact:true}), 'fill', username);
+    await act(page.getByLabel('Password',{exact:true}), 'fill', password);
+    await act(page.getByRole('button',{name:'Sign in',exact:true}), 'click');
     await page.waitForURL('**/shelf');
     return page;
   }
   const alice = await session('alice'), bobby = await session('bobby');
+  await checkSuiteControls(bobby, { apps: true, density: true });
   async function share(title, genre, tags, audience='members', raw=title.toLowerCase().replaceAll(' ','-'), kind='') {
     await alice.goto(`${base}/recommendations/new`);
-    await alice.getByLabel('Music link',{exact:true}).fill(`https://music.example/${raw}`);
-    await alice.getByLabel('Title, if you know it',{exact:true}).fill(title);
-    await alice.getByLabel('Artist',{exact:true}).fill('Demo ensemble');
-    if (kind) await alice.getByRole('combobox',{name:'Music kind',exact:true}).selectOption(kind);
-    await alice.getByLabel('Genre',{exact:true}).fill(genre);
-    await alice.getByLabel('Tags',{exact:true}).fill(tags);
-    await alice.getByRole('combobox',{name:'Who can see this?',exact:true}).selectOption(audience);
-    await alice.getByLabel('A note, if you like',{exact:true}).fill('Something for a quiet moment.');
-    await alice.getByRole('button',{name:'Share recommendation',exact:true}).click();
+    check(await alice.locator('details.comfy-disclosure').getAttribute('open') === null, 'Optional music fields start collapsed');
+    check(await alice.locator('select[name=audience]').isVisible(), 'Audience choice stays visible');
+    await act(alice.getByLabel('Music link',{exact:true}), 'fill', `https://music.example/${raw}`);
+    await act(alice.getByLabel('Title, if you know it',{exact:true}), 'fill', title);
+    await act(alice.getByLabel('Artist',{exact:true}), 'fill', 'Demo ensemble');
+    if (kind) await act(alice.getByRole('combobox',{name:'Music kind',exact:true}), 'selectOption', kind);
+    await act(alice.getByLabel('Genre',{exact:true}), 'fill', genre);
+    await act(alice.getByLabel('Tags',{exact:true}), 'fill', tags);
+    await act(alice.getByRole('combobox',{name:'Who can see this?',exact:true}), 'selectOption', audience);
+    await act(alice.getByLabel('A note, if you like',{exact:true}), 'fill', 'Something for a quiet moment.');
+    await act(alice.getByRole('button',{name:'Share recommendation',exact:true}), 'click');
     await alice.waitForURL(/\/recommendations\/\d+$/);
     return new URL(alice.url()).pathname;
   }
@@ -90,6 +95,7 @@ def cover(colors):
         rows.append(b'\\0'+row)
     return b'\\x89PNG\\r\\n\\x1a\\n'+chunk(b'IHDR',struct.pack('!2I5B',width,height,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(b''.join(rows)))+chunk(b'IEND',b'')
 with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
+    db.create_function('songstead_fold',1,lambda value: value.lower() if isinstance(value,str) else '',deterministic=True)
     for title,colors in [('Porchlight sessions',[(46,71,94),(213,177,125),(156,92,62)]),('Heavy weather',[(51,56,67),(109,126,147),(144,67,68)]),('Guitars after rain',[(51,82,68),(185,204,180),(139,148,115)])]:
         db.execute('INSERT INTO media_artwork(media_id,content) SELECT id,? FROM media WHERE title=?',(cover(colors),title))
 `,directory],{encoding:'utf8'});
@@ -104,18 +110,18 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   check(await bobby.locator('.artwork-placeholder').count()===1,'List has a missing-artwork fallback');
   check(await bobby.locator('.filter-grid:visible').count()===0,'Advanced dropdowns start collapsed');
   await bobby.getByText('More filters',{exact:true}).click();
-  await bobby.getByRole('combobox',{name:'Music kind',exact:true}).selectOption('track');
-  await bobby.getByRole('button',{name:'Apply filters',exact:true}).click();
+  await act(bobby.getByRole('combobox',{name:'Music kind',exact:true}), 'selectOption', 'track');
+  await act(bobby.getByRole('button',{name:'Apply filters',exact:true}), 'click');
   await bobby.waitForURL('**/recent?**kind=track**');
   await bobby.getByRole('heading',{name:'A quiet shelf.',exact:true}).waitFor();
   check(await bobby.locator('.list-artwork').count()===0,'Advanced kind filter excludes non-track links');
   await bobby.getByText('More filters',{exact:true}).click();
-  await bobby.getByRole('combobox',{name:'Music kind',exact:true}).selectOption('');
-  await bobby.getByRole('button',{name:'Apply filters',exact:true}).click();
+  await act(bobby.getByRole('combobox',{name:'Music kind',exact:true}), 'selectOption', '');
+  await act(bobby.getByRole('button',{name:'Apply filters',exact:true}), 'click');
   await bobby.locator('.list-artwork').first().waitFor();
   check(await bobby.locator('.list-artwork').count()===4,'Clearing advanced filters restores list thumbnails');
   check(new URL(bobby.url()).searchParams.get('discovery')==='preferences','Advanced filters preserve discovery mode');
-  await bobby.getByRole('link',{name:'Tiles',exact:true}).click();
+  await act(bobby.getByRole('link',{name:'Tiles',exact:true}), 'click');
   await bobby.waitForURL('**/recent?**');
   await bobby.locator('.recommendations.tiles').waitFor();
   check(await bobby.locator('.tile-artwork').count()===4,'Tile view preserves all shared music');
@@ -127,31 +133,31 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     await image.evaluate(async element => { await element.decode(); });
   }
   check(await bobby.locator('.tile-artwork img[src$="/thumbnail"]').evaluateAll(images=>images.every(img=>img.complete && img.naturalWidth===320)),'Cached covers render');
-  await bobby.getByRole('link',{name:'Your settings',exact:true}).click();
+  await act(bobby.getByRole('link',{name:'Your settings',exact:true}), 'click');
   await bobby.waitForURL('**/account');
   check(await bobby.getByRole('heading',{name:'Your settings',exact:true}).count()===1,'Settings link leads to clearly named page');
-  await bobby.getByRole('navigation',{name:'Your settings sections',exact:true}).getByRole('link',{name:'Genres & tags',exact:true}).click();
+  await act(bobby.getByRole('navigation',{name:'Your settings sections',exact:true}).getByRole('link',{name:'Genres & tags',exact:true}), 'click');
   check(new URL(bobby.url()).hash==='#discovery-preferences','Settings shortcuts reach the relevant section');
-  await bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}).selectOption('spoiler-free');
-  await bobby.getByRole('button',{name:'Save spoiler preference',exact:true}).click();
+  await act(bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}), 'selectOption', 'spoiler-free');
+  await act(bobby.getByRole('button',{name:'Save spoiler preference',exact:true}), 'click');
   await bobby.waitForURL('**/account?saved=annotations*');
   check((await bobby.getByRole('status').innerText()).includes('Spoiler preference saved'),'Account spoiler save confirmed');
-  await bobby.getByLabel('Exclude genres',{exact:true}).fill('metal');
-  await bobby.getByLabel('Prefer tags',{exact:true}).fill('instrumental');
-  await bobby.getByRole('button',{name:'Save discovery preferences',exact:true}).click();
+  await act(bobby.getByLabel('Exclude genres',{exact:true}), 'fill', 'metal');
+  await act(bobby.getByLabel('Prefer tags',{exact:true}), 'fill', 'instrumental');
+  await act(bobby.getByRole('button',{name:'Save discovery preferences',exact:true}), 'click');
   await bobby.waitForURL('**/account?saved=discovery*');
   check((await bobby.getByRole('status').innerText()).includes('Discovery preferences saved'),'Discovery save confirmed');
   await bobby.goto(`${base}/recent?layout=tiles`);
   check(!(await bobby.locator('main').innerText()).includes('Heavy weather'),'Excluded genre disappears');
   check((await bobby.locator('.recommendations h3').first().innerText())==='Porchlight sessions','Preferred tag surfaces an older share');
-  await bobby.getByRole('link',{name:'All music',exact:true}).click();
+  await act(bobby.getByRole('link',{name:'All music',exact:true}), 'click');
   await bobby.waitForURL('**/recent?**');
   await bobby.getByRole('heading',{name:'Heavy weather',exact:true}).first().waitFor();
   check((await bobby.locator('.recommendations h3').first().innerText())==='Late evening sketches','All music restores chronology');
   await bobby.goto(base+favorite);
   check(await bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}).inputValue()==='spoiler-free','Account preference applies on music pages');
-  await bobby.getByRole('combobox',{name:'Listening status',exact:true}).selectOption('listened');
-  await bobby.getByRole('button',{name:'Like song',exact:true}).click();
+  await act(bobby.getByRole('combobox',{name:'Listening status',exact:true}), 'selectOption', 'listened');
+  await act(bobby.getByRole('button',{name:'Like song',exact:true}), 'click');
   await bobby.waitForURL(`**${favorite}?saved=like*`);
   check(await bobby.getByRole('button',{name:'Unlike song',exact:true}).getAttribute('aria-pressed')==='true','Song like is saved privately');
   await bobby.goto(base+privatePath);
@@ -159,60 +165,61 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.goto(`${base}/shelf?liked=1`);
   check(await bobby.locator('[data-song-id]').count()===1,'Liked songs filter groups duplicate recommendations');
   await bobby.goto(base+favorite);
-  await bobby.getByRole('combobox',{name:'Listening status',exact:true}).selectOption('listened');
-  await bobby.getByRole('textbox',{name:'Personal notes',exact:true}).fill('Private listening thought');
-  await bobby.getByRole('button',{name:'Save your reaction',exact:true}).click();
+  await act(bobby.getByRole('combobox',{name:'Listening status',exact:true}), 'selectOption', 'listened');
+  await act(bobby.getByRole('textbox',{name:'Personal notes',exact:true}), 'fill', 'Private listening thought');
+  await act(bobby.getByRole('button',{name:'Save your reaction',exact:true}), 'click');
   await bobby.waitForURL(`**${favorite}?saved=feedback*`);
   await bobby.getByRole('status').waitFor();
   check((await bobby.getByRole('status').innerText())==='Listening feedback saved.','Listening save visibly confirmed');
   check(await bobby.getByRole('status').evaluate(el=>{ const r=el.getBoundingClientRect(); return r.top>=0 && r.bottom<=innerHeight; }),'Confirmation is in the viewport');
-  await bobby.getByRole('textbox',{name:'Personal notes',exact:true}).fill('Unsaved edit');
+  await act(bobby.getByRole('textbox',{name:'Personal notes',exact:true}), 'fill', 'Unsaved edit');
   check(await bobby.getByRole('status').count()===0,'Editing clears stale save confirmation');
   await bobby.goto(base+favorite);
   check(await bobby.getByRole('textbox',{name:'Personal notes',exact:true}).inputValue()==='Private listening thought','Feedback persists without saving the draft');
   await alice.goto(base+favorite);
   check(await alice.getByRole('button',{name:'Like song',exact:true}).count()===1,'Song likes stay private to each member');
   check(await alice.getByRole('textbox',{name:'Personal notes',exact:true}).inputValue()==='','Private feedback is absent for sender');
-  await alice.getByLabel('Genre',{exact:true}).fill('New jazz');
-  await alice.getByRole('button',{name:'Save genre and tags',exact:true}).click();
+  await act(alice.getByLabel('Genre',{exact:true}), 'fill', 'New jazz');
+  await act(alice.getByRole('button',{name:'Save genre and tags',exact:true}), 'click');
   await alice.waitForURL(`**${favorite}?saved=labels*`);
   check((await alice.getByRole('status').innerText())==='Genre and tags saved.','Label edits confirmed');
   await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);
-  await bobby.getByRole('link',{name:'Acoustic',exact:true}).first().click();
+  await bobby.locator('details.browse-options > summary').click();
+  await act(bobby.getByRole('link',{name:'Acoustic',exact:true}).first(), 'click');
   await bobby.waitForURL('**/recent?**tag=Acoustic**');
   check(await bobby.locator('.recommendations.tiles').count()===1,'Tag picker preserves tile layout');
   check(await bobby.locator('.recommendation-copy').count()===1,'Tag picker filters immediately');
-  await bobby.getByRole('link',{name:'List',exact:true}).click();
+  await act(bobby.getByRole('link',{name:'List',exact:true}), 'click');
   await bobby.locator('.recommendations.chips').waitFor();
   check(new URL(bobby.url()).searchParams.get('tag')==='Acoustic','Layout switch preserves tag filter');
   const native = await session('bobby',false);
   await native.goto(`${base}/recent?discovery=all`);
-  await native.getByRole('link',{name:'Tiles',exact:true}).click();
+  await act(native.getByRole('link',{name:'Tiles',exact:true}), 'click');
   await native.locator('.recommendations.tiles').waitFor();
   check(await native.locator('.tile-artwork').count()===4,'Native layout switch needs no Browse click');
   await native.goto(base+plain);
-  await native.getByRole('textbox',{name:'Personal notes',exact:true}).fill('Saved without JavaScript');
-  await native.getByRole('button',{name:'Save your reaction',exact:true}).click();
+  await act(native.getByRole('textbox',{name:'Personal notes',exact:true}), 'fill', 'Saved without JavaScript');
+  await act(native.getByRole('button',{name:'Save your reaction',exact:true}), 'click');
   await native.waitForURL(`**${plain}?saved=feedback*`);
   check((await native.getByRole('status').innerText())==='Listening feedback saved.','Native feedback confirmation works');
   await native.goto(`${base}/account`);
-  await native.getByRole('combobox',{name:'Spoiler preference',exact:true}).selectOption('hidden');
-  await native.getByRole('button',{name:'Save spoiler preference',exact:true}).click();
+  await act(native.getByRole('combobox',{name:'Spoiler preference',exact:true}), 'selectOption', 'hidden');
+  await act(native.getByRole('button',{name:'Save spoiler preference',exact:true}), 'click');
   await native.waitForURL('**/account?saved=annotations*');
   check(await native.getByRole('combobox',{name:'Spoiler preference',exact:true}).inputValue()==='hidden','Native account preference persists');
 
   // Only Songstead accounts are provisioned here. Local/Both must let these
   // members participate, while Witmoot mode requires its separate account.
   await bobby.goto(base+favorite);
-  await bobby.getByRole('textbox',{name:'Your comment',exact:true}).fill('A conversation before changing modes');
-  await bobby.getByRole('button',{name:'Add comment',exact:true}).click();
+  await act(bobby.getByRole('textbox',{name:'Your comment',exact:true}), 'fill', 'A conversation before changing modes');
+  await act(bobby.getByRole('button',{name:'Add comment',exact:true}), 'click');
   await bobby.getByText('A conversation before changing modes',{exact:true}).waitFor();
   for (const mode of ['witmoot','both','songstead']) {
     await alice.goto(`${base}/admin/settings`);
-    await alice.getByLabel('Public Songstead address').fill(base);
-    await alice.getByLabel('Witmoot address').fill('https://boards.example.org/forum');
-    await alice.getByRole('combobox',{name:'Where can people comment?',exact:true}).selectOption(mode);
-    await alice.getByRole('button',{name:'Save settings',exact:true}).click();
+    await act(alice.getByLabel('Public Songstead address'), 'fill', base);
+    await act(alice.getByLabel('Witmoot address'), 'fill', 'https://boards.example.org/forum');
+    await act(alice.getByRole('combobox',{name:'Where can people comment?',exact:true}), 'selectOption', mode);
+    await act(alice.getByRole('button',{name:'Save settings',exact:true}), 'click');
     await alice.waitForURL('**/admin/settings?saved=1');
     for (const member of [bobby,native]) {
       await member.goto(base+favorite);
@@ -224,12 +231,12 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
       }
     }
     if (mode!=='witmoot') {
-      await native.getByRole('textbox',{name:'Your comment',exact:true}).fill(`Local participation in ${mode}`);
-      await native.getByRole('button',{name:'Add comment',exact:true}).click();
+      await act(native.getByRole('textbox',{name:'Your comment',exact:true}), 'fill', `Local participation in ${mode}`);
+      await act(native.getByRole('button',{name:'Add comment',exact:true}), 'click');
       await native.getByText(`Local participation in ${mode}`,{exact:true}).waitFor();
       check(true,`No Witmoot account needed to comment in ${mode}`);
     } else {
-      await bobby.getByRole('button',{name:'Prepare a Witmoot discussion',exact:true}).click();
+      await act(bobby.getByRole('button',{name:'Prepare a Witmoot discussion',exact:true}), 'click');
       await bobby.getByRole('heading',{name:'A discussion, if you like',exact:true}).waitFor();
       check((await bobby.locator('main').innerText()).includes('A separate Witmoot account is required'),'Draft review explains separate identity');
       check((await bobby.getByRole('link',{name:'Continue to Witmoot',exact:true}).getAttribute('href')).startsWith('https://boards.example.org/forum/share?'),'Handoff respects the configured Witmoot path');
@@ -243,13 +250,13 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     await route.fulfill({contentType:'application/json',body:JSON.stringify({status:'ready',title:'Preview title <script>',artist:'Preview artist',artwork:tinyPNG.toString('base64')})});
   });
   await alice.goto(`${base}/recommendations/new`);
-  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/dQw4w9WgXcQ');
+  await act(alice.getByLabel('Music link',{exact:true}), 'fill', 'https://youtu.be/dQw4w9WgXcQ');
   await alice.getByText('Music preview ready.',{exact:true}).waitFor();
   check(await alice.getByLabel('Title, if you know it',{exact:true}).inputValue()==='Preview title <script>','Preview auto-fills optional metadata as text');
   await alice.locator('[data-preview-artwork]').evaluate(img=>img.decode());
   check(await alice.locator('[data-preview-artwork]').evaluate(img=>img.naturalWidth===1),'Pasted link generates thumbnail before sharing');
-  await alice.getByLabel('Title, if you know it',{exact:true}).fill('My own title');
-  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/aaaaaaaaaaa');
+  await act(alice.getByLabel('Title, if you know it',{exact:true}), 'fill', 'My own title');
+  await act(alice.getByLabel('Music link',{exact:true}), 'fill', 'https://youtu.be/aaaaaaaaaaa');
   await alice.getByText('Music preview ready.',{exact:true}).waitFor();
   check(await alice.getByLabel('Title, if you know it',{exact:true}).inputValue()==='My own title','Preview preserves manual edits');
   check(await alice.locator('main script').count()===0,'Provider text never becomes executable HTML');
@@ -261,9 +268,9 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   });
   await alice.goto(`${base}/recommendations/new`);
   const first=alice.waitForRequest(request=>request.url().endsWith('/recommendations/preview'));
-  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/dQw4w9WgXcQ');
+  await act(alice.getByLabel('Music link',{exact:true}), 'fill', 'https://youtu.be/dQw4w9WgXcQ');
   await first;
-  await alice.getByLabel('Music link',{exact:true}).fill('https://youtu.be/aaaaaaaaaaa');
+  await act(alice.getByLabel('Music link',{exact:true}), 'fill', 'https://youtu.be/aaaaaaaaaaa');
   await alice.getByText('Current preview',{exact:true}).waitFor();
   await alice.waitForTimeout(1200);
   check(await alice.getByLabel('Title, if you know it',{exact:true}).inputValue()==='Current preview','Late response cannot replace newer link preview');
@@ -281,7 +288,8 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   const embedSeed=spawnSync('python3',['-c',`import sqlite3,sys
 from pathlib import Path
 with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
- db.execute("UPDATE media SET video_id='dQw4w9WgXcQ' WHERE title='Late evening sketches'")`,directory],{encoding:'utf8'});
+    db.create_function('songstead_fold',1,lambda value: value.lower() if isinstance(value,str) else '',deterministic=True)
+    db.execute("UPDATE media SET video_id='dQw4w9WgXcQ' WHERE title='Late evening sketches'")`,directory],{encoding:'utf8'});
   assert.equal(embedSeed.status,0,embedSeed.stderr);
   let playerReferer;
   await alice.route('https://www.youtube-nocookie.com/embed/**',async route => {
@@ -298,14 +306,14 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await alice.goto(`${base}/account`);
   const oneGIF=Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64');
   const animatedGIF=Buffer.concat([oneGIF.subarray(0,19),oneGIF.subarray(19,-1),oneGIF.subarray(19,-1),Buffer.from([0x3b])]);
-  await alice.getByLabel('Picture',{exact:true}).setInputFiles({name:'avatar.gif',mimeType:'image/gif',buffer:animatedGIF});
-  await alice.getByRole('button',{name:'Save profile picture',exact:true}).click();
+  await act(alice.getByLabel('Picture',{exact:true}), 'setInputFiles', {name:'avatar.gif',mimeType:'image/gif',buffer:animatedGIF});
+  await act(alice.getByRole('button',{name:'Save profile picture',exact:true}), 'click');
   await alice.waitForURL('**/account?saved=picture*');
   let picture=await bobby.request.get(`${base}/users/1/picture`);
   check(picture.headers()['content-type']==='image/gif','Animated account picture is preserved');
   await bobby.goto(`${base}/account`);
   await bobby.getByLabel('Play animated profile pictures',{exact:true}).uncheck();
-  await bobby.getByRole('button',{name:'Save animation preference',exact:true}).click();
+  await act(bobby.getByRole('button',{name:'Save animation preference',exact:true}), 'click');
   await bobby.waitForURL('**/account?saved=animation*');
   picture=await bobby.request.get(`${base}/users/1/picture`);
   check(picture.headers()['content-type']==='image/png','Disabling animation serves the still image');
@@ -315,7 +323,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await alice.reload();
   check(await alice.locator('#profile-picture .avatar img').evaluate(img=>img.currentSrc.endsWith('picture?still=1')),'Browser reduced-motion setting selects the still picture');
   await alice.emulateMedia({reducedMotion:'no-preference'});
-  await alice.getByRole('button',{name:'Remove profile picture',exact:true}).click();
+  await act(alice.getByRole('button',{name:'Remove profile picture',exact:true}), 'click');
   await alice.waitForURL('**/account?saved=picture*');
   picture=await bobby.request.get(`${base}/users/1/picture`);
   check(picture.headers()['content-type']==='image/png','Removing the picture restores a still fallback');
@@ -336,26 +344,26 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   assert.equal(preference.status(),303);
   for (const member of [bobby,native]) {
     await member.goto(base+'/recent');
-    await member.getByRole('link',{name:'Comments',exact:true}).click();
+    await act(member.getByRole('link',{name:'Comments',exact:true}), 'click');
     await member.waitForURL('**/recent/comments');
     check(await member.locator('.comment-activity').count()===25,'Feed pages contain 25 visible comments');
     check(!(await member.locator('main').innerText()).includes('SECRET'),'Private and hidden comments never render in the feed');
     await member.getByText('Visible feed reaction 26',{exact:true}).waitFor();
     check(await member.locator('.comment-artwork img').count()===25,'Comment cards include artwork or local fallbacks');
-    await member.getByRole('link',{name:'Older comments',exact:true}).click();
+    await act(member.getByRole('link',{name:'Older comments',exact:true}), 'click');
     await member.waitForURL('**/recent/comments?before=*');
     await member.getByText('Visible feed reaction 00',{exact:true}).waitFor();
     check(!(await member.locator('main').innerText()).includes('Visible feed reaction 26'),'Older pages do not repeat newer reactions');
-    await member.getByRole('link',{name:'Newest comments',exact:true}).click();
+    await act(member.getByRole('link',{name:'Newest comments',exact:true}), 'click');
     await member.waitForURL('**/recent/comments');
-    await member.getByRole('link',{name:'View comment & conversation',exact:true}).first().click();
+    await act(member.getByRole('link',{name:'View comment & conversation',exact:true}).first(), 'click');
     await member.waitForURL(/\/recommendations\/\d+#comment-\d+$/);
     const target=new URL(member.url()).hash;
     check((await member.locator(target).innerText()).includes('Visible feed reaction 26'),'Feed links reach the exact conversation comment');
   }
   await bobby.goto(base+feedSong);
-  await bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}).selectOption('immediate');
-  await bobby.getByRole('button',{name:'Save preference',exact:true}).click();
+  await act(bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}), 'selectOption', 'immediate');
+  await act(bobby.getByRole('button',{name:'Save preference',exact:true}), 'click');
   await bobby.getByRole('status').waitFor();
   await bobby.goto(base+'/recent/comments');
   await bobby.getByText('SECRET feed annotation at 0:40',{exact:true}).waitFor();
@@ -364,16 +372,16 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   // Search navigation and results work through HTMX and native GET forms.
   for (const member of [bobby,await session('bobby',false)]) {
     await member.goto(`${base}/recent`);
-    await member.getByRole('link',{name:'Search',exact:true}).click();
+    await act(member.getByRole('link',{name:'Search',exact:true}), 'click');
     await member.waitForURL('**/search');
-    await member.getByLabel('Search words',{exact:true}).fill('Jazz');
-    await member.getByRole('button',{name:'Search',exact:true}).click();
+    await act(member.getByLabel('Search words',{exact:true}), 'fill', 'Jazz');
+    await act(member.getByRole('button',{name:'Search',exact:true}), 'click');
     await member.waitForURL('**/search?**');
     check(await member.getByRole('heading',{name:'Porchlight sessions',exact:true}).count()===1,'Search finds music with native and boosted forms');
     check(await member.locator('.list-artwork img[src$="/thumbnail"]').count()>0,'Search results include thumbnails');
-    await member.getByLabel('Search in',{exact:true}).selectOption('comments');
-    await member.getByLabel('Search words',{exact:true}).fill('no-matching-comment');
-    await member.getByRole('button',{name:'Search',exact:true}).click();
+    await act(member.getByLabel('Search in',{exact:true}), 'selectOption', 'comments');
+    await act(member.getByLabel('Search words',{exact:true}), 'fill', 'no-matching-comment');
+    await act(member.getByRole('button',{name:'Search',exact:true}), 'click');
     await member.getByRole('heading',{name:'No matching comments.',exact:true}).waitFor();
     check((await member.locator('main').innerText()).includes('spoiler preference'),'Search explains comment visibility');
     for (const width of [320,390,1280]) {
@@ -388,27 +396,27 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   // Optional member profiles work through HTMX and ordinary browser forms.
   for (const member of [bobby,native]) {
     await member.goto(base+'/account');
-    await member.getByLabel('Name (optional)',{exact:true}).fill('A demo name');
-    await member.getByLabel('Bio (optional)',{exact:true}).fill('A short bio.\nMusic, books and rainy walks.');
-    await member.locator('input[name="profile_link_label"]').first().fill('My music');
-    await member.locator('input[name="profile_link_url"]').first().fill('https://music.example.org/');
-    await member.getByRole('button',{name:'Save profile',exact:true}).click();
+    await act(member.getByLabel('Name (optional)',{exact:true}), 'fill', 'A demo name');
+    await act(member.getByLabel('Bio (optional)',{exact:true}), 'fill', 'A short bio.\nMusic, books and rainy walks.');
+    await act(member.locator('input[name="profile_link_label"]').first(), 'fill', 'My music');
+    await act(member.locator('input[name="profile_link_url"]').first(), 'fill', 'https://music.example.org/');
+    await act(member.getByRole('button',{name:'Save profile',exact:true}), 'click');
     await member.waitForURL('**/account?saved=profile*');
     await member.getByRole('status').filter({hasText:'Profile saved.'}).waitFor();
     check(await member.getByLabel('Name (optional)',{exact:true}).inputValue()==='A demo name','Profile name survives save');
-    await member.getByRole('link',{name:'View your profile',exact:true}).click();
+    await act(member.getByRole('link',{name:'View your profile',exact:true}), 'click');
     await member.waitForURL('**/members/2');
     check(await member.getByRole('heading',{name:'bobby',exact:true}).count()===1,'Username remains the profile identity');
     const link=member.getByRole('link',{name:'My music',exact:true});
     check(await link.getAttribute('target')==='_blank' && (await link.getAttribute('rel')).includes('noopener'),'Profile links open safely');
     check((await member.locator('main').innerText()).includes('Music, books and rainy walks.'),'Profile bio is visible');
-    await member.getByRole('link',{name:'Edit your profile',exact:true}).click();
+    await act(member.getByRole('link',{name:'Edit your profile',exact:true}), 'click');
     await member.waitForURL('**/account#your-profile');
   }
   await alice.goto(base+'/members/2');
   check(await alice.getByRole('link',{name:'Edit your profile',exact:true}).count()===0,'Members cannot edit someone else’s profile');
   await bobby.goto(base+'/recent/comments');
-  await bobby.locator('.comment-copy strong a').first().click();
+  await act(bobby.locator('.comment-copy strong a').first(), 'click');
   await bobby.waitForURL('**/members/2');
   check((await bobby.locator('main').innerText()).includes('A demo name'),'Comment authors lead to profiles');
 
@@ -419,7 +427,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   check(await song.locator('.recommendation-copy').count()===2,'Grouped card preserves both recommendation entries');
   check(await song.locator('time[datetime]').count()===2,'Every recommendation keeps its date');
   check(await song.getByRole('button',{name:'Unlike song',exact:true}).count()===1,'Grouped song has one private like control');
-  await song.getByRole('button',{name:'Unlike song',exact:true}).click();
+  await act(song.getByRole('button',{name:'Unlike song',exact:true}), 'click');
   await bobby.waitForURL('**/recent?discovery=all');
   await bobby.goto(`${base}/shelf?liked=1`);
   check(await bobby.locator('[data-song-id]').count()===0,'Unlike removes the song from liked songs across duplicates');
@@ -430,13 +438,13 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     await bobby.goto(base+post);
     check(await bobby.getByRole('link',{name:'Edit post',exact:true}).count()===0,'Other members have no post editing controls');
     await author.goto(base+post);
-    await author.getByRole('link',{name:'Edit post',exact:true}).click();
+    await act(author.getByRole('link',{name:'Edit post',exact:true}), 'click');
     await author.waitForURL('**/edit');
     check(await author.getByLabel('Music link',{exact:true}).inputValue()==='https://music.example/a-post-to-correct','Edit form keeps the original link');
     check(await author.getByRole('combobox',{name:'Who can see this?',exact:true}).count()===0,'Editing preserves the original audience');
-    await author.getByLabel('Title, if you know it',{exact:true}).fill('Corrected album title');
-    await author.getByRole('combobox',{name:'Music kind',exact:true}).selectOption('album');
-    await author.getByLabel('A note, if you like',{exact:true}).fill('Updated recommendation note');
+    await act(author.getByLabel('Title, if you know it',{exact:true}), 'fill', 'Corrected album title');
+    await act(author.getByRole('combobox',{name:'Music kind',exact:true}), 'selectOption', 'album');
+    await act(author.getByLabel('A note, if you like',{exact:true}), 'fill', 'Updated recommendation note');
     for (const width of [390,1280]) {
       await author.setViewportSize({width,height:1000});
       check(await author.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Edit form fits mobile and desktop');
@@ -445,25 +453,25 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
         check(audit.violations.length===0,'Edit form has no accessibility violations');
       }
     }
-    await author.getByRole('button',{name:'Save changes',exact:true}).click();
+    await act(author.getByRole('button',{name:'Save changes',exact:true}), 'click');
     await author.waitForURL('**?saved=post');
     check((await author.getByRole('status').filter({hasText:'Post saved.'}).innerText()).includes('Post saved.'),'Post edit confirms the save');
     await bobby.goto(base+post);
     check(await bobby.getByRole('heading',{name:'Corrected album title',exact:true}).count()===1,'Other members see the corrected title');
     check((await bobby.locator('main').innerText()).includes('Updated recommendation note'),'Other members see the corrected note');
-    await author.getByRole('link',{name:'Delete post',exact:true}).click();
+    await act(author.getByRole('link',{name:'Delete post',exact:true}), 'click');
     await author.waitForURL('**/delete');
     check(await author.getByRole('heading',{name:'Corrected album title',exact:true}).count()===1,'Deletion confirmation identifies the post');
     if (javaScriptEnabled) {
       const audit=await new AxeBuilder({page:author}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
       check(audit.violations.length===0,'Deletion confirmation has no accessibility violations');
     }
-    await author.getByRole('link',{name:'Cancel',exact:true}).click();
+    await act(author.getByRole('link',{name:'Cancel',exact:true}), 'click');
     await author.waitForURL('**'+post);
     check(await author.getByRole('heading',{name:'Corrected album title',exact:true}).count()===1,'Cancel keeps the post');
-    await author.getByRole('link',{name:'Delete post',exact:true}).click();
+    await act(author.getByRole('link',{name:'Delete post',exact:true}), 'click');
     await author.waitForURL('**/delete');
-    await author.getByRole('button',{name:'Delete post permanently',exact:true}).click();
+    await act(author.getByRole('button',{name:'Delete post permanently',exact:true}), 'click');
     await author.waitForURL('**/history');
     check((await bobby.request.get(base+post)).status()===404,'Confirmed deletion removes the post');
   }
@@ -471,7 +479,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   for (const [width,theme] of [[1280,'light'],[390,'dark']]) {
     await bobby.setViewportSize({width,height:1000});
     await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);
-    await bobby.getByLabel('Color theme',{exact:true}).selectOption(theme);
+    await act(bobby.getByLabel('Color theme',{exact:true}), 'selectOption', theme);
     for (const route of ['/recent?layout=tiles&discovery=all','/recent','/recent/comments','/members/2',favorite,'/account']) {
       await bobby.goto(base+route);
       check(await bobby.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`No overflow on ${route} at ${width}`);
@@ -491,7 +499,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     await bobby.goto(`${base}/recent?discovery=all`);
     await bobby.screenshot({path:resolve(process.env.SONGSTEAD_SCREENSHOT_DIR,'recent-list-mobile.png'),fullPage:true});
     await bobby.setViewportSize({width:1280,height:1000});
-    await bobby.getByLabel('Color theme',{exact:true}).selectOption('light');
+    await act(bobby.getByLabel('Color theme',{exact:true}), 'selectOption', 'light');
     await bobby.getByText('More filters',{exact:true}).click();
     await bobby.screenshot({path:resolve(process.env.SONGSTEAD_SCREENSHOT_DIR,'recent-list-desktop.png'),fullPage:true});
     await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);

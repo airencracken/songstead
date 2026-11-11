@@ -1,5 +1,5 @@
 {{define "layout"}}<!doctype html>
-<html lang="en">
+<html lang="en" data-comfy-app="songstead">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,15 +17,15 @@
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/feedback.js" defer></script>
   <script src="/static/music.js" defer></script>
-</head>
+<link rel="stylesheet" href="/static/comfy-components.css"><script src="/static/comfy-suite.js"></script></head>
 <body hx-boost="true" hx-history="false">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="/shelf"><img src="{{if .Settings.Mascot}}/branding/mascot{{else}}/static/jukebox.png{{end}}" alt="" width="42" height="42">{{.Settings.Name}}</a>
-    <nav aria-label="Main navigation">
-      {{if .User}}<a href="/recent" {{if .Recent}}aria-current="page"{{end}}>Recent</a><a href="/shelf" {{if and (eq .View "list") (not .History) (not .Recent)}}aria-current="page"{{end}}>Shelf</a><a href="/history">History</a><a href="/search" {{if eq .View "search"}}aria-current="page"{{end}}>Search</a><a href="/groups">Groups</a><a class="button" href="/recommendations/new">Share music</a>{{end}}
-      <span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span>
-      {{if .User}}{{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{end}}{{if or (eq .User.Role "owner") .User.CanInvite}}<a href="/invites">Invites</a>{{end}}<a href="/account" {{if eq .View "account"}}aria-current="page"{{end}}>Your settings</a><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>{{end}}
+    <nav aria-label="Main navigation">{{with suiteApps}}<details class="comfy-menu comfy-apps"><summary>Apps</summary><div class="comfy-menu-panel"><p class="comfy-menu-label">Your Comfyware apps</p>{{range .}}<a href="{{.URL}}" hx-boost="false" rel="noreferrer">{{.Name}}</a>{{end}}</div></details>{{end}}
+      {{if .User}}<a href="/recent" {{if .Recent}}aria-current="page"{{end}}>Recent</a><a href="/shelf" {{if and (eq .View "list") (not .History) (not .Recent)}}aria-current="page"{{end}}>Shelf</a><a href="/history">History</a><a href="/search" {{if eq .View "search"}}aria-current="page"{{end}}>Search</a><a class="button" href="/recommendations/new">Share music</a>{{end}}
+
+      {{if .User}}<details class="comfy-menu comfy-account"><summary>Account</summary><div class="comfy-menu-panel">{{if sharedSignIn}}<a href="/auth/shared/manage" hx-boost="false">Community sign-in</a>{{end}}<a href="/account" {{if eq .View "account"}}aria-current="page"{{end}}>Your settings</a><a href="/groups">Groups</a>{{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{end}}{{if or (eq .User.Role "owner") .User.CanInvite}}<a href="/invites">Invites</a>{{end}}      <span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span><hr><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form></div></details>{{else}}      <span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span>{{end}}
     </nav>
   </header>
   <main id="main" class="page" tabindex="-1">

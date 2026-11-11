@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/airencracken/comfylib/autobackup"
+	"github.com/airencracken/songstead/internal/suite"
 	"html/template"
 	"io/fs"
 	"log/slog"
@@ -119,6 +120,10 @@ type page struct {
 }
 
 func New(s *store.Store, cfg Config) (*App, error) {
+	suiteFuncs, suiteErr := suite.TemplateFuncs("SONGSTEAD_")
+	if suiteErr != nil {
+		return nil, suiteErr
+	}
 	for _, base := range []string{cfg.WitmootURL, cfg.BaseURL} {
 		if base != "" {
 			if _, err := reference.Handoff(base, reference.Draft{Source: "https://source.invalid"}); err != nil {
@@ -126,7 +131,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 			}
 		}
 	}
-	tmpl, err := template.New("pages").Funcs(template.FuncMap{"linkNumber": func(i int) int { return i + 1 },
+	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"linkNumber": func(i int) int { return i + 1 },
 		"supportsMetadata": media.SupportsMetadata,
 		"invitationStatus": invitationStatus,
 		"browseURL":        browseURL,
@@ -206,8 +211,12 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("POST /recommendations/{id}/position", a.signedIn(a.position))
 	mux.HandleFunc("POST /recommendations/{id}/annotations", a.signedIn(a.annotationPreference))
 	mux.HandleFunc("POST /recommendations/{id}/discussion", a.signedIn(a.discussion))
+	mux.HandleFunc("GET /recommendations/{id}/discussion-return", a.signedIn(a.discussionReturn))
 	mux.HandleFunc("POST /recommendations/{id}/share", a.signedIn(a.share))
 	mux.HandleFunc("GET /account/export", a.signedIn(a.export))
+	if err = a.registerSharedSignIn(mux); err != nil {
+		return nil, err
+	}
 	a.handler = http.NewCrossOriginProtection().Handler(a.middleware(mux))
 	return a, nil
 }

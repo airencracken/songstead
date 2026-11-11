@@ -203,7 +203,7 @@ func TestPostEditsSchemaNineUpgrade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec(`ALTER TABLE recommendations DROP COLUMN title_override; ALTER TABLE recommendations DROP COLUMN artist_override; ALTER TABLE recommendations DROP COLUMN kind_override; DELETE FROM metadata_jobs; PRAGMA user_version=9`); err != nil {
+	if _, err := s.db.Exec(`DROP TRIGGER IF EXISTS search_recommendations_insert; DROP TRIGGER IF EXISTS search_recommendations_update; DROP TRIGGER IF EXISTS search_recommendations_delete; DROP TRIGGER IF EXISTS search_recommendation_labels_insert; DROP TRIGGER IF EXISTS search_recommendation_labels_update; DROP TRIGGER IF EXISTS search_recommendation_labels_delete; DROP TRIGGER IF EXISTS search_media_update; DROP TABLE IF EXISTS music_search; ALTER TABLE recommendations DROP COLUMN title_override; ALTER TABLE recommendations DROP COLUMN artist_override; ALTER TABLE recommendations DROP COLUMN kind_override; DELETE FROM metadata_jobs; PRAGMA user_version=9`); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "schema9.db")

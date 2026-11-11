@@ -66,8 +66,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 10 {",
-    "after": "if version > 11 {",
+    "before": "if version > 11 {",
+    "after": "if version > 12 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -226,8 +226,8 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 10 {",
-    "after": "if false && currentOnly && version != 10 {",
+    "before": "if currentOnly && version != 11 {",
+    "after": "if false && currentOnly && version != 11 {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
   },
@@ -586,8 +586,8 @@
   {
     "name": "search music active viewer",
     "file": "internal/store/search.go",
-    "before": "v.suspended=0)\n",
-    "after": "v.suspended>=0)\n",
+    "before": "SELECT 1 FROM users v WHERE v.id=? AND v.suspended=0",
+    "after": "SELECT 1 FROM users v WHERE v.id=?",
     "package": "./internal/store",
     "run": "^TestSearchAudienceLiteralUnicodeAndReadOnly$"
   },

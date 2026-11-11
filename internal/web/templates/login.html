@@ -1,4 +1,4 @@
-{{define "login"}}<section class="welcome">
+{{define "login"}}{{if sharedSignIn}}<p class="community-signin"><a class="button" href="/auth/shared/start" hx-boost="false">Sign in with your community account</a></p>{{end}}<section class="welcome">
   <div><h1>{{.Settings.WelcomeTitle}}</h1><p class="intro">{{.Settings.WelcomeText}}</p><img class="mascot" src="{{if .Settings.Mascot}}/branding/mascot{{else}}/static/jukebox.png{{end}}" width="240" height="240" alt="Songstead's smiling little blue jukebox"></div>
   <div class="panel account-page"><h2>Sign in</h2><form action="/login" method="post" class="stack">
     <input type="hidden" name="csrf" value="{{.CSRF}}">

@@ -30,6 +30,10 @@ var ErrInvalid = errors.New("invalid input")
 var ErrMissing = errors.New("recommendation unavailable")
 
 type Store struct{ db *sql.DB }
+
+// DB exposes the existing connection for optional suite identity bindings.
+func (s *Store) DB() *sql.DB { return s.db }
+
 type User struct {
 	ID        int64  `json:"id"`
 	Username  string `json:"username"`
@@ -106,14 +110,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 10 {
+	if version > 11 {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 10 {
+	if currentOnly && version != 11 {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 10; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql", 10: "migrations/010_post_edits.sql"}[next]
+	for next := version + 1; next <= 11; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql", 10: "migrations/010_post_edits.sql", 11: "migrations/011_search_index.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "search trigger updates labels",
+    "file": "internal/store/migrations/011_search_index.sql",
+    "before": "AFTER UPDATE ON recommendation_labels",
+    "after": "AFTER DELETE ON recommendation_labels",
+    "package": "./internal/store",
+    "run": "TestSearchIndexTracksMutationsAndRollback"
+  },
+  {
+    "name": "search snapshots require complete index",
+    "file": "internal/store/snapshot.go",
+    "before": "if triggers != 7",
+    "after": "if triggers < 0",
+    "package": "./internal/store",
+    "run": "TestSearchIndexMigrationFailureAtomicityAndSnapshotValidation"
+  }
+]

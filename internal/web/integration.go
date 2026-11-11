@@ -6,6 +6,7 @@ import (
 	"github.com/airencracken/comfylib/reference"
 	"github.com/airencracken/songstead/internal/annotations"
 	"github.com/airencracken/songstead/internal/store"
+	"github.com/airencracken/songstead/internal/suite"
 	"net/http"
 	"strconv"
 	"strings"
@@ -141,12 +142,19 @@ func (a *App) annotationPreference(w http.ResponseWriter, r *http.Request) {
 }
 func (a *App) discussion(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)
+	if err == nil && r.PostForm.Get("discussion_state") != "" && !suite.CheckDiscussion(r.PostForm.Get("discussion_state"), "/recommendations/"+strconv.FormatInt(id, 10), state(r).Session, r.PostForm.Get("url"), state(r).Settings.WitmootURL) {
+		http.Error(w, "This discussion return expired. Prepare a new draft.", 400)
+		return
+	}
 	if err == nil {
 		if r.PostForm.Get("remove") == "1" {
 			err = a.store.RemoveDiscussion(r.Context(), state(r).User.ID, id, r.PostForm.Get("url"))
 		} else {
 			err = a.store.LinkDiscussion(r.Context(), state(r).User.ID, id, r.PostForm.Get("url"))
 		}
+	}
+	if err == nil {
+		suite.FinishDiscussion(r.PostForm.Get("discussion_state"))
 	}
 	a.finishDetail(w, r, id, err)
 }
@@ -176,5 +184,29 @@ func (a *App) share(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, store.ErrInvalid)
 		return
 	}
+	link, err = suite.PrepareDiscussion(link, source, state(r).Session)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
 	a.render(w, r, 200, page{View: "handoff", Title: "A discussion, if you like", Handoff: link})
+}
+
+func (a *App) discussionReturn(w http.ResponseWriter, r *http.Request) {
+	id, err := recommendationID(r)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	if _, err = a.store.Recommendation(r.Context(), state(r).User.ID, id); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	path := "/recommendations/" + strconv.FormatInt(id, 10)
+	q := r.URL.Query()
+	if len(q["state"]) != 1 || len(q["thread"]) != 1 || !suite.CheckDiscussion(q.Get("state"), path, state(r).Session, q.Get("thread"), state(r).Settings.WitmootURL) {
+		http.Error(w, "This discussion return expired. Prepare a new draft.", 400)
+		return
+	}
+	suite.RenderDiscussion(w, path+"/discussion", path, q.Get("thread"), q.Get("state"), "csrf", state(r).CSRF, "/static/comfy-components.css")
 }

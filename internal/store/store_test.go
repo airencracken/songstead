@@ -18,7 +18,7 @@ import (
 	"github.com/airencracken/songstead/internal/media"
 )
 
-func fixture(t *testing.T) (*Store, []int64) {
+func fixture(t testing.TB) (*Store, []int64) {
 	t.Helper()
 	s, err := Open(filepath.Join(t.TempDir(), "songstead.db"))
 	if err != nil {
@@ -190,7 +190,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	if err != nil || user.ID != id {
 		t.Fatal("migration changed data")
 	}
-	if _, err := s.db.Exec("PRAGMA user_version=11"); err != nil {
+	if _, err := s.db.Exec("PRAGMA user_version=12"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()
@@ -204,7 +204,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	defer db.Close()
 	var version int
 	db.QueryRow("PRAGMA user_version").Scan(&version)
-	if version != 11 {
+	if version != 12 {
 		t.Fatal("modified newer schema")
 	}
 }

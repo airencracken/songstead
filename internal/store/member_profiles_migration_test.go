@@ -16,7 +16,7 @@ func TestMemberProfileMigrationPreservesAccounts(t *testing.T) {
 	if err := s.db.QueryRow("SELECT username,password_hash FROM users WHERE id=?", id).Scan(&beforeName, &beforeHash); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.db.Exec("ALTER TABLE recommendations DROP COLUMN title_override; ALTER TABLE recommendations DROP COLUMN artist_override; ALTER TABLE recommendations DROP COLUMN kind_override; DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked; DROP TABLE member_profiles; PRAGMA user_version=7"); err != nil {
+	if _, err := s.db.Exec("DROP TRIGGER IF EXISTS search_recommendations_insert; DROP TRIGGER IF EXISTS search_recommendations_update; DROP TRIGGER IF EXISTS search_recommendations_delete; DROP TRIGGER IF EXISTS search_recommendation_labels_insert; DROP TRIGGER IF EXISTS search_recommendation_labels_update; DROP TRIGGER IF EXISTS search_recommendation_labels_delete; DROP TRIGGER IF EXISTS search_media_update; DROP TABLE IF EXISTS music_search; ALTER TABLE recommendations DROP COLUMN title_override; ALTER TABLE recommendations DROP COLUMN artist_override; ALTER TABLE recommendations DROP COLUMN kind_override; DROP INDEX music_states_liked; ALTER TABLE music_states DROP COLUMN liked; DROP TABLE member_profiles; PRAGMA user_version=7"); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.db.Close(); err != nil {

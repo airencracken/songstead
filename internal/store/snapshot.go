@@ -27,7 +27,7 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	}
 	// Previous releases used schemas 3 and 4. Restore them unchanged; the
 	// server applies forward migrations on its next start.
-	if version != 3 && version != 4 && version != 5 && version != 6 && version != 7 && version != 8 && version != 9 && version != 10 {
+	if version != 3 && version != 4 && version != 5 && version != 6 && version != 7 && version != 8 && version != 9 && version != 10 && version != 11 {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string
@@ -166,6 +166,22 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 		}
 		if err = rows.Close(); err != nil {
 			return err
+		}
+	}
+	if version >= 11 {
+		rows, err := db.QueryContext(ctx, "SELECT rowid,text FROM music_search LIMIT 0")
+		if err != nil {
+			return err
+		}
+		if err = rows.Close(); err != nil {
+			return err
+		}
+		var triggers int
+		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name IN ('search_recommendations_insert','search_recommendations_update','search_recommendations_delete','search_recommendation_labels_insert','search_recommendation_labels_update','search_recommendation_labels_delete','search_media_update')").Scan(&triggers); err != nil {
+			return err
+		}
+		if triggers != 7 {
+			return errors.New("snapshot search index is incomplete")
 		}
 	}
 	return nil
