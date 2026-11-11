@@ -142,7 +142,7 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertFalse([p for p in tracked if "__pycache__/" in p or p.endswith((".pyc",".pyo"))])
     def test_agpl_stack_and_version(self):
         self.assertIn("GNU AFFERO GENERAL PUBLIC LICENSE", (ROOT/"LICENSE").read_text())
-        self.assertRegex((ROOT/"VERSION").read_text().strip(), r"^0\.12\.1$")
+        self.assertRegex((ROOT/"VERSION").read_text().strip(), r"^0\.13\.0$")
         self.assertIn("modernc.org/sqlite",(ROOT/"go.mod").read_text())
         self.assertTrue((ROOT/"internal/web/static/htmx.min.js").is_file())
         make=(ROOT/"Makefile").read_text()
