@@ -9,6 +9,15 @@ and SHA-256 checksums in [GitHub Releases](https://github.com/airencracken/songs
 The binary includes SQLite, templates, JavaScript, and the jukebox artwork.
 It needs no Go installation, C library, frontend build, or streaming account.
 
+## Upgrade to 0.13.0
+
+Version 0.13.0 applies schema 11 at startup to build the music search index.
+Back up the stopped data directory before upgrading, allow time for the initial
+index build, and retain the pre-upgrade backup for a downgrade. Optional shared
+sign-in creates an additive identity-binding table when configured. Existing
+accounts, audiences, music likes and account export format 6 are preserved.
+See the [release notes](../CHANGELOG.md#0130) and [suite guide](suite.md).
+
 ## Upgrade from 0.10.x
 
 Version 0.11.0 applies schema 10 at server startup. Back up the stopped data
@@ -30,12 +39,12 @@ Choose the archive for your machine and download the matching checksum file.
 For this release on amd64, using the GitHub CLI:
 
 ```sh
-gh release download v0.12.1 --repo airencracken/songstead \
-    --pattern songstead_0.12.1_linux_amd64.tar.gz \
-    --pattern songstead_0.12.1_checksums.txt
-sha256sum --check --ignore-missing songstead_0.12.1_checksums.txt
-tar -xzf songstead_0.12.1_linux_amd64.tar.gz
-cd songstead_0.12.1_linux_amd64
+gh release download v0.13.0 --repo airencracken/songstead \
+    --pattern songstead_0.13.0_linux_amd64.tar.gz \
+    --pattern songstead_0.13.0_checksums.txt
+sha256sum --check --ignore-missing songstead_0.13.0_checksums.txt
+tar -xzf songstead_0.13.0_linux_amd64.tar.gz
+cd songstead_0.13.0_linux_amd64
 ./songstead --version
 ```
 
@@ -56,7 +65,7 @@ After accepting its testing keywords according to the overlay guide:
 
 ```sh
 emaint sync -r comfyware
-emerge --ask =www-apps/songstead-0.12.1::comfyware
+emerge --ask =www-apps/songstead-0.13.0::comfyware
 ```
 
 See [deployment.md](deployment.md) for native services and optional Witmoot
@@ -64,11 +73,11 @@ discussion configuration. Each application works independently.
 
 ## Build the published source
 
-Source builds need Go 1.26.11 or newer. Release builds resolve Comfylib v0.1.8 from
+Source builds need Go 1.26.11 or newer. Release builds resolve Comfylib v0.2.0 from
 its published module rather than a sibling checkout:
 
 ```sh
-git clone --branch v0.12.1 https://github.com/airencracken/songstead.git
+git clone --branch v0.13.0 https://github.com/airencracken/songstead.git
 cd songstead
 GOWORK=off make check build
 ```

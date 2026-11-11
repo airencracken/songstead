@@ -171,16 +171,16 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
 
     def test_release_guides_and_library_pin_are_self_contained(self):
         guide = (ROOT / "docs/releases.md").read_text()
-        for requirement in ("songstead_0.12.1_linux_amd64.tar.gz", "songstead_0.12.1_checksums.txt",
+        for requirement in ("songstead_0.13.0_linux_amd64.tar.gz", "songstead_0.13.0_checksums.txt",
                             "sha256sum --check --ignore-missing", "GOWORK=off make check build",
-                            "=www-apps/songstead-0.12.1::comfyware"):
+                            "=www-apps/songstead-0.13.0::comfyware"):
             self.assertIn(requirement, guide)
         module = (ROOT / "go.mod").read_text()
-        self.assertIn("github.com/airencracken/comfylib v0.1.8", module)
+        self.assertIn("github.com/airencracken/comfylib v0.2.0", module)
         self.assertNotIn("replace ", module)
         sums = (ROOT / "go.sum").read_text()
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.1\.8 h1:[A-Za-z0-9+/]{43}=$")
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.1\.8/go\.mod h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.2\.0 h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.2\.0/go\.mod h1:[A-Za-z0-9+/]{43}=$")
 
     def test_ci_checks_standalone_dependencies_without_rewriting_checksums(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text()

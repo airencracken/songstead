@@ -1,70 +1,51 @@
-# Coordinated releases
+# Coordinated suite releases
 
-The coordinated release uses the published Comfylib module, real upstream
-source archives and immutable Gentoo dependency bundles. Each app keeps its
-own accounts, database and runtime; the discussion connections are optional.
+These releases use the published Comfylib module and independent application
+accounts, databases and services. Configure the optional integrations only when
+wanted; upgrading does not enable shared sign-in or add app links automatically.
 
-| Component | Published version | Release |
+| Component | Version | Release |
 | --- | --- | --- |
-| Comfylib | 0.1.4 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.1.4) |
-| Songstead | 0.5.0 | [Linux binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.5.0) |
-| Witmoot | 0.14.2 | [Linux binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.14.2) |
-| Imvault | 0.16.2 | [Linux binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.16.2) |
+| Comfylib | 0.2.0 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.2.0) |
+| Songstead | 0.13.0 | [Binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.13.0) |
+| Witmoot | 0.20.0 | [Binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.20.0) |
+| Imvault | 0.22.0 | [Binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.22.0) |
+| Folkweave | 0.3.0 | [Binaries, Debian packages and source](https://github.com/airencracken/folkweave/releases/tag/v0.3.0) |
+| Tidings | 0.5.0 | [Binaries, Debian packages and source](https://github.com/airencracken/tidings/releases/tag/v0.5.0) |
 
-Comfylib adds shared password confirmation and branding image normalization,
-and retains `token.SessionCSRF` and the `reference` browser handoff package.
-Existing Witmoot and Imvault CSRF purpose strings and outputs are preserved.
-Songstead pins Comfylib v0.1.4 for reusable profile-image validation. Imvault
-and Witmoot retain v0.1.3; their existing image handling is unchanged. All pins
-use verified Go checksum database records.
-Clean builds and release workflows use `GOWORK=off`, without local replacements.
+All five apps pin Comfylib v0.2.0 with checksum database verification and
+`GOWORK=off`, without local replacements. Comfylib remains standard-library-only.
+Source builds require Go 1.26.11 or newer. Release workflows scan source and
+packaged executables and verify native artifacts before publication. Multi-platform
+container images must pass installation, upgrade, backup and restore checks before
+publication, including anonymous registry access.
 
-Songstead's public repository uses `master` as its default branch and
-AGPL-3.0-or-later licensing. Its v0.5.0 tag is on master and matches VERSION.
-Songstead adds owner settings, invitations, account recovery and suspension.
-GoReleaser publishes static Linux amd64/arm64 archives, source, license notices
-and SHA-256 checksums after the full standalone release checks pass.
+Shared controls preserve each app's palette. App menus use explicitly configured
+URLs. Community sign-in requires an existing local account to connect an identity;
+there is no automatic provisioning or email matching. Applications retain their
+own roles and permissions. See [suite integration](suite.md).
 
-Witmoot v0.14.2 accepts deliberate `/share` discussion drafts. Imvault v0.16.2
-adds album discussion links and its authenticated
-`/api/v1/albums/{ref}/preview` endpoint. Optional previews check current public
-visibility; private albums retain plain links. Preparing a draft creates no
-thread. Choose a destination, review its audience, then post. Older instances
-continue to work independently, with no preview when unsupported.
+Discussion returns preserve the author's source and destination audience checks.
+A source app saves a discussion link only after its signed-in author confirms a
+normal CSRF-protected form. Preparing a draft creates no thread, and posting a
+thread does not change an album or recommendation audience.
 
-## Gentoo
+Back up the stopped data directory before upgrading. Songstead applies schema 11
+for the search index; large libraries need time for the first index build. Shared
+sign-in creates an additive identity-binding table when configured. Restore the
+matching pre-upgrade backup when downgrading. Account export format 6 is unchanged.
 
-The Comfyware overlay contains versioned and live recipes for all three apps.
-The versioned recipes use verified published sources and these dependency
-releases:
+## Gentoo and website
 
-- [Songstead 0.5.0 dependencies](https://github.com/airencracken/comfyware/releases/tag/songstead-0.5.0)
-- [Witmoot 0.14.2 dependencies](https://github.com/airencracken/comfyware/releases/tag/witmoot-0.14.2)
-- [Imvault 0.16.2 dependencies](https://github.com/airencracken/comfyware/releases/tag/imvault-0.16.2)
+The Comfyware overlay uses each app's real published source archive and immutable
+Go dependency bundles. Manifests record the bytes of published distfiles. New
+recipes are published after their upstream application releases are available.
+The website release catalog is updated only after native releases and anonymously
+pullable container images are published.
 
-The BLAKE2B/SHA512 Manifests record the actual published archives.
-All three packages passed builds, upstream tests and the overlay installation harness in an
-official Gentoo stage3 container with its external network disconnected.
-The native release checks cover service accounts, private permissions,
-provisioning and health routes. Songstead also covers backup/restore; Imvault's
-preview API and Witmoot's draft route enforce authentication.
+Repository publication does not change running services, DNS, proxies or user data.
+The website has a separate host deployment procedure (`git pull`, then
+`make deploy`); repository updates do not deploy it.
 
-Follow [releases.md](releases.md) and [Gentoo deployment](deployment.md) to install. Stop and
-back up existing apps before their schema upgrades. Publication does not
-change services, DNS, proxies or application data.
-
-## Website and funding
-
-The [website repository](https://github.com/airencracken/comfyware_org) includes
-Songstead's release page, installation links, privacy FAQ and square jukebox
-artwork, plus the companion discussion descriptions. Content, HTTP, deployment,
-Caddy and responsive browser checks pass. Publish its document root using the
-existing server procedure (`git pull`, then `make deploy`). Repository updates
-do not perform that host deployment.
-
-Songstead's README Support section and enabled GitHub Sponsor sidebar link
-[Ko-fi](https://ko-fi.com/airencracken), matching Witmoot and Imvault.
-
-See [validation.md](validation.md) for test coverage and CI evidence. Local
-`go.work` files remain untracked review conveniences. Earlier workspace-built
-preview archives are not release artifacts; use the verified published downloads.
+Follow [installation](releases.md), [containers](containers.md), and
+[deployment](deployment.md) for the supported installation and upgrade procedures.

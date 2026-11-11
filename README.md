@@ -17,7 +17,7 @@ Run a published image with Docker Compose: [container installation, upgrades, an
 Use a current Go security patch when building: Go 1.26.11 or later on the
 1.26 series, or Go 1.27.4 or later on the 1.27 series.
 
-## Songstead 0.12.1
+## Songstead 0.13.0
 
 - Standardize shipped service configs and documented environment examples on
   `KEY="value"`, including numbers, booleans, and empty values.
@@ -31,7 +31,8 @@ No database migration is introduced.
 
 ## Songstead 0.12.0
 
-First-run setup now works in the browser or terminal, using Comfylib v0.1.8.
+First-run setup works in the browser or terminal. Suite controls and linked
+community sign-in use published Comfylib v0.2.0.
 `setup` reveals the host key; `create-owner` and `set-password` share hidden
 confirmed prompts, stdin/file sources, and a data-directory override with the
 other Comfyware apps. See [setup](docs/setup.md).
