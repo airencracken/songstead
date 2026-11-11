@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.13.1
+
+- Forward optional app navigation and community sign-in settings through OpenRC
+  and Docker Compose. Native templates document disabled defaults. Regression
+  tests check literal values and reject missing service exports.
+- Add an optional Apps menu and consistent keyboard, focus and account controls.
+- Add explicitly linked community sign-in using OpenID Connect, state, nonce and
+  PKCE. Existing local accounts and passwords remain available; accounts are never
+  created or linked by matching email addresses. Configure this only when wanted.
+- Use published Comfylib v0.2.0 and require Go 1.26.11 or newer for source builds.
+- Upgrade golang.org/x/crypto to v0.59.0 and scan the actual release executables
+  for vulnerable dependencies before publication.
+
+- Add comfortable and compact spacing, simplified navigation, Music details
+  disclosures, and a More filters section, preserving edits and no-JavaScript use.
+- Add a trigram search index for selective music searches while preserving exact
+  matching, Unicode folding, audience checks, and the common-query fallback.
+- Return from deliberately posted Witmoot discussions to an explicit link-saving
+  confirmation page. Posting never changes the recommendation audience.
+
+Read [Suite integration](docs/suite.md) for configuration and security boundaries.
+Back up the stopped data directory before upgrading. Shared sign-in creates an
+additive identity-binding table when configured. Keep the pre-upgrade backup;
+use it when returning to older binaries rather than opening a migrated database
+with an older application. Publishing a release does not change running services.
+
+This release applies schema 11 (`011_search_index.sql`) at startup. Allow time
+for the initial search index build on large libraries. Account export format 6
+and existing song likes, listening history, comments and audiences are preserved.
+
+
 ## 0.13.0
 
 - Add an optional Apps menu and consistent keyboard, focus and account controls.

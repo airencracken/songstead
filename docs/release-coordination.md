@@ -7,11 +7,11 @@ wanted; upgrading does not enable shared sign-in or add app links automatically.
 | Component | Version | Release |
 | --- | --- | --- |
 | Comfylib | 0.2.0 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.2.0) |
-| Songstead | 0.13.0 | [Binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.13.0) |
-| Witmoot | 0.20.0 | [Binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.20.0) |
-| Imvault | 0.22.0 | [Binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.22.0) |
-| Folkweave | 0.3.0 | [Binaries, Debian packages and source](https://github.com/airencracken/folkweave/releases/tag/v0.3.0) |
-| Tidings | 0.5.0 | [Binaries, Debian packages and source](https://github.com/airencracken/tidings/releases/tag/v0.5.0) |
+| Songstead | 0.13.1 | [Binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.13.1) |
+| Witmoot | 0.20.1 | [Binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.20.1) |
+| Imvault | 0.22.1 | [Binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.22.1) |
+| Folkweave | 0.3.1 | [Binaries, Debian packages and source](https://github.com/airencracken/folkweave/releases/tag/v0.3.1) |
+| Tidings | 0.5.1 | [Binaries, Debian packages and source](https://github.com/airencracken/tidings/releases/tag/v0.5.1) |
 
 All five apps pin Comfylib v0.2.0 with checksum database verification and
 `GOWORK=off`, without local replacements. Comfylib remains standard-library-only.

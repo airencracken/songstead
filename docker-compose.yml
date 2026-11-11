@@ -1,6 +1,6 @@
 services:
   songstead:
-    image: ${SONGSTEAD_IMAGE:-ghcr.io/airencracken/songstead:v0.13.0}
+    image: ${SONGSTEAD_IMAGE:-ghcr.io/airencracken/songstead:v0.13.1}
     restart: unless-stopped
     ports:
       - "127.0.0.1:${SONGSTEAD_PORT:-8083}:8080"
@@ -13,6 +13,10 @@ services:
     security_opt: [no-new-privileges:true]
     stop_grace_period: 25s
     environment:
+      SONGSTEAD_APPS: "${SONGSTEAD_APPS:-}"
+      SONGSTEAD_SHARED_ISSUER: "${SONGSTEAD_SHARED_ISSUER:-}"
+      SONGSTEAD_SHARED_CLIENT_ID: "${SONGSTEAD_SHARED_CLIENT_ID:-}"
+      SONGSTEAD_SHARED_CLIENT_SECRET: "${SONGSTEAD_SHARED_CLIENT_SECRET:-}"
       SONGSTEAD_BASE_URL: "${SONGSTEAD_BASE_URL:-http://localhost:${SONGSTEAD_PORT:-8083}}"
       SONGSTEAD_SECURE_COOKIES: "${SONGSTEAD_SECURE_COOKIES:-false}"
       SONGSTEAD_TRUSTED_PROXIES: "${SONGSTEAD_TRUSTED_PROXIES:-}"
