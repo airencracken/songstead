@@ -64,7 +64,7 @@ discussion configuration. Each application works independently.
 
 ## Build the published source
 
-Source builds need Go 1.26 or newer. Release builds resolve Comfylib v0.1.8 from
+Source builds need Go 1.26.11 or newer. Release builds resolve Comfylib v0.1.8 from
 its published module rather than a sibling checkout:
 
 ```sh

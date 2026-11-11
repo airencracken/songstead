@@ -14,6 +14,9 @@ quiet blue panels, with a little jukebox to keep the songs company.
 
 Run a published image with Docker Compose: [container installation, upgrades, and backups](docs/containers.md).
 
+Use a current Go security patch when building: Go 1.26.11 or later on the
+1.26 series, or Go 1.27.4 or later on the 1.27 series.
+
 ## Songstead 0.12.1
 
 - Standardize shipped service configs and documented environment examples on
@@ -169,7 +172,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 
 ## Build and try it
 
-Requires Go 1.26 or later. Dependencies are pinned, including pure-Go SQLite;
+Requires Go 1.26.11 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
 Release builds use published Comfylib v0.1.7 and verified module checksums.
