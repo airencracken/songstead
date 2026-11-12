@@ -83,7 +83,7 @@ jobs:
             *) goreleaser release --snapshot --clean --skip=publish || exit 1 ;;
           esac
       - name: Verify release archives and source documentation
-        run: python3 scripts/containers/check_artifacts.py
+        run: python3 scripts/release/check_artifacts.py
       - name: Scan release executable vulnerabilities
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0 || exit 1

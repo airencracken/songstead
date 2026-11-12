@@ -142,7 +142,7 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertFalse([p for p in tracked if "__pycache__/" in p or p.endswith((".pyc",".pyo"))])
     def test_agpl_stack_and_version(self):
         self.assertIn("GNU AFFERO GENERAL PUBLIC LICENSE", (ROOT/"LICENSE").read_text())
-        self.assertRegex((ROOT/"VERSION").read_text().strip(), r"^0\.13\.1$")
+        self.assertRegex((ROOT/"VERSION").read_text().strip(), r"^0\.13\.2$")
         self.assertIn("modernc.org/sqlite",(ROOT/"go.mod").read_text())
         self.assertTrue((ROOT/"internal/web/static/htmx.min.js").is_file())
         make=(ROOT/"Makefile").read_text()
@@ -176,11 +176,20 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
                             "=www-apps/songstead-0.13.2::comfyware"):
             self.assertIn(requirement, guide)
         module = (ROOT / "go.mod").read_text()
-        self.assertIn("github.com/airencracken/comfylib v0.2.0", module)
+        self.assertIn("github.com/airencracken/comfylib v0.3.0", module)
+        self.assertIn("github.com/airencracken/comfylib/oidc v0.1.0", module)
         self.assertNotIn("replace ", module)
         sums = (ROOT / "go.sum").read_text()
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.2\.0 h1:[A-Za-z0-9+/]{43}=$")
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.2\.0/go\.mod h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.3\.0 h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.3\.0/go\.mod h1:[A-Za-z0-9+/]{43}=$")
+
+    def test_release_artifact_check_step_points_to_existing_application_validation(self):
+        workflow = (ROOT / '.github/workflows/release.yml').read_text()
+        self.assertIn('run: python3 scripts/release/check_artifacts.py', workflow)
+        source = (ROOT / 'scripts/release/check_artifacts.py').read_text()
+        compile(source, 'check_artifacts.py', 'exec')
+        self.assertIn('"github.com/airencracken/comfylib"', source)
+        self.assertIn('from release import stage', source)
 
     def test_ci_checks_standalone_dependencies_without_rewriting_checksums(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text()
