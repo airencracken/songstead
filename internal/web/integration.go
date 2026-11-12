@@ -4,9 +4,9 @@ package web
 import (
 	"errors"
 	"github.com/airencracken/comfylib/reference"
+	"github.com/airencracken/comfylib/suite"
 	"github.com/airencracken/songstead/internal/annotations"
 	"github.com/airencracken/songstead/internal/store"
-	"github.com/airencracken/songstead/internal/suite"
 	"net/http"
 	"strconv"
 	"strings"
@@ -208,5 +208,5 @@ func (a *App) discussionReturn(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "This discussion return expired. Prepare a new draft.", 400)
 		return
 	}
-	suite.RenderDiscussion(w, path+"/discussion", path, q.Get("thread"), q.Get("state"), "csrf", state(r).CSRF, "/static/comfy-components.css")
+	suite.RenderDiscussion(w, path+"/discussion", path, q.Get("thread"), q.Get("state"), "csrf", state(r).CSRF, "/static/comfyware/components.css")
 }

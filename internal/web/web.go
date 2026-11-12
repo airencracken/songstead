@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/airencracken/comfylib/autobackup"
-	"github.com/airencracken/songstead/internal/suite"
+	"github.com/airencracken/comfylib/suite"
 	"html/template"
 	"io/fs"
 	"log/slog"

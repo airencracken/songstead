@@ -17,7 +17,7 @@ test-packaging:
 test-js:
 	node --test internal/web/static/*.test.js
 test-mutations:
-	python3 scripts/mutate.py scripts/mutations.json scripts/mutations/suite.json scripts/mutations/search_index.json
+	python3 scripts/comfy.py mutate scripts/mutations.json scripts/mutations/search_index.json
 test-cli: build
 	python3 scripts/test_cli.py
 	python3 "$$(go list -m -f '{{.Dir}}' github.com/airencracken/comfylib)/tools/check_password_cli.py" --binary bin/songstead --command create-owner --data-env SONGSTEAD_DATA_DIR --prompt "Password: " --confirmation "Confirm password: "
@@ -36,26 +36,26 @@ test-browser: build
 
 .PHONY: test-containers test-container-lifecycle
 test-containers: ## Check container release, schema, mutation and publication contracts
-	python3 -m unittest discover -s scripts/containers -p 'test_*.py' -v
+	python3 scripts/comfy.py test-containers
 
 test-container-lifecycle: ## Exercise a local image (build it first; needs Docker)
-	python3 scripts/containers/lifecycle.py --image songstead:local --version "$(VERSION)" --upgrade
+	python3 scripts/comfy.py container-lifecycle --image songstead:local --version "$(VERSION)" --upgrade
 
 .PHONY: test-container-registry
 test-container-registry: ## Exercise real multi-platform publication in an isolated local registry
-	python3 scripts/containers/check_registry.py
+	python3 scripts/comfy.py container-registry
 
 .PHONY: test-design-mutations
 test-design-mutations: ## Verify invitation design regressions reject deliberate defects
 	GOWORK=off go mod download
-	GOWORK=off python3 scripts/mutate.py scripts/mutations/design.json
+	GOWORK=off python3 scripts/comfy.py mutate scripts/mutations/design.json
 
 .PHONY: test-config
 test-config:
-	python3 scripts/test_service_config.py
+	python3 scripts/comfy.py service-config
 
 .PHONY: test-suite-assets
-test-suite-assets: ## Verify synchronized suite source and assets
-	python3 scripts/verify_suite.py
-	python3 scripts/test_suite_deployment.py
-	python3 scripts/test_release_dispatch.py
+test-suite-assets: ## Verify shared module integration and deployment contracts
+	python3 scripts/comfy.py check
+	python3 scripts/comfy.py suite-deployment
+	python3 scripts/comfy.py release-dispatch

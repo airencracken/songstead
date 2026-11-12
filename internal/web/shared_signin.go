@@ -4,9 +4,9 @@ package web
 import (
 	"fmt"
 	"github.com/airencracken/comfylib/clientip"
+	sharedoidc "github.com/airencracken/comfylib/oidc"
+	"github.com/airencracken/comfylib/suite"
 	"github.com/airencracken/comfylib/token"
-	"github.com/airencracken/songstead/internal/sharedoidc"
-	"github.com/airencracken/songstead/internal/suite"
 	"net/http"
 )
 

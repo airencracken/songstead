@@ -171,9 +171,9 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
 
     def test_release_guides_and_library_pin_are_self_contained(self):
         guide = (ROOT / "docs/releases.md").read_text()
-        for requirement in ("songstead_0.13.1_linux_amd64.tar.gz", "songstead_0.13.1_checksums.txt",
+        for requirement in ("songstead_0.13.2_linux_amd64.tar.gz", "songstead_0.13.2_checksums.txt",
                             "sha256sum --check --ignore-missing", "GOWORK=off make check build",
-                            "=www-apps/songstead-0.13.1::comfyware"):
+                            "=www-apps/songstead-0.13.2::comfyware"):
             self.assertIn(requirement, guide)
         module = (ROOT / "go.mod").read_text()
         self.assertIn("github.com/airencracken/comfylib v0.2.0", module)

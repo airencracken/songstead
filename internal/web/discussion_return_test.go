@@ -3,7 +3,7 @@ package web
 
 import (
 	"fmt"
-	"github.com/airencracken/songstead/internal/suite"
+	"github.com/airencracken/comfylib/suite"
 	"net/url"
 	"strings"
 	"testing"

@@ -17,7 +17,7 @@ Run a published image with Docker Compose: [container installation, upgrades, an
 Use a current Go security patch when building: Go 1.26.11 or later on the
 1.26 series, or Go 1.27.4 or later on the 1.27 series.
 
-## Songstead 0.13.1
+## Songstead 0.13.2
 
 - Standardize shipped service configs and documented environment examples on
   `KEY="value"`, including numbers, booleans, and empty values.
