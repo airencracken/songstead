@@ -176,12 +176,12 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
                             "=www-apps/songstead-0.14.0::comfyware"):
             self.assertIn(requirement, guide)
         module = (ROOT / "go.mod").read_text()
-        self.assertIn("github.com/airencracken/comfylib v0.4.2", module)
+        self.assertIn("github.com/airencracken/comfylib v0.4.3", module)
         self.assertIn("github.com/airencracken/comfylib/oidc v0.1.0", module)
         self.assertNotIn("replace ", module)
         sums = (ROOT / "go.sum").read_text()
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.4\.1 h1:[A-Za-z0-9+/]{43}=$")
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.4\.1/go\.mod h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.4\.3 h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.4\.3/go\.mod h1:[A-Za-z0-9+/]{43}=$")
 
     def test_release_artifact_check_step_points_to_existing_application_validation(self):
         workflow = (ROOT / '.github/workflows/release.yml').read_text()
