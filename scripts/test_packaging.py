@@ -180,8 +180,8 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         self.assertIn("github.com/airencracken/comfylib/oidc v0.1.0", module)
         self.assertNotIn("replace ", module)
         sums = (ROOT / "go.sum").read_text()
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.5\.0 h1:[A-Za-z0-9+/]{43}=$")
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.5\.0/go\.mod h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.6\.0 h1:[A-Za-z0-9+/]{43}=$")
+        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.6\.0/go\.mod h1:[A-Za-z0-9+/]{43}=$")
 
     def test_release_artifact_check_step_points_to_existing_application_validation(self):
         workflow = (ROOT / '.github/workflows/release.yml').read_text()
