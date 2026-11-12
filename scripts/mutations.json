@@ -726,5 +726,21 @@
     "after": "a.metrics",
     "package": "./internal/web",
     "run": "^TestOwnerMetricsTotalsPermissionsAndFailure$"
+  },
+  {
+    "name": "successful authentication is recorded",
+    "file": "internal/store/store.go",
+    "before": "analytics.RecordLogin(ctx, tx, analytics.MemberID(user), time.Now())",
+    "after": "analytics.Prune(ctx, tx, time.Now())",
+    "package": "./internal/web",
+    "run": "^TestActivityCountsAuthorizedOpensAndSuccessfulLogins$"
+  },
+  {
+    "name": "recommendation opens reach the shared collector",
+    "file": "internal/web/web.go",
+    "before": "a.signedIn(a.trackOpen(analytics.Recommendation, a.detail))",
+    "after": "a.signedIn(a.detail)",
+    "package": "./internal/web",
+    "run": "^TestActivityCountsAuthorizedOpensAndSuccessfulLogins$"
   }
 ]
