@@ -3,7 +3,7 @@ module github.com/airencracken/songstead
 go 1.26.11
 
 require (
-	github.com/airencracken/comfylib v0.5.0
+	github.com/airencracken/comfylib v0.6.0
 	github.com/airencracken/comfylib/oidc v0.1.0
 	github.com/gofrs/flock v0.13.1
 	golang.org/x/crypto v0.59.0

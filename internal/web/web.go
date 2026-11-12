@@ -13,6 +13,7 @@ import (
 	"github.com/airencracken/comfylib/admin"
 	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/autobackup"
+	"github.com/airencracken/comfylib/displaytime"
 	"github.com/airencracken/comfylib/ratelimit"
 	"github.com/airencracken/comfylib/suite"
 	"html/template"
@@ -49,7 +50,7 @@ type Config struct {
 type App struct {
 	store        *store.Store
 	config       Config
-	templates    *template.Template
+	templates    *displaytime.Templates
 	handler      http.Handler
 	dummyHash    []byte
 	previewFetch func(context.Context, string) (media.Metadata, error)
@@ -71,8 +72,11 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
-	Overview admin.View
-	Backups  autobackup.Status
+	TimezoneControl               displaytime.Preference
+	TimezoneInput                 *string
+	TimezoneError, TimezoneNotice string
+	Overview                      admin.View
+	Backups                       autobackup.Status
 
 	Query, SearchKind string
 
@@ -130,7 +134,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 			}
 		}
 	}
-	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"adminSummary": admin.Render, "linkNumber": func(i int) int { return i + 1 },
+	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"timezonePreference": displaytime.RenderPreference, "adminSummary": admin.Render, "linkNumber": func(i int) int { return i + 1 },
 		"supportsMetadata": media.SupportsMetadata,
 		"invitationStatus": invitationStatus,
 		"browseURL":        browseURL,
@@ -145,9 +149,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 			}
 			return 20 + seconds*960/duration
 		},
-		"date":    func(unix int64) string { return time.Unix(unix, 0).UTC().Format("2 Jan 2006, 15:04 UTC") },
-		"isoDate": func(unix int64) string { return time.Unix(unix, 0).UTC().Format(time.RFC3339) },
-	}).ParseFS(assets, "templates/*.html")
+	}).Funcs(displaytime.New("UTC").Funcs()).ParseFS(assets, "templates/*.html")
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +157,11 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	a := &App{store: s, config: cfg, templates: tmpl, dummyHash: dummy, logins: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 20, Interval: 15 * time.Minute, Capacity: 10000}), previews: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 6, Interval: time.Minute, Capacity: 10000})}
+	bound, err := displaytime.NewTemplates(tmpl, nil)
+	if err != nil {
+		return nil, err
+	}
+	a := &App{store: s, config: cfg, templates: bound, dummyHash: dummy, logins: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 20, Interval: 15 * time.Minute, Capacity: 10000}), previews: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 6, Interval: time.Minute, Capacity: 10000})}
 	mux := http.NewServeMux()
 	static, err := fs.Sub(assets, "static")
 	if err != nil {
@@ -191,6 +197,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("POST /recommendations/{id}/preview", a.signedIn(a.retryPreview))
 	mux.HandleFunc("GET /users/{id}/picture", a.signedIn(a.profilePicture))
 	mux.HandleFunc("GET /members/{id}", a.signedIn(a.memberProfile))
+	mux.HandleFunc("POST /account/timezone", a.signedIn(a.saveTimezone))
 	mux.HandleFunc("POST /account/profile", a.signedIn(a.saveMemberProfile))
 	mux.HandleFunc("POST /account/picture", a.signedIn(a.saveProfilePicture))
 	mux.HandleFunc("POST /account/animation", a.signedIn(a.saveAnimationPreference))
@@ -266,6 +273,11 @@ func (a *App) middleware(next http.Handler) http.Handler {
 				return
 			}
 			if err == nil {
+				u.Timezone, err = a.store.Timezone(r.Context(), u.ID)
+				if err != nil {
+					a.fail(w, r, err)
+					return
+				}
 				st.User = &u
 				st.Session = c.Value
 			}
@@ -358,6 +370,8 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 	}
 	st := state(r)
 	p.User, p.CSRF = st.User, st.CSRF
+	p.Overview.Timezone = preferredTimezone(r)
+	p.TimezoneControl = timezoneControl(r, p.TimezoneInput, p.TimezoneError, p.TimezoneNotice)
 	p.Settings = st.Settings
 	if p.SettingsDraft != nil {
 		p.Settings = *p.SettingsDraft
@@ -378,7 +392,7 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 		p.SocialImage = strings.TrimRight(base, "/") + "/static/jukebox.png"
 	}
 	var buf bytes.Buffer
-	if err := a.templates.ExecuteTemplate(&buf, "layout", p); err != nil {
+	if err := a.templates.ExecuteTemplate(&buf, preferredTimezone(r), "layout", p); err != nil {
 		a.fail(w, r, err)
 		return
 	}

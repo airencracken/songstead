@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/airencracken/comfylib/analytics"
+	"github.com/airencracken/comfylib/displaytime"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -36,6 +37,7 @@ type Store struct{ db *sql.DB }
 func (s *Store) DB() *sql.DB { return s.db }
 
 type User struct {
+	Timezone  string `json:"-"`
 	ID        int64  `json:"id"`
 	Username  string `json:"username"`
 	Role      string `json:"role"`
@@ -97,6 +99,9 @@ func open(path string, currentOnly bool) (*Store, error) {
 		return nil, errors.Join(err, db.Close())
 	}
 	if !currentOnly {
+		if err := displaytime.Initialize(context.Background(), db); err != nil {
+			return nil, errors.Join(err, db.Close())
+		}
 		if err := analytics.Initialize(context.Background(), db, time.Now()); err != nil {
 			return nil, errors.Join(err, db.Close())
 		}

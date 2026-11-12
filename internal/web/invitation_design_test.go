@@ -66,7 +66,7 @@ func TestInvitationStatusesDescribeAvailability(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var out bytes.Buffer
 			p := page{User: &store.User{Role: "owner"}, InvitationNow: 100, Invitations: []store.Invitation{tc.invitation}}
-			if err := a.templates.ExecuteTemplate(&out, "invites", p); err != nil {
+			if err := a.templates.ExecuteTemplate(&out, "UTC", "invites", p); err != nil {
 				t.Fatal(err)
 			}
 			if !strings.Contains(out.String(), `<span class="invitation-status">`+tc.want+`</span>`) {

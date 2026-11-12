@@ -742,5 +742,21 @@
     "after": "a.signedIn(a.detail)",
     "package": "./internal/web",
     "run": "^TestActivityCountsAuthorizedOpensAndSuccessfulLogins$"
+  },
+  {
+    "name": "reader timezone reaches native rendering",
+    "file": "internal/web/display_timezone.go",
+    "before": "return displaytime.New(u.Timezone).Name()",
+    "after": "return \"UTC\"",
+    "package": "./internal/web",
+    "run": "^TestDisplayTimezoneAccountRoutesAndRendering$"
+  },
+  {
+    "name": "inactive accounts cannot save display timezones",
+    "file": "internal/store/timezone.go",
+    "before": "AND suspended=0",
+    "after": "AND suspended IN (0,1)",
+    "package": "./internal/web",
+    "run": "^TestDisplayTimezoneAccountRoutesAndRendering$"
   }
 ]
