@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/airencracken/comfylib/admin"
+	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/autobackup"
 	"github.com/airencracken/comfylib/ratelimit"
 	"github.com/airencracken/comfylib/suite"
@@ -193,7 +194,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("POST /account/profile", a.signedIn(a.saveMemberProfile))
 	mux.HandleFunc("POST /account/picture", a.signedIn(a.saveProfilePicture))
 	mux.HandleFunc("POST /account/animation", a.signedIn(a.saveAnimationPreference))
-	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.detail))
+	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.trackOpen(analytics.Recommendation, a.detail)))
 	mux.HandleFunc("GET /recommendations/{id}/edit", a.signedIn(a.editRecommendation))
 	mux.HandleFunc("POST /recommendations/{id}/edit", a.signedIn(a.editRecommendation))
 	mux.HandleFunc("GET /recommendations/{id}/delete", a.signedIn(a.deleteRecommendation))
@@ -215,7 +216,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	if err = a.registerSharedSignIn(mux); err != nil {
 		return nil, err
 	}
-	a.handler = http.NewCrossOriginProtection().Handler(a.middleware(mux))
+	a.handler = http.NewCrossOriginProtection().Handler(a.middleware(analytics.Maintenance(a.store.AnalyticsDB(), mux)))
 	return a, nil
 }
 
@@ -349,9 +350,7 @@ func (a *App) signedIn(next http.HandlerFunc) http.HandlerFunc {
 
 func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page) {
 	if state(r).User != nil && state(r).User.Role == "owner" && (p.View == "settings" || p.View == "metrics") {
-		metrics := p.Overview.Metrics
-		p.Overview = admin.WithSuite(admin.Runtime(a.config.Version, a.config.Backups.Status()), "SONGSTEAD_")
-		p.Overview.Metrics = metrics
+		p.Overview = admin.WithOperations(p.Overview, a.config.Version, a.config.Backups.Status(), "SONGSTEAD_")
 	}
 
 	if p.View == "settings" {

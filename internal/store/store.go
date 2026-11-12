@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/airencracken/comfylib/analytics"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -94,6 +95,11 @@ func open(path string, currentOnly bool) (*Store, error) {
 	s := &Store{db: db}
 	if err := s.migrate(currentOnly); err != nil {
 		return nil, errors.Join(err, db.Close())
+	}
+	if !currentOnly {
+		if err := analytics.Initialize(context.Background(), db, time.Now()); err != nil {
+			return nil, errors.Join(err, db.Close())
+		}
 	}
 	return s, nil
 }
@@ -266,6 +272,9 @@ func (s *Store) NewSession(ctx context.Context, user int64, verifiedHash string)
 		return "", err
 	}
 	if err := mutationResult(result, nil); err != nil {
+		return "", err
+	}
+	if err := analytics.RecordLogin(ctx, tx, analytics.MemberID(user), time.Now()); err != nil {
 		return "", err
 	}
 	return secret, tx.Commit()

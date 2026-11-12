@@ -26,24 +26,8 @@ func (a *App) registerSharedSignIn(mux *http.ServeMux) error {
 			}
 			return u.ID, binding
 		},
-		CSRF: func(r *http.Request) (string, string) { return "csrf", state(r).CSRF },
-		SignIn: func(w http.ResponseWriter, r *http.Request, id int64) (string, error) {
-			var name string
-			if err := a.store.DB().QueryRowContext(r.Context(), "SELECT username FROM users WHERE id=? AND suspended=0", id).Scan(&name); err != nil {
-				return "", err
-			}
-			u, hash, err := a.store.Credentials(r.Context(), name)
-			if err != nil || u.Suspended {
-				return "", fmt.Errorf("account unavailable")
-			}
-			raw, err := a.store.NewSession(r.Context(), id, hash)
-			if err != nil {
-				return "", err
-			}
-			a.cookie(w, r, "session", raw, 7*86400)
-			a.cookie(w, r, "csrf", token.SessionCSRF(raw, "songstead-csrf-v1"), 86400)
-			return "/shelf", nil
-		},
+		CSRF:   func(r *http.Request) (string, string) { return "csrf", state(r).CSRF },
+		SignIn: a.sharedSignIn,
 	})
 	if err != nil {
 		return err
@@ -52,4 +36,22 @@ func (a *App) registerSharedSignIn(mux *http.ServeMux) error {
 		auth.Register(mux)
 	}
 	return nil
+}
+
+func (a *App) sharedSignIn(w http.ResponseWriter, r *http.Request, id int64) (string, error) {
+	var name string
+	if err := a.store.DB().QueryRowContext(r.Context(), "SELECT username FROM users WHERE id=? AND suspended=0", id).Scan(&name); err != nil {
+		return "", err
+	}
+	u, hash, err := a.store.Credentials(r.Context(), name)
+	if err != nil || u.Suspended {
+		return "", fmt.Errorf("account unavailable")
+	}
+	raw, err := a.store.NewSession(r.Context(), id, hash)
+	if err != nil {
+		return "", err
+	}
+	a.cookie(w, r, "session", raw, 7*86400)
+	a.cookie(w, r, "csrf", token.SessionCSRF(raw, "songstead-csrf-v1"), 86400)
+	return "/shelf", nil
 }
