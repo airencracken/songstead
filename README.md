@@ -17,6 +17,14 @@ Run a published image with Docker Compose: [container installation, upgrades, an
 Use a current Go security patch when building: Go 1.26.11 or later on the
 1.26 series, or Go 1.27.4 or later on the 1.27 series.
 
+## Songstead 0.14.0
+
+Native owner/admin metrics now show aggregate membership, content, storage and recent activity, with owner-only operational summaries for backups and configured suite connections. The pages work without JavaScript and follow the application's existing permissions.
+
+Rate limiting uses the bounded shared implementations while retaining the app's own budgets. Release preparation, artifact verification, browser fixtures and immutable CI workflows use Comfylib 0.4.1 directly. A release preflight verifies version metadata, cold module caches and the exact shared workflow revision before publication.
+
+No application database migration is added. Existing service configuration and account permissions remain supported.
+
 ## Songstead 0.13.2
 
 - Standardize shipped service configs and documented environment examples on

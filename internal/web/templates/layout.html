@@ -29,8 +29,8 @@
     </nav>
   </header>
   <main id="main" class="page" tabindex="-1">
-    {{if .Notice}}<p class="notice" role="status" tabindex="-1" data-save-status>{{.Notice}}</p>{{end}}
-    {{if .Error}}<p class="error" role="alert">{{.Error}}</p>{{end}}
+    {{if .Notice}}<p class="comfy-notice notice" role="status" tabindex="-1" data-save-status>{{.Notice}}</p>{{end}}
+    {{if .Error}}<p class="comfy-notice comfy-notice-error error" role="alert">{{.Error}}</p>{{end}}
     {{if eq .View "login"}}{{template "login" .}}{{end}}
     {{if eq .View "list"}}{{template "list" .}}{{end}}
     {{if eq .View "search"}}{{template "search" .}}{{end}}
@@ -40,6 +40,7 @@
     {{if eq .View "groups"}}{{template "groups" .}}{{end}}
  {{if eq .View "handoff"}}{{template "handoff" .}}{{end}}
  {{if eq .View "detail"}}{{template "detail" .}}{{end}}
+    {{if eq .View "metrics"}}{{template "metrics" .}}{{end}}
     {{if eq .View "settings"}}{{template "settings" .}}{{end}}
     {{if eq .View "accounts"}}{{template "accounts" .}}{{end}}
     {{if eq .View "invites"}}{{template "invites" .}}{{end}}

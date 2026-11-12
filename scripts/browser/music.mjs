@@ -1,3 +1,4 @@
+import { findBrowser, reservePort, waitForHTTP, stopProcess } from '../browser-runtime.mjs';
 import { act, checkSuiteControls } from '../browser-controls.mjs';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import assert from 'node:assert/strict';
@@ -24,22 +25,14 @@ try {
       { input: `${password}\n`, env: environment, encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
   }
-  const listener = createServer(); listener.listen(0,'127.0.0.1'); await once(listener,'listening');
-  const port = listener.address().port;
-  await new Promise((done,reject) => listener.close(error => error ? reject(error) : done()));
+  const port = await reservePort();
   const base = `http://127.0.0.1:${port}`;
   environment.SONGSTEAD_APPS = '[{"id":"witmoot","url":"https://suite.example.org"}]';
   app = spawn(binary, ['serve','--addr',`127.0.0.1:${port}`,'--data-dir',directory], { env: environment, stdio:['ignore','ignore','pipe'] });
   let errors = ''; app.stderr.on('data',chunk => { errors += chunk; });
-  let ready = false;
-  for (let attempt=0; attempt<100; attempt++) {
-    if (app.exitCode!==null) throw new Error(`Server exited: ${errors}`);
-    try { ready=(await fetch(`${base}/healthz`)).ok; } catch {}
-    if (ready) break;
-    await new Promise(done => setTimeout(done,100));
-  }
-  check(ready,'Server became healthy');
-  browser = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined });
+  await waitForHTTP(base + '/healthz', { process: app, output: () => errors });
+  check(true, 'Server became healthy');
+  browser = await chromium.launch({ executablePath: await findBrowser({ required: true }) });
   async function session(username, javaScriptEnabled=true) {
     const context = await browser.newContext({ javaScriptEnabled, viewport:{width:1280,height:1000} });
     await context.route('**/*',route => {
@@ -510,10 +503,6 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   console.log(`Passed ${checks} music and preferences browser checks.`);
 } finally {
   if (browser) await browser.close();
-  if (app && app.exitCode===null) {
-    app.kill('SIGTERM');
-    await Promise.race([once(app,'exit'),new Promise(done=>setTimeout(done,5000))]);
-    if (app.exitCode===null) { app.kill('SIGKILL'); await once(app,'exit'); }
-  }
+  await stopProcess(app);
   await rm(directory,{recursive:true,force:true});
 }

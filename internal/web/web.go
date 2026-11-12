@@ -10,7 +10,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/airencracken/comfylib/admin"
 	"github.com/airencracken/comfylib/autobackup"
+	"github.com/airencracken/comfylib/ratelimit"
 	"github.com/airencracken/comfylib/suite"
 	"html/template"
 	"io/fs"
@@ -20,7 +22,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/airencracken/comfylib/clientip"
@@ -51,12 +52,8 @@ type App struct {
 	handler      http.Handler
 	dummyHash    []byte
 	previewFetch func(context.Context, string) (media.Metadata, error)
-	mu           sync.Mutex
-	attempts     map[string]attempt
-}
-type attempt struct {
-	count   int
-	expires time.Time
+	logins       *ratelimit.Window
+	previews     *ratelimit.Window
 }
 type requestState struct {
 	User          *store.User
@@ -73,7 +70,8 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
-	Backups autobackup.Status
+	Overview admin.View
+	Backups  autobackup.Status
 
 	Query, SearchKind string
 
@@ -131,7 +129,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 			}
 		}
 	}
-	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"linkNumber": func(i int) int { return i + 1 },
+	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"adminSummary": admin.Render, "linkNumber": func(i int) int { return i + 1 },
 		"supportsMetadata": media.SupportsMetadata,
 		"invitationStatus": invitationStatus,
 		"browseURL":        browseURL,
@@ -156,7 +154,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	a := &App{store: s, config: cfg, templates: tmpl, dummyHash: dummy, attempts: map[string]attempt{}}
+	a := &App{store: s, config: cfg, templates: tmpl, dummyHash: dummy, logins: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 20, Interval: 15 * time.Minute, Capacity: 10000}), previews: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 6, Interval: time.Minute, Capacity: 10000})}
 	mux := http.NewServeMux()
 	static, err := fs.Sub(assets, "static")
 	if err != nil {
@@ -350,6 +348,12 @@ func (a *App) signedIn(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page) {
+	if state(r).User != nil && state(r).User.Role == "owner" && (p.View == "settings" || p.View == "metrics") {
+		metrics := p.Overview.Metrics
+		p.Overview = admin.WithSuite(admin.Runtime(a.config.Version, a.config.Backups.Status()), "SONGSTEAD_")
+		p.Overview.Metrics = metrics
+	}
+
 	if p.View == "settings" {
 		p.Backups = a.config.Backups.Status()
 	}
@@ -407,27 +411,8 @@ func (a *App) loginForm(w http.ResponseWriter, r *http.Request) {
 }
 func (a *App) allowLogin(r *http.Request) bool {
 	key := clientip.NetworkKey((clientip.Resolver{Trusted: a.config.TrustedProxies}).Client(r))
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	now := time.Now()
-	for k, v := range a.attempts {
-		if !v.expires.After(now) {
-			delete(a.attempts, k)
-		}
-	}
-	v, exists := a.attempts[key]
-	if !exists {
-		if len(a.attempts) >= 10000 {
-			for k := range a.attempts {
-				delete(a.attempts, k)
-				break
-			}
-		}
-		v.expires = now.Add(15 * time.Minute)
-	}
-	v.count++
-	a.attempts[key] = v
-	return v.count <= 20
+	ok, _ := a.logins.Allow(key)
+	return ok
 }
 func (a *App) login(w http.ResponseWriter, r *http.Request) {
 	if !a.allowLogin(r) {

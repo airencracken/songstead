@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/airencracken/songstead/internal/media"
 )
@@ -29,26 +28,12 @@ func browseURL(p page, field, value string) string {
 
 func (a *App) allowPreview(w http.ResponseWriter, r *http.Request) bool {
 	key := "preview:" + strconv.FormatInt(state(r).User.ID, 10)
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	now := time.Now()
-	for key, value := range a.attempts {
-		if !now.Before(value.expires) {
-			delete(a.attempts, key)
-		}
-	}
-	v := a.attempts[key]
-	if v.count >= 6 {
-		w.Header().Set("Retry-After", "60")
+	ok, retry := a.previews.Allow(key)
+	if !ok {
+		w.Header().Set("Retry-After", strconv.Itoa(int(retry.Seconds())+1))
 		http.Error(w, "Wait a minute before requesting another preview.", 429)
-		return false
 	}
-	if v.count == 0 {
-		v.expires = now.Add(time.Minute)
-	}
-	v.count++
-	a.attempts[key] = v
-	return true
+	return ok
 }
 
 func (a *App) musicPreview(w http.ResponseWriter, r *http.Request) {

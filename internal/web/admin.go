@@ -16,6 +16,7 @@ import (
 )
 
 func (a *App) adminRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /admin/metrics", a.owner(a.metrics))
 	mux.HandleFunc("GET /admin", a.owner(a.settingsForm))
 	mux.HandleFunc("GET /admin/settings", a.owner(a.settingsForm))
 	mux.HandleFunc("POST /admin/settings", a.owner(a.saveSettings))

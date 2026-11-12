@@ -9,10 +9,10 @@ and SHA-256 checksums in [GitHub Releases](https://github.com/airencracken/songs
 The binary includes SQLite, templates, JavaScript, and the jukebox artwork.
 It needs no Go installation, C library, frontend build, or streaming account.
 
-## Upgrade to 0.13.2
+## Upgrade to 0.14.0
 
 Schema 11, introduced in 0.13.0, builds the music search index at startup.
-Version 0.13.2 centralizes shared suite code, assets, OIDC verification and maintenance tooling.
+Version 0.14.0 centralizes shared suite code, assets, OIDC verification and maintenance tooling.
 Back up the stopped data directory before upgrading, allow time for the initial
 index build, and retain the pre-upgrade backup for a downgrade. Optional shared
 sign-in creates an additive identity-binding table when configured. Existing
@@ -40,12 +40,12 @@ Choose the archive for your machine and download the matching checksum file.
 For this release on amd64, using the GitHub CLI:
 
 ```sh
-gh release download v0.13.2 --repo airencracken/songstead \
-    --pattern songstead_0.13.2_linux_amd64.tar.gz \
-    --pattern songstead_0.13.2_checksums.txt
-sha256sum --check --ignore-missing songstead_0.13.2_checksums.txt
-tar -xzf songstead_0.13.2_linux_amd64.tar.gz
-cd songstead_0.13.2_linux_amd64
+gh release download v0.14.0 --repo airencracken/songstead \
+    --pattern songstead_0.14.0_linux_amd64.tar.gz \
+    --pattern songstead_0.14.0_checksums.txt
+sha256sum --check --ignore-missing songstead_0.14.0_checksums.txt
+tar -xzf songstead_0.14.0_linux_amd64.tar.gz
+cd songstead_0.14.0_linux_amd64
 ./songstead --version
 ```
 
@@ -66,7 +66,7 @@ After accepting its testing keywords according to the overlay guide:
 
 ```sh
 emaint sync -r comfyware
-emerge --ask =www-apps/songstead-0.13.2::comfyware
+emerge --ask =www-apps/songstead-0.14.0::comfyware
 ```
 
 See [deployment.md](deployment.md) for native services and optional Witmoot
@@ -78,7 +78,7 @@ Source builds need Go 1.26.11 or newer. Release builds resolve Comfylib v0.2.0 f
 its published module rather than a sibling checkout:
 
 ```sh
-git clone --branch v0.13.2 https://github.com/airencracken/songstead.git
+git clone --branch v0.14.0 https://github.com/airencracken/songstead.git
 cd songstead
 GOWORK=off make check build
 ```

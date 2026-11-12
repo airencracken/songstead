@@ -1,6 +1,6 @@
 {
   "app": "songstead",
-  "previous": "0.12.1",
+  "previous": "0.13.2",
   "port": 8083,
   "tmp_mb": 128,
   "owner_command": "create-owner",
