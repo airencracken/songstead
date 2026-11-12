@@ -48,7 +48,7 @@ No database migration is introduced.
 ## Songstead 0.12.0
 
 First-run setup works in the browser or terminal. Suite controls and linked
-community sign-in use published Comfylib v0.2.0.
+community sign-in use published Comfylib v0.5.0.
 `setup` reveals the host key; `create-owner` and `set-password` share hidden
 confirmed prompts, stdin/file sources, and a data-directory override with the
 other Comfyware apps. See [setup](docs/setup.md).
@@ -192,7 +192,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26.11 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.1.7 and verified module checksums.
+Release builds use published Comfylib v0.5.0 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh

@@ -12,12 +12,15 @@ It needs no Go installation, C library, frontend build, or streaming account.
 ## Upgrade to 0.15.0
 
 Schema 11, introduced in 0.13.0, builds the music search index at startup.
-Version 0.15.0 centralizes shared suite code, assets, OIDC verification and maintenance tooling.
+Version 0.15.0 uses the shared admin dashboard and records successful sign-ins
+and authorized recommendation opens through Comfylib. Activity tables are
+additive and separately versioned. Collection begins after upgrade and retains
+90 UTC days; existing application schema and export versions are unchanged.
 Back up the stopped data directory before upgrading, allow time for the initial
 index build, and retain the pre-upgrade backup for a downgrade. Optional shared
 sign-in creates an additive identity-binding table when configured. Existing
 accounts, audiences, music likes and account export format 6 are preserved.
-See the [release notes](../CHANGELOG.md#0132) and [suite guide](suite.md).
+See the [release notes](../CHANGELOG.md#0150) and [suite guide](suite.md).
 
 ## Upgrade from 0.10.x
 
@@ -74,7 +77,7 @@ discussion configuration. Each application works independently.
 
 ## Build the published source
 
-Source builds need Go 1.26.11 or newer. Release builds resolve Comfylib v0.2.0 from
+Source builds need Go 1.26.11 or newer. Release builds resolve Comfylib v0.5.0 from
 its published module rather than a sibling checkout:
 
 ```sh
