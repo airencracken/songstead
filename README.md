@@ -17,6 +17,26 @@ Run a published image with Docker Compose: [container installation, upgrades, an
 Use a current Go security patch when building: Go 1.26.11 or later on the
 1.26 series, or Go 1.27.4 or later on the 1.27 series.
 
+## Songstead 0.16.0
+
+Account settings now offer the same **Times and dates** control used across the
+five Comfyware applications. Open `/account`, choose an IANA timezone such as
+`America/Los_Angeles`, and select **Save timezone**. UTC is the default. Your
+choice is saved for your account across sessions and devices. **Use this device's
+timezone** fills the field when JavaScript is available; saving remains explicit.
+Manual selection and local date rendering also work without JavaScript.
+
+Comfylib 0.6.0 owns validation, formatting, the account control, browser detection
+and bounded template caching. Dates handle daylight saving and calendar boundaries.
+Admin dashboard sign-in and backup instants follow your preference; reporting
+days remain UTC. Stored timestamps, API responses and machine-readable timestamps
+retain their existing UTC contract. Account isolation, native permissions and CSRF
+checks apply to every preference change.
+
+Startup adds a separately versioned display preference namespace. Application
+migration and export format versions are unchanged. Back up the stopped data
+directory before upgrading and retain that snapshot for a downgrade.
+
 ## Songstead 0.15.0
 
 Native admin metrics now use one shared dashboard with identical typography, spacing, cards, tables and reporting definitions across the apps. Successful local and community sign-ins and authorized content opens are recorded by Comfylib 0.5.0. Views count once per account, item and UTC day; thumbnails, background assets, failed requests and signed-out visits do not count.
@@ -48,7 +68,7 @@ No database migration is introduced.
 ## Songstead 0.12.0
 
 First-run setup works in the browser or terminal. Suite controls and linked
-community sign-in use published Comfylib v0.5.0.
+community sign-in use published Comfylib v0.6.0.
 `setup` reveals the host key; `create-owner` and `set-password` share hidden
 confirmed prompts, stdin/file sources, and a data-directory override with the
 other Comfyware apps. See [setup](docs/setup.md).
@@ -192,7 +212,7 @@ AGPL-3.0-or-later, with `master` as the repository default branch.
 Requires Go 1.26.11 or later. Dependencies are pinned, including pure-Go SQLite;
 `CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
 
-Release builds use published Comfylib v0.5.0 and verified module checksums.
+Release builds use published Comfylib v0.6.0 and verified module checksums.
 Build and test independently of any development workspace:
 
 ```sh
