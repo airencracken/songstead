@@ -4,6 +4,7 @@ package web
 import (
 	"database/sql"
 	"errors"
+	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/brandimage"
 	"github.com/airencracken/songstead/internal/store"
 	"golang.org/x/crypto/bcrypt"
@@ -225,7 +226,11 @@ func (a *App) revokeInvite(w http.ResponseWriter, r *http.Request) {
 func (a *App) joinForm(w http.ResponseWriter, r *http.Request) {
 	raw := r.URL.Query().Get("invite")
 	mode := state(r).Settings.JoinMode
-	if mode == "closed" || (raw == "" && mode != "open") || (raw != "" && a.store.CheckInvitation(r.Context(), raw) != nil) {
+	rejected := raw != "" && a.store.CheckInvitation(r.Context(), raw) != nil
+	if rejected {
+		a.security(r, analytics.RecordRejectedToken)
+	}
+	if mode == "closed" || (raw == "" && mode != "open") || rejected {
 		a.render(w, r, 422, page{View: "join", Title: "Join", Error: "This invitation is unavailable, or joining is closed."})
 		return
 	}
@@ -235,6 +240,7 @@ func (a *App) limited(w http.ResponseWriter, r *http.Request) bool {
 	if a.allowLogin(r) {
 		return false
 	}
+	a.security(r, analytics.RecordRateLimited)
 	w.Header().Set("Retry-After", "900")
 	a.problem(w, r, 429, "Too many attempts. Try again in 15 minutes.")
 	return true
@@ -268,6 +274,7 @@ func (a *App) resetForm(w http.ResponseWriter, r *http.Request) {
 			a.fail(w, r, err)
 			return
 		}
+		a.security(r, analytics.RecordRejectedToken)
 		a.render(w, r, 422, page{View: "reset", Title: "Reset password", Error: "This recovery link is unavailable. Ask an owner for a new one."})
 		return
 	}

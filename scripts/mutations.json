@@ -746,18 +746,10 @@
   {
     "name": "schema 12 deletes stored activity",
     "file": "internal/store/store.go",
-    "before": "_, err := tx.Exec(\"DELETE FROM comfy_analytics_activity\")",
-    "after": "_, err := tx.Exec(\"SELECT 1\")",
+    "before": "return analytics.RemoveDetail(context.Background(), tx)",
+    "after": "return nil",
     "package": "./internal/store",
-    "run": "^TestSchema12DeletesStoredActivityRows$"
-  },
-  {
-    "name": "schema 12 tolerates a missing shared table",
-    "file": "internal/store/store.go",
-    "before": "\tif tables == 0 {\n\t\treturn nil\n\t}\n",
-    "after": "",
-    "package": "./internal/store",
-    "run": "^TestSchema12MigratesWithoutSharedActivityTable$"
+    "run": "^TestSchema12MigrationRemovesDetailInsideTheMigration$"
   },
   {
     "name": "snapshots accept the current schema",
@@ -806,5 +798,29 @@
     "after": "--text-meta: .6875rem;",
     "package": "./internal/web",
     "run": "^TestStylesheetKeepsTwelvePixelFloor$"
+  },
+  {
+    "name": "failed sign-ins are counted",
+    "file": "internal/web/web.go",
+    "before": "\t\ta.security(r, analytics.RecordFailedSignIn)\n",
+    "after": "",
+    "package": "./internal/web",
+    "run": "^TestMetricsCountRoutesAndSecurityWithoutPeople$"
+  },
+  {
+    "name": "requests reach the route monitor",
+    "file": "internal/web/web.go",
+    "before": "a.monitor.Middleware(mux)",
+    "after": "mux",
+    "package": "./internal/web",
+    "run": "^TestMetricsCountRoutesAndSecurityWithoutPeople$"
+  },
+  {
+    "name": "refused attempts are counted",
+    "file": "internal/web/web.go",
+    "before": "\t\ta.security(r, analytics.RecordRateLimited)\n\t\tw.Header().Set(\"Retry-After\", \"900\")",
+    "after": "\t\tw.Header().Set(\"Retry-After\", \"900\")",
+    "package": "./internal/web",
+    "run": "^TestRefusedAttemptsAreCounted$"
   }
 ]

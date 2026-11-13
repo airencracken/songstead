@@ -14,6 +14,7 @@ import (
 	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/autobackup"
 	"github.com/airencracken/comfylib/displaytime"
+	"github.com/airencracken/comfylib/password"
 	"github.com/airencracken/comfylib/ratelimit"
 	"github.com/airencracken/comfylib/suite"
 	"html/template"
@@ -56,6 +57,7 @@ type App struct {
 	previewFetch func(context.Context, string) (media.Metadata, error)
 	logins       *ratelimit.Window
 	previews     *ratelimit.Window
+	monitor      *analytics.Monitor
 }
 type requestState struct {
 	User          *store.User
@@ -223,12 +225,24 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	if err = a.registerSharedSignIn(mux); err != nil {
 		return nil, err
 	}
-	a.handler = http.NewCrossOriginProtection().Handler(a.middleware(analytics.Maintenance(a.store.AnalyticsDB(), mux)))
+	a.monitor = analytics.NewMonitor(a.store.AnalyticsDB())
+	a.handler = http.NewCrossOriginProtection().Handler(a.middleware(analytics.Maintenance(a.store.AnalyticsDB(), a.monitor.Middleware(mux))))
 	return a, nil
 }
 
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) { a.handler.ServeHTTP(w, r) }
-func state(r *http.Request) requestState                        { return r.Context().Value(stateKey{}).(requestState) }
+
+// Flush writes request counts still held in memory. Call it on shutdown.
+func (a *App) Flush(ctx context.Context) error { return a.monitor.Flush(ctx) }
+
+// security records a failed sign-in, refused attempt or rejected link. The
+// counters hold daily totals only; a storage failure never blocks the request.
+func (a *App) security(r *http.Request, record func(context.Context, analytics.Executor, time.Time) error) {
+	if err := record(r.Context(), a.store.AnalyticsDB(), time.Now()); err != nil {
+		slog.WarnContext(r.Context(), "record security count", "error", err)
+	}
+}
+func state(r *http.Request) requestState { return r.Context().Value(stateKey{}).(requestState) }
 func (a *App) secure(r *http.Request) bool {
 	return a.config.SecureCookies || (clientip.Resolver{Trusted: a.config.TrustedProxies}).ForwardedHTTPS(r)
 }
@@ -429,11 +443,12 @@ func (a *App) allowLogin(r *http.Request) bool {
 }
 func (a *App) login(w http.ResponseWriter, r *http.Request) {
 	if !a.allowLogin(r) {
+		a.security(r, analytics.RecordRateLimited)
 		w.Header().Set("Retry-After", "900")
 		a.problem(w, r, 429, problemSignIns)
 		return
 	}
-	name, password := strings.TrimSpace(r.PostForm.Get("username")), r.PostForm.Get("password")
+	name, secret := strings.TrimSpace(r.PostForm.Get("username")), r.PostForm.Get("password")
 	u, hash, err := a.store.Credentials(r.Context(), name)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		a.fail(w, r, err)
@@ -442,12 +457,13 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 	if errors.Is(err, sql.ErrNoRows) {
 		hash = string(a.dummyHash)
 	}
-	check := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	if err != nil || check != nil || u.Suspended || len(password) > 72 {
+	check := bcrypt.CompareHashAndPassword([]byte(hash), []byte(secret))
+	if err != nil || check != nil || u.Suspended || !password.Fits(secret) {
+		a.security(r, analytics.RecordFailedSignIn)
 		a.render(w, r, 422, page{View: "login", Title: "Welcome back", Username: name, Error: "That username and password did not match."})
 		return
 	}
-	secret, err := a.store.NewSession(r.Context(), u.ID, hash)
+	session, err := a.store.NewSession(r.Context(), u.ID, hash)
 	if errors.Is(err, store.ErrMissing) {
 		a.render(w, r, 422, page{View: "login", Title: "Welcome back", Username: name, Error: "Your sign-in details changed. Please try again."})
 		return
@@ -456,8 +472,8 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	a.cookie(w, r, "session", secret, 7*86400)
-	a.cookie(w, r, "csrf", token.SessionCSRF(secret, "songstead-csrf-v1"), 86400)
+	a.cookie(w, r, "session", session, 7*86400)
+	a.cookie(w, r, "csrf", token.SessionCSRF(session, "songstead-csrf-v1"), 86400)
 	http.Redirect(w, r, "/shelf", 303)
 }
 func (a *App) logout(w http.ResponseWriter, r *http.Request) {

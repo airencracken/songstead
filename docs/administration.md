@@ -77,11 +77,14 @@ signs out every session. Members can change their own password in Your settings.
 
 ## Instance metrics
 
-**Admin → Metrics** shows operational health: member, recommendation, music link
-and comment totals, new recommendations in the past seven days, database size,
+**Admin → Metrics** shows operational health, the kind of numbers a server log
+gives: member, recommendation, music link and comment totals, database size,
+requests, error rate and response times per route, data served, failed
+sign-ins, refused attempts and rejected invitation or recovery links, plus
 backup status and configured connections. Songstead does not record who signs in
-or which recommendations people open, and it keeps no per-member or per-item
-rankings. Schema 12 deletes the sign-in and view records kept by 0.15 and 0.16.
+or which recommendations people open, and keeps no per-member or per-item
+rankings. Counts are kept for 90 days. Schema 12 deletes the sign-in and view
+records kept by 0.15 and 0.16.
 
 ## Identity and images
 

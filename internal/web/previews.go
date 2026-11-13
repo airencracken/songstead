@@ -3,6 +3,7 @@ package web
 
 import (
 	"encoding/json"
+	"github.com/airencracken/comfylib/analytics"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -30,6 +31,7 @@ func (a *App) allowPreview(w http.ResponseWriter, r *http.Request) bool {
 	key := "preview:" + strconv.FormatInt(state(r).User.ID, 10)
 	ok, retry := a.previews.Allow(key)
 	if !ok {
+		a.security(r, analytics.RecordRateLimited)
 		w.Header().Set("Retry-After", strconv.Itoa(int(retry.Seconds())+1))
 		http.Error(w, "Wait a minute before requesting another preview.", 429)
 	}

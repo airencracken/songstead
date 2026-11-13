@@ -10,5 +10,5 @@ import (
 
 func (s *Store) AnalyticsDB() *sql.DB { return s.db }
 func (s *Store) Analytics(ctx context.Context, now time.Time) (analytics.Summary, error) {
-	return analytics.Collect(ctx, s.db, "SELECT id,username FROM users", now)
+	return analytics.Collect(ctx, s.db, "", now)
 }

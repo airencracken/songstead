@@ -13,11 +13,7 @@ func TestSharedSignInRecordsNoPerAccountActivity(t *testing.T) {
 	if _, err := a.sharedSignIn(httptest.NewRecorder(), request, users[0]); err != nil {
 		t.Fatal(err)
 	}
-	report, err := a.store.Analytics(t.Context(), time.Now())
-	if err != nil || report.Logins != 0 || len(report.LoginsByAccount) != 0 {
-		t.Fatal(report, err)
-	}
-	if _, err = a.store.AnalyticsDB().Exec("UPDATE users SET suspended=1 WHERE id=?", users[0]); err != nil {
+	if _, err := a.store.DB().Exec("UPDATE users SET suspended=1 WHERE id=?", users[0]); err != nil {
 		t.Fatal(err)
 	}
 	response := httptest.NewRecorder()
@@ -27,8 +23,8 @@ func TestSharedSignInRecordsNoPerAccountActivity(t *testing.T) {
 	if len(response.Result().Cookies()) != 0 {
 		t.Fatal("inactive account received a session")
 	}
-	report, err = a.store.Analytics(t.Context(), time.Now())
-	if err != nil || report.Logins != 0 {
-		t.Fatal("inactive sign-in counted", report, err)
+	report, err := a.store.Analytics(t.Context(), time.Now())
+	if err != nil || len(report.LoginsByAccount) != 0 || report.Logins != 0 {
+		t.Fatal(report, err)
 	}
 }

@@ -315,6 +315,13 @@ func serve(ctx context.Context, s *store.Store, addr, dataDir string) error {
 	}()
 	go func() { defer wg.Done(); metadataWorker(workerCtx, s) }()
 	defer func() { cancel(); wg.Wait() }()
+	defer func() {
+		flush, stop := context.WithTimeout(context.Background(), 5*time.Second)
+		defer stop()
+		if err := a.Flush(flush); err != nil {
+			slog.Error("save request counts", "error", err)
+		}
+	}()
 	done := make(chan error, 1)
 	go func() { done <- server.ListenAndServe() }()
 	slog.Info("Songstead listening", "address", addr)

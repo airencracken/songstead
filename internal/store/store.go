@@ -161,19 +161,10 @@ func (s *Store) migrate(currentOnly bool) error {
 // currentSchema is the newest application migration this binary applies.
 const currentSchema = 12
 
-// forgetActivity removes per-account and per-item analytics rows recorded by
-// earlier releases. Metrics describe operational health only. The shared
-// table is created after application migrations, so a new database has none.
+// forgetActivity removes the per-account and per-item analytics table kept by
+// 0.15 and 0.16. Metrics describe operational health only.
 func forgetActivity(tx *sql.Tx) error {
-	var tables int
-	if err := tx.QueryRow("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='comfy_analytics_activity'").Scan(&tables); err != nil {
-		return err
-	}
-	if tables == 0 {
-		return nil
-	}
-	_, err := tx.Exec("DELETE FROM comfy_analytics_activity")
-	return err
+	return analytics.RemoveDetail(context.Background(), tx)
 }
 
 var username = regexp.MustCompile(`^[A-Za-z0-9_-]{3,24}$`)
