@@ -28,6 +28,19 @@ def example_configuration_errors(text):
 def service_errors(text):
     return [requirement for requirement in ("User=songstead", "Group=songstead", "StateDirectoryMode=0700", "UMask=0077", "EnvironmentFile=-/etc/songstead/songstead.env", "ExecStart=/usr/local/bin/songstead serve") if requirement not in text]
 
+def readme_version_errors(readme, version):
+    """README keeps one correct version line, no release notes, and ends with License."""
+    errors = []
+    lines = re.findall(r"(?m)^Current release: (\S+?)\.?(?: |$)", readme)
+    if lines != [version]:
+        errors.append("README needs exactly one 'Current release: %s' line" % version)
+    if re.search(r"(?mi)^## songstead \d", readme):
+        errors.append("Release notes belong in CHANGELOG.md")
+    headings = re.findall(r"(?m)^## (.+)$", readme)
+    if not headings or headings[-1] != "License":
+        errors.append("License must be the last README section")
+    return errors
+
 class PackagingTests(unittest.TestCase):
     def test_funding_matches_the_companion_projects(self):
         self.assertEqual((ROOT / ".github/FUNDING.yml").read_text().strip(),
@@ -128,6 +141,26 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
             with self.subTest(host=host):
                 self.assertTrue(example_configuration_errors(
                     f'SONGSTEAD_BASE_URL="https://{host}"'))
+
+    def test_readme_has_one_current_version_line(self):
+        readme = (ROOT / "README.md").read_text()
+        version = (ROOT / "VERSION").read_text().strip()
+        self.assertEqual(readme_version_errors(readme, version), [])
+        for broken in (readme.replace("Current release: " + version, "Current release: 0.0.1"),
+                       readme.replace("Current release: " + version + ".", ""),
+                       readme + "\nCurrent release: " + version + ".\n",
+                       readme.replace("## Install", "## Songstead " + version + "\n\nNotes.\n\n## Install"),
+                       readme + "\n## Automatic backups\n\nAppended.\n"):
+            with self.subTest(broken=broken[-60:]):
+                self.assertTrue(readme_version_errors(broken, version))
+
+    def test_changelog_lists_releases_newest_first(self):
+        text = (ROOT / "CHANGELOG.md").read_text()
+        self.assertTrue(text.startswith("# Changelog\n"))
+        versions = re.findall(r"(?m)^## (\d+)\.(\d+)\.(\d+)$", text)
+        numbers = [tuple(map(int, v)) for v in versions]
+        self.assertEqual(numbers, sorted(set(numbers), reverse=True))
+        self.assertIn((ROOT / "VERSION").read_text().strip(), ".".join(versions[0]))
 
     def test_local_documentation_links_exist(self):
         for path in [ROOT / "README.md", *(ROOT / "docs").glob("*.md")]:

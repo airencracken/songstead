@@ -2,396 +2,94 @@
 
 Good music, from your people.
 
-[Source repository](https://github.com/airencracken/songstead). See the [release installation guide](docs/releases.md).
+Songstead is a small, self-hosted inbox for music recommendations between
+friends. Paste a link, share it with everyone or send it to a friend or group,
+and add a note. Listen when you have time, keep track of what you have heard,
+and talk about it if you like. There is no feed to keep up with.
 
-Songstead is a small, self-hosted recommendation shelf for friends. Paste a link,
-share it with everyone here or choose a friend or group privately, and add a note. Listen when you have a moment, keep your own
-listening state and private likes, and talk about it together.
+Songstead is part of [Comfyware](https://comfyware.org/): software for a small
+community, run by the people who use it.
 
-It is part of Comfyware: software for a small community, run by the people using
-it. The first version follows Witmoot's Go/SQLite/HTML structure and Imvault's
-quiet blue panels, with a little jukebox to keep the songs company.
+Current release: 0.16.0. See the [changelog](CHANGELOG.md).
 
-Run a published image with Docker Compose: [container installation, upgrades, and backups](docs/containers.md).
+## What members can do
 
-Use a current Go security patch when building: Go 1.26.11 or later on the
-1.26 series, or Go 1.27.4 or later on the 1.27 series.
+- Share YouTube, Spotify, Bandcamp, SoundCloud, Apple Music, Pandora or any other
+  music link. Supported links fill in the title, artist and artwork.
+- Choose the audience: everyone here (shown in **Recent**), one friend, or a group.
+- Keep a private listening status, notes and song likes. Nobody sees what you
+  have or have not heard.
+- Comment on a recommendation, mark moments in a recording, and hide
+  timestamped comments until you reach that point.
+- Search titles, artists, genres, tags and messages you can see.
+- Edit or delete your own posts, keep a short profile, and export your history.
 
-## Songstead 0.16.0
+Owners invite people, manage accounts and choose whether conversations happen
+here, in Witmoot, or both. See [how the inbox works](docs/quiet-inbox.md).
 
-Account settings now offer the same **Times and dates** control used across the
-five Comfyware applications. Open `/account`, choose an IANA timezone such as
-`America/Los_Angeles`, and select **Save timezone**. UTC is the default. Your
-choice is saved for your account across sessions and devices. **Use this device's
-timezone** fills the field when JavaScript is available; saving remains explicit.
-Manual selection and local date rendering also work without JavaScript.
+## Install
 
-Comfylib 0.6.0 owns validation, formatting, the account control, browser detection
-and bounded template caching. Dates handle daylight saving and calendar boundaries.
-Admin dashboard sign-in and backup instants follow your preference; reporting
-days remain UTC. Stored timestamps, API responses and machine-readable timestamps
-retain their existing UTC contract. Account isolation, native permissions and CSRF
-checks apply to every preference change.
+- [Release archives](docs/releases.md) for Linux amd64 and arm64
+- [Container images](docs/containers.md) for Docker Compose
+- [Deployment](docs/deployment.md) behind a reverse proxy with systemd or OpenRC
 
-Startup adds a separately versioned display preference namespace. Application
-migration and export format versions are unchanged. Back up the stopped data
-directory before upgrading and retain that snapshot for a downgrade.
+Create the first owner in the browser or the terminal:
 
-## Songstead 0.15.0
+```sh
+sudo songstead setup
+sudo songstead create-owner --username alex
+```
 
-Native admin metrics now use one shared dashboard with identical typography, spacing, cards, tables and reporting definitions across the apps. Successful local and community sign-ins and authorized content opens are recorded by Comfylib 0.5.0. Views count once per account, item and UTC day; thumbnails, background assets, failed requests and signed-out visits do not count.
+`setup` prints a private key for the `/setup` page. See [setup](docs/setup.md),
+then [administration and invitations](docs/administration.md).
 
-Only active administrators (called owners in this app where applicable) can read the dashboard or its account sign-in summaries. Ordinary members, guests and moderators cannot read analytics. The dashboard shows the past seven UTC days, when collection began, daily totals, recent sign-ins by account, and most-viewed content. Recording begins after upgrade; no earlier history is inferred. No IP addresses or browser identifiers are recorded. Activity is retained for ninety UTC days, pruned at startup and daily while serving, and removed when its account is deleted.
+## Configuration
 
-The analytics tables are additive and separately versioned by Comfylib; existing application data and application migration versions are unchanged. Back up before upgrading. Existing archives remain supported. Shared browser contracts now check exact dashboard styling, widths and access boundaries in both themes and with JavaScript disabled.
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `SONGSTEAD_BASE_URL` | empty | Public address used in invitation, recovery and discussion links |
+| `SONGSTEAD_WITMOOT_URL` | empty | Default Witmoot address; owners can change it in Admin |
+| `SONGSTEAD_DATA_DIR` | `./data` | Private directory for the database and server lock |
+| `SONGSTEAD_ADDR` | `127.0.0.1:8083` | Listen address |
+| `SONGSTEAD_SECURE_COOKIES` | `false` | Set `true` when served over HTTPS |
+| `SONGSTEAD_TRUSTED_PROXIES` | empty | Proxy IPs or CIDRs whose forwarding headers are trusted |
 
-## Songstead 0.14.0
+The data directory must have mode `0700`. `--data-dir` and `--addr` override
+the environment. Run `songstead help` for every command.
 
-Native owner/admin metrics now show aggregate membership, content, storage and recent activity, with owner-only operational summaries for backups and configured suite connections. The pages work without JavaScript and follow the application's existing permissions.
+## Back up and restore
 
-Rate limiting uses the bounded shared implementations while retaining the app's own budgets. Release preparation, artifact verification, browser fixtures and immutable CI workflows use the published Comfylib pin directly. A release preflight verifies version metadata, cold module caches and the exact shared workflow revision before publication.
+The running server makes a compressed backup every day. See
+[automatic backups](docs/automatic-backups.md). For a manual snapshot:
 
-No application database migration is added. Existing service configuration and account permissions remain supported.
+```sh
+songstead backup --output /private/backups/songstead.db
+songstead restore --input /private/backups/songstead.db --data-dir /private/restored
+```
 
-## Songstead 0.13.2
+Backups contain password hashes, sessions and private recommendations. Keep
+them private. Restore needs an empty, private directory. Stop the service before
+switching it to the restored directory.
 
-- Standardize shipped service configs and documented environment examples on
-  `KEY="value"`, including numbers, booleans, and empty values.
-- Identify the service manager and installed config path in every template.
-- Check source and generated package configs, literal quoting, and OpenRC
-  environment inheritance during `make check`.
-- Pass ordinary backup override assignments to the OpenRC service process.
+## Build from source
 
-Existing configuration values remain supported and local files are preserved.
-No database migration is introduced.
-
-## Songstead 0.12.0
-
-First-run setup works in the browser or terminal. Suite controls and linked
-community sign-in use published Comfylib v0.6.0.
-`setup` reveals the host key; `create-owner` and `set-password` share hidden
-confirmed prompts, stdin/file sources, and a data-directory override with the
-other Comfyware apps. See [setup](docs/setup.md).
-
-## Songstead 0.11.3
-
-Comfylib v0.1.7 now supplies the shared invitation/account styles, invitation
-availability and browser assertions. Long backup paths wrap on mobile settings
-pages. Schema 10 and account export format 6 are unchanged.
-
-## Songstead 0.11.2
-
-Invitation and account screens now use matching Comfyware layouts and controls,
-with compact forms, responsive invitation records, and fewer decorative labels.
-Invitation statuses and validation drafts are clearer. Schema 10 and export
-format 6 are unchanged.
-
-## Songstead 0.11.1
-
-Published container images now support Linux amd64 and arm64, with private
-persistent storage and tested upgrades and restores. See the
-[container guide](docs/containers.md). Schema 10 and export format 6 are unchanged.
-
-## Songstead 0.11.0
-
-Open your own post to edit its music details and note, or delete it through a
-confirmation page. Corrections preserve the original audience and leave other
-recommendations unchanged. YouTube album playlist links now support automatic
-titles and artwork. Schema 10 stores per-post corrections and retries missing
-previews; back up your data before upgrading.
-
-Like songs privately and find them through **Liked songs**. Matching URLs share
-one song like across recommendations. Recent now defaults to one card per song,
-with each recommendation's sender, date, note and conversation preserved.
-Different providers stay separate. Schema 9 migrates existing private feedback;
-back up your data before upgrading.
-
-Posting a recommendation marks the music as listened for you, including private
-sends and group posts. Ratings, personal notes and other members' listening
-status stay unchanged.
-
-The running service now makes bounded compressed backups automatically.
-See [automatic backups](docs/automatic-backups.md) for recovery and limits.
-
-Use **Search** in the navigation to find titles, artists, genres, tags, or words
-from shared messages. Choose **Comments** to search conversations, including
-private sends and groups you can access. Queries match literal substrings,
-ignoring case with Unicode-aware letter mapping. Personal listening notes and
-ratings are never searched. Timestamped comments follow your spoiler preference
-and listening positions before pagination; search never reveals them on its own.
-Older matches use stable cursors and both result types include local thumbnails.
-Search works with or without JavaScript and needs no new database migration.
-
-
-Members have a profile page linked from recommendations and comments. In Your
-settings, optionally add a name, a plain-text bio and up to five labeled web
-links. Profiles are visible only to signed-in members and never show private
-listening feedback, preferences or credentials. Your account export includes your
-own profile. Clear the fields to remove them; usernames stay unchanged.
-Back up the data directory before the schema 10 upgrade.
-
-
-Open **Recent → Comments** to discover conversations on music shared with everyone
-here. The feed is chronological, includes profile pictures and music artwork, and
-links to the exact comment. Private sends, ratings and personal listening notes
-stay out. Timestamped comments follow your saved spoiler preference and indicated
-listening positions. Older pages remain stable as new comments arrive.
-
-The feed includes earlier local comments when your host chooses Witmoot for new
-posts. Witmoot discussions remain on Witmoot. The current source uses schema 10, export format 6 and Comfylib 0.1.7.
-
-
-Owners choose **Discussion location** in Admin: Songstead for comments here,
-Witmoot for separate board discussions, or Both for either option. Members
-without a Witmoot account can comment in Songstead or Both. Witmoot posting
-requires a separate account and a deliberate draft review; no API key is needed.
-Existing local comments stay readable in every mode, and ratings and personal
-notes stay private. Existing configured connections retain Both on upgrade.
-
-
-Pasting a supported music link now previews its title, artist and artwork before
-sharing. Pending artwork refreshes automatically, and YouTube artwork can be
-fetched even when its metadata endpoint is unavailable. List and Tiles switch
-immediately and both show artwork. View and discovery switches sit above genre/tag
-pickers; additional dropdowns stay under More filters. Music links
-open in a new tab, and the YouTube player sends only the site origin to satisfy
-its client-identification requirement.
-
-Accounts can upload PNG, JPEG or animated GIF profile pictures. Every animation
-has a still version; viewers can disable animations in Your settings, and browser
-reduced-motion preferences select stills automatically. External sharing cards
-show the instance branding without exposing private recommendations.
-
-Friends and groups can leave tracks, albums, artists and listening links. Browse
-by music, person, group or each recommendation. Duplicate provider identities
-keep each sender's words while sharing your private listening organization.
-Recommendations are gifts: there is no need to keep up.
-
-Recent shows what people shared with everyone on the instance. List is the
-default layout; both List and Tiles include artwork. It starts newest first, with optional
-private preferences to exclude genres or tags and bring favorites to the top.
-Choose an audience before posting; private friend and group gifts stay out of
-Recent. All views require sign-in. Sharing does not fill anyone else's shelf.
-
-Comments can mark several moments in a chosen recording. Show annotations
-immediately, reveal them manually, or use spoiler-free mode with a position you
-indicate yourself. Songstead neither tracks playback nor connects streaming
-accounts. Explicit Witmoot drafts and saved discussion links keep conversation
-optional. Every application remains usable on its own.
-
-Open your own post and choose **Edit post** to correct its link, title, artist,
-music kind, note, genre or tags. Corrections stay with that post and preserve its
-audience. A post with timestamped comments must keep the same music identity so
-those references remain attached to their recording. **Delete post** opens a
-confirmation page before permanently removing the post and its comments; other
-recommendations and private song likes and listening history remain. Both actions
-work without JavaScript and are available only to the author.
-
-YouTube playlist links support automatic titles and artwork. YouTube album
-playlists are recognized as albums; a video link with a playlist parameter still
-identifies the individual track. Provider availability can limit previews, and
-you can always enter or correct the details yourself.
-
-Add an optional freeform genre and comma-separated tags when sharing, or edit
-them on your own recommendation later. These descriptions follow that
-recommendation's audience. Private-send labels never carry over to another
-share of the same music. Listening feedback stays private and saves show an
-inline confirmation. **Your settings** includes profile pictures, animation, spoiler and discovery preferences.
-
-YouTube, Spotify and SoundCloud metadata can include artwork, cached locally so
-viewing music does not contact image providers from your browser. Unsupported
-links and unavailable artwork keep a useful fallback.
-
-Read [the shelf and annotation behavior](docs/quiet-inbox.md),
-[deployment and migration details](docs/deployment.md), and
-[the publication order](docs/release-coordination.md). Go/SQLite/HTMX,
-AGPL-3.0-or-later, with `master` as the repository default branch.
-
-## Build and try it
-
-Requires Go 1.26.11 or later. Dependencies are pinned, including pure-Go SQLite;
-`CGO_ENABLED=0` builds a standalone binary with templates and assets embedded.
-
-Release builds use published Comfylib v0.6.0 and verified module checksums.
-Build and test independently of any development workspace:
+Songstead needs Go 1.26.11 or later on 1.26, or Go 1.27.4 or later on 1.27.
 
 ```sh
 GOWORK=off make check build
 make demo
 ```
 
-`make test-browser` adds Chromium administration, music, preferences and
-accessibility checks, with and without JavaScript.
-Install Playwright Chromium from `scripts/browser`, or set `CHROMIUM` to a local
-executable. The browser suite uses disposable accounts and deletes its database.
-
-For local changes to the shared library, use an untracked `go.work` with the
-sibling Comfylib worktree. Keep workspace files and local replacements out of
-commits and release builds. See [release coordination](docs/release-coordination.md).
-
-The demo listens at `http://127.0.0.1:8083`. Sign in as `alice` or `bobby`, both
-with `demo-password`. It uses a private temporary directory and removes it when
-stopped. Send a link as one account, then sign in as the other to try the shelf.
-
-For a permanent instance, provision an owner locally using a hidden password
-prompt. Passwords are entered twice and never passed as command arguments:
-
-```sh
-songstead create-owner --username alex --password-prompt
-songstead create-user --username freya --password-prompt
-songstead list-users
-```
-
-On a packaged installation, these commands discover the data directory in the
-active OpenRC or systemd service configuration. When invoked as root, they run
-as the configured service account to preserve database ownership. An explicit
-`--data-dir` overrides `SONGSTEAD_DATA_DIR`, which overrides service settings.
-Portable installations default to `./data` and run as an unprivileged user.
-
-For scripts, use `--password-stdin` instead of `--password-prompt`. For example,
-in Bash:
-
-```sh
-if read -r -s -p 'Password: ' songstead_password; then
-    printf '\n'
-    if ! printf '%s\n' "$songstead_password" | ./bin/songstead create-user --username alice --password-stdin; then
-        printf '%s\n' 'Account creation failed.' >&2
-    fi
-    unset songstead_password
-else
-    printf '%s\n' 'Password input was cancelled.' >&2
-fi
-```
-
-Repeat for your friend, then run `./bin/songstead serve`. Account names use 3–24
-letters, digits, underscores, or dashes. Passwords need at least 12 characters
-and at most 72 bytes. `set-password` has the same options and revokes every
-session for the account. `create-owner` only creates a new owner: it never
-promotes, replaces, or resets an existing account, including a username differing
-only in case. Existing accounts stay members during upgrade. Owners have the
-same music privacy boundaries as members. Sign in as an owner and open
-**Admin** to configure the instance, invite people, manage account roles and
-suspension, and issue one-hour password recovery links. Members can change
-their own passwords from **Your settings**.
-
-Joining is invitation-only by default. Owners can delegate invitation
-permission or choose closed or open joining. Public joining never makes music
-pages public. Invitation links are shown once and support expiry, use limits
-and revocation. Existing accounts remain members during an upgrade; explicitly
-promote your own existing account with:
-
-```sh
-songstead set-role --username alex --role owner
-```
-
-Set the public Songstead and Witmoot addresses in **Admin → Instance settings**.
-Saved settings apply immediately and persist across restarts. A blank Witmoot
-address disables the connection even if the service has an environment default.
-See [administration and invitations](docs/administration.md) for the full flow.
-Use `songstead help COMMAND` or `COMMAND --help` for CLI flags.
-
-## Configuration and hosting
-
-| Setting | Default | Purpose |
-| --- | --- | --- |
-| `SONGSTEAD_BASE_URL` | empty | Default public origin for discussion, invitation and recovery links |
-| `SONGSTEAD_WITMOOT_URL` | empty | Default Witmoot base URL; editable in Admin; no startup request |
-| `SONGSTEAD_DATA_DIR` | `./data` | Private directory containing SQLite and the server lock |
-| `SONGSTEAD_ADDR` | `127.0.0.1:8083` | Listen address |
-| `SONGSTEAD_SECURE_COOKIES` | `false` | Set `true` for an installation reached over HTTPS |
-| `SONGSTEAD_TRUSTED_PROXIES` | empty | Comma-separated proxy IPs/CIDRs; trust forwarding headers only from these |
-
-`--data-dir` and `--addr` override their environment settings. Use `--help` for
-commands. The data directory must have mode `0700`; new directories are created
-that way. Run the app as its own unprivileged service account.
-
-Put a reverse proxy in front of the localhost listener. A Caddy example is in
-[contrib/Caddyfile](contrib/Caddyfile), alongside a
-[systemd service](contrib/songstead.service). See [deployment](docs/deployment.md)
-for setup and account provisioning. `/healthz` checks SQLite availability.
-
-## Back up and restore
-
-```sh
-./bin/songstead backup --output /private/backups/songstead-2026-10-07.db
-./bin/songstead restore --input /private/backups/songstead-2026-10-07.db --data-dir /private/restored-songstead
-```
-
-Backup uses SQLite's consistent snapshot operation, including committed WAL
-contents; it can run while the server is active. It validates the snapshot and
-publishes a private file atomically, refusing to overwrite an existing target.
-Backups contain account password hashes, sessions, and private recommendations.
-Keep them private. Store backup files outside the served web root.
-
-Restore requires an empty, private destination directory. It copies into a
-temporary file, checks schema compatibility, integrity, and foreign keys, then
-publishes the database without overwriting an existing file. Stop the service
-before switching it to the restored directory. Test restoration periodically.
-
-Signed-in users can download their history as JSON. This preserves accessible
-recommendations, their own reactions and notes, and comments they authored.
-Credentials and other people's personal notes are excluded. It is a portable
-record; import and account deletion are not implemented yet.
-
-## Checks
-
-```sh
-make test
-make check
-```
-
-`make check` runs race-enabled Go tests, JavaScript unit tests, mutation tests,
-vet, and formatting checks. Tests cover the two-friend HTTP workflow without
-JavaScript, route and export contracts, permissions, schema constraints,
-transactions and failed writes, concurrent submissions, property checks,
-adversarial forms and URLs, session revocation, metadata failures, SSRF, and
-backup/restore. Fuzz seeds run in ordinary tests; run the parser continuously with
-`go test ./internal/media -fuzz=FuzzURLParsing -fuzztime=10s`.
-
-The app does not need a frontend build step, CDN, external database, or music
-provider account. Metadata lookup runs after submission and retries at most
-three times. A failed lookup leaves the original link intact.
-
-Read the [architecture notes](docs/architecture.md) for domain and permission
-decisions. The [mascot provenance and prompt](design/mascot.md) document the
-built-in imagegen artwork. HTMX's license is bundled; see
-[THIRD_PARTY.md](THIRD_PARTY.md). Licensed under AGPL-3.0-or-later.
+The demo runs at `http://127.0.0.1:8083` with accounts `alice` and `bobby`,
+both using `demo-password`. It deletes its data when stopped.
+`make test-browser` adds the Chromium checks. Set `CHROMIUM` to use a local
+browser.
 
 ## Support
 
 You can [support Songstead on Ko-fi](https://ko-fi.com/airencracken).
 
-See [Bubblewrap service isolation](docs/sandbox.md) for the optional confined launcher and native service settings.
+## License
 
-## Automatic backups
-
-Songstead 0.9.0 backs itself up daily while running, using zstd when
-available and gzip otherwise. It keeps at most seven copies within a 10 GiB
-archive cap and bounds each uncompressed copy to 5 GiB. Owners can check status
-in instance settings. See [automatic backups](docs/automatic-backups.md) for
-configuration, retention, off-host copies and recovery.
-
-## Shared forms
-
-Invitation and account layouts use Comfylib's embedded `ui` styles, loaded after
-the app stylesheet so controls and responsive spacing stay aligned across the
-Comfyware apps. Comfylib also supplies invitation status calculation and shared
-browser assertions. Templates, palettes, permissions and atomic redemption remain
-in the application.
-
-## Common setup
-
-New source builds share [browser and command-line setup](docs/setup.md) with the
-other Comfyware apps: `songstead setup` authorizes the first-owner browser page,
-and `songstead create-owner --username NAME` prompts privately by default.
-
-Optional app navigation, shared sign-in and discussion returns are described in
-[Comfyware connections](docs/suite.md).
-
-## Display timezone
-
-In your account settings (`/account`), choose **Times and dates**, enter a city
-timezone, and select **Save timezone**. The saved choice follows your account
-across devices. UTC is the default. Device detection fills the field when
-JavaScript is available; manual selection and saving work without it.
-Admin reporting days remain UTC.
+AGPL-3.0-or-later. HTMX is bundled under its own license; see
+[THIRD_PARTY.md](THIRD_PARTY.md).

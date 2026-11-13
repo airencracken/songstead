@@ -1,3 +1,5 @@
+# Changelog
+
 ## Unreleased
 
 - Keep instance metrics to operational health. Sign-ins and recommendation opens
@@ -6,62 +8,26 @@
 
 ## 0.16.0
 
-Account settings now offer the same **Times and dates** control used across the
-five Comfyware applications. Open `/account`, choose an IANA timezone such as
-`America/Los_Angeles`, and select **Save timezone**. UTC is the default. Your
-choice is saved for your account across sessions and devices. **Use this device's
-timezone** fills the field when JavaScript is available; saving remains explicit.
-Manual selection and local date rendering also work without JavaScript.
-
-Comfylib 0.6.0 owns validation, formatting, the account control, browser detection
-and bounded template caching. Dates handle daylight saving and calendar boundaries.
-Admin dashboard sign-in and backup instants follow your preference; reporting
-days remain UTC. Stored timestamps, API responses and machine-readable timestamps
-retain their existing UTC contract. Account isolation, native permissions and CSRF
-checks apply to every preference change.
-
-Startup adds a separately versioned display preference namespace. Application
-migration and export format versions are unchanged. Back up the stopped data
-directory before upgrading and retain that snapshot for a downgrade.
+- Choose your timezone under **Times and dates** in Your settings. UTC is the
+  default. **Use this device's timezone** fills the field when JavaScript is on;
+  saving is always your choice. Dates on the admin dashboard follow it; reporting
+  days stay in UTC.
+- Uses Comfylib 0.6.0. Startup adds a small table for the preference. Back up
+  the stopped data directory before upgrading and keep it for a downgrade.
 
 ## 0.15.0
 
-Native admin metrics now use one shared dashboard with identical typography, spacing, cards, tables and reporting definitions across the apps. Successful local and community sign-ins and authorized content opens are recorded by Comfylib 0.5.0. Views count once per account, item and UTC day; thumbnails, background assets, failed requests and signed-out visits do not count.
-
-Only active administrators (called owners in this app where applicable) can read the dashboard or its account sign-in summaries. Ordinary members, guests and moderators cannot read analytics. The dashboard shows the past seven UTC days, when collection began, daily totals, recent sign-ins by account, and most-viewed content. Recording begins after upgrade; no earlier history is inferred. No IP addresses or browser identifiers are recorded. Activity is retained for ninety UTC days, pruned at startup and daily while serving, and removed when its account is deleted.
-
-The analytics tables are additive and separately versioned by Comfylib; existing application data and application migration versions are unchanged. Back up before upgrading. Existing archives remain supported. Shared browser contracts now check exact dashboard styling, widths and access boundaries in both themes and with JavaScript disabled.
-
+- Owners see a shared metrics dashboard with daily sign-ins and views, recent
+  sign-ins by account and the most viewed recommendations for the past week. (Removed after 0.16.0; schema
+  12 deletes these records.)
+- Uses Comfylib 0.5.0. Back up before upgrading.
 
 ## 0.14.0
 
-Native owner/admin metrics now show aggregate membership, content, storage and recent activity, with owner-only operational summaries for backups and configured suite connections. The pages work without JavaScript and follow the application's existing permissions.
-
-Rate limiting uses the bounded shared implementations while retaining the app's own budgets. Release preparation, artifact verification, browser fixtures and immutable CI workflows use Comfylib 0.4.0 directly. A release preflight verifies version metadata, cold module caches and the exact shared workflow revision before publication.
-
-No application database migration is added. Existing service configuration and account permissions remain supported.
-
-# Changelog
-
-## 0.16.0
-
-Account settings now offer the same **Times and dates** control used across the
-five Comfyware applications. Open `/account`, choose an IANA timezone such as
-`America/Los_Angeles`, and select **Save timezone**. UTC is the default. Your
-choice is saved for your account across sessions and devices. **Use this device's
-timezone** fills the field when JavaScript is available; saving remains explicit.
-Manual selection and local date rendering also work without JavaScript.
-
-Comfylib 0.6.0 owns validation, formatting, the account control, browser detection
-and bounded template caching. Dates handle daylight saving and calendar boundaries.
-Admin dashboard sign-in and backup instants follow your preference; reporting
-days remain UTC. Stored timestamps, API responses and machine-readable timestamps
-retain their existing UTC contract. Account isolation, native permissions and CSRF
-checks apply to every preference change.
-
-Startup adds a separately versioned display preference namespace. Application
-migration and export format versions are unchanged. Back up the stopped data
-directory before upgrading and retain that snapshot for a downgrade.
+- Owners see instance totals, storage, recent activity, backup status and
+  configured connections under **Admin → Metrics**. The pages work without
+  JavaScript.
+- Uses Comfylib 0.4.0 for rate limits and release tooling. No database migration.
 
 ## 0.13.2
 
@@ -84,31 +50,6 @@ versions, follow the earlier release notes for any migrations you have not run.
 - Forward optional app navigation and community sign-in settings through OpenRC
   and Docker Compose. Native templates document disabled defaults. Regression
   tests check literal values and reject missing service exports.
-- Add an optional Apps menu and consistent keyboard, focus and account controls.
-- Add explicitly linked community sign-in using OpenID Connect, state, nonce and
-  PKCE. Existing local accounts and passwords remain available; accounts are never
-  created or linked by matching email addresses. Configure this only when wanted.
-- Use published Comfylib v0.2.0 and require Go 1.26.11 or newer for source builds.
-- Upgrade golang.org/x/crypto to v0.59.0 and scan the actual release executables
-  for vulnerable dependencies before publication.
-
-- Add comfortable and compact spacing, simplified navigation, Music details
-  disclosures, and a More filters section, preserving edits and no-JavaScript use.
-- Add a trigram search index for selective music searches while preserving exact
-  matching, Unicode folding, audience checks, and the common-query fallback.
-- Return from deliberately posted Witmoot discussions to an explicit link-saving
-  confirmation page. Posting never changes the recommendation audience.
-
-Read [Suite integration](docs/suite.md) for configuration and security boundaries.
-Back up the stopped data directory before upgrading. Shared sign-in creates an
-additive identity-binding table when configured. Keep the pre-upgrade backup;
-use it when returning to older binaries rather than opening a migrated database
-with an older application. Publishing a release does not change running services.
-
-This release applies schema 11 (`011_search_index.sql`) at startup. Allow time
-for the initial search index build on large libraries. Account export format 6
-and existing song likes, listening history, comments and audiences are preserved.
-
 
 ## 0.13.0
 
