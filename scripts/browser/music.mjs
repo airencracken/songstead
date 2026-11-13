@@ -148,7 +148,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.getByRole('heading',{name:'Heavy weather',exact:true}).first().waitFor();
   check((await bobby.locator('.recommendations h3').first().innerText())==='Late evening sketches','All music restores chronology');
   await bobby.goto(base+favorite);
-  check(await bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}).inputValue()==='spoiler-free','Account preference applies on music pages');
+  check(await bobby.getByRole('combobox',{name:'Spoiler preference',exact:true,includeHidden:true}).inputValue()==='spoiler-free','Account preference applies on music pages');
   await act(bobby.getByRole('combobox',{name:'Listening status',exact:true}), 'selectOption', 'listened');
   await act(bobby.getByRole('button',{name:'Like song',exact:true}), 'click');
   await bobby.waitForURL(`**${favorite}?saved=like*`);
@@ -355,8 +355,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     check((await member.locator(target).innerText()).includes('Visible feed reaction 26'),'Feed links reach the exact conversation comment');
   }
   await bobby.goto(base+feedSong);
-  await act(bobby.getByText('Spoiler settings',{exact:true}), 'click');
-  await act(bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}), 'selectOption', 'immediate');
+  await act(bobby.getByRole('combobox',{name:'Spoiler preference',exact:true,includeHidden:true}), 'selectOption', 'immediate');
   await act(bobby.getByRole('button',{name:'Save preference',exact:true}), 'click');
   await bobby.getByRole('status').waitFor();
   await bobby.goto(base+'/recent/comments');
