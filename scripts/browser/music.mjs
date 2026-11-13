@@ -355,6 +355,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     check((await member.locator(target).innerText()).includes('Visible feed reaction 26'),'Feed links reach the exact conversation comment');
   }
   await bobby.goto(base+feedSong);
+  await act(bobby.getByText('Spoiler settings',{exact:true}), 'click');
   await act(bobby.getByRole('combobox',{name:'Spoiler preference',exact:true}), 'selectOption', 'immediate');
   await act(bobby.getByRole('button',{name:'Save preference',exact:true}), 'click');
   await bobby.getByRole('status').waitFor();
