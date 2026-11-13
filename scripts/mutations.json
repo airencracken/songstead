@@ -790,5 +790,21 @@
     "after": "<a href=\"/admin/settings\">Admin</a>{{end}}{{if or (eq .User.Role \"owner\") .User.CanInvite}}",
     "package": "./internal/web",
     "run": "^TestNavigationGivesEachDestinationOneHome$"
+  },
+  {
+    "name": "shared tokens outrank Comfylib defaults",
+    "file": "internal/web/static/app.css",
+    "before": ":root[data-comfy-app=\"songstead\"] {",
+    "after": ":root {",
+    "package": "./internal/web",
+    "run": "^TestStylesheetDefinesSharedTokens$"
+  },
+  {
+    "name": "meta text keeps a 12px floor",
+    "file": "internal/web/static/app.css",
+    "before": "--text-meta: .8125rem;",
+    "after": "--text-meta: .6875rem;",
+    "package": "./internal/web",
+    "run": "^TestStylesheetKeepsTwelvePixelFloor$"
   }
 ]
