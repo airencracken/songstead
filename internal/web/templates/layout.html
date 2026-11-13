@@ -1,3 +1,4 @@
+{{define "theme-picker"}}<span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span>{{end}}
 {{define "layout"}}<!doctype html>
 <html lang="en" data-comfy-app="songstead">
 <head>
@@ -14,18 +15,34 @@
   <script src="/static/theme.js"></script>
   <link rel="stylesheet" href="/static/app.css">
   <link rel="stylesheet" href="/static/comfyware/accounts.css">
+  <link rel="stylesheet" href="/static/comfyware/components.css">
+  <script src="/static/comfyware/suite.js"></script>
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/feedback.js" defer></script>
   <script src="/static/music.js" defer></script>
-<link rel="stylesheet" href="/static/comfyware/components.css"><script src="/static/comfyware/timezone.js" defer></script><script src="/static/comfyware/suite.js"></script></head>
+  <script src="/static/comfyware/timezone.js" defer></script>
+</head>
 <body hx-boost="true" hx-history="false">
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="brand" href="/shelf"><img src="{{if .Settings.Mascot}}/branding/mascot{{else}}/static/jukebox.png{{end}}" alt="" width="42" height="42">{{.Settings.Name}}</a>
-    <nav aria-label="Main navigation">{{with suiteApps}}<details class="comfy-menu comfy-apps"><summary>Apps</summary><div class="comfy-menu-panel"><p class="comfy-menu-label">Your Comfyware apps</p>{{range .}}<a href="{{.URL}}" hx-boost="false" rel="noreferrer">{{.Name}}</a>{{end}}</div></details>{{end}}
-      {{if .User}}<a href="/recent" {{if .Recent}}aria-current="page"{{end}}>Recent</a><a href="/shelf" {{if and (eq .View "list") (not .History) (not .Recent)}}aria-current="page"{{end}}>Shelf</a><a href="/history">History</a><a href="/search" {{if eq .View "search"}}aria-current="page"{{end}}>Search</a><a class="button" href="/recommendations/new">Share music</a>{{end}}
-
-      {{if .User}}<details class="comfy-menu comfy-account"><summary>Account</summary><div class="comfy-menu-panel">{{if sharedSignIn}}<a href="/auth/shared/manage" hx-boost="false">Community sign-in</a>{{end}}<a href="/account" {{if eq .View "account"}}aria-current="page"{{end}}>Your settings</a><a href="/groups">Groups</a>{{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{end}}{{if or (eq .User.Role "owner") .User.CanInvite}}<a href="/invites">Invites</a>{{end}}      <span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span><hr><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form></div></details>{{else}}      <span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span>{{end}}
+    <nav aria-label="Main navigation">
+      {{with suiteApps}}<details class="comfy-menu comfy-apps"><summary>Apps</summary><div class="comfy-menu-panel"><p class="comfy-menu-label">Your Comfyware apps</p>{{range .}}<a href="{{.URL}}" hx-boost="false" rel="noreferrer">{{.Name}}</a>{{end}}</div></details>{{end}}
+      {{if .User}}
+      <a href="/shelf" {{if and (eq .View "list") (not .History) (not .Recent)}}aria-current="page"{{end}}>Shelf</a>
+      <a href="/recent" {{if .Recent}}aria-current="page"{{end}}>Recent</a>
+      <a href="/history" {{if .History}}aria-current="page"{{end}}>History</a>
+      <a href="/search" {{if eq .View "search"}}aria-current="page"{{end}}>Search</a>
+      <a class="button" href="/recommendations/new">Share music</a>
+      <details class="comfy-menu comfy-account"><summary>Account</summary><div class="comfy-menu-panel">
+        <a href="/account" {{if eq .View "account"}}aria-current="page"{{end}}>Your settings</a>
+        <a href="/groups" {{if eq .View "groups"}}aria-current="page"{{end}}>Groups</a>
+        {{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{else if .User.CanInvite}}<a href="/invites" {{if eq .View "invites"}}aria-current="page"{{end}}>Invitations</a>{{end}}
+        {{if sharedSignIn}}<a href="/auth/shared/manage" hx-boost="false">Community sign-in</a>{{end}}
+        {{template "theme-picker"}}
+        <hr><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>
+      </div></details>
+      {{else}}{{template "theme-picker"}}{{end}}
     </nav>
   </header>
   <main id="main" class="page" tabindex="-1">
@@ -38,8 +55,8 @@
     {{if eq .View "recent-comments"}}{{template "recent-comments" .}}{{end}}
     {{if eq .View "compose"}}{{template "compose" .}}{{end}}
     {{if eq .View "groups"}}{{template "groups" .}}{{end}}
- {{if eq .View "handoff"}}{{template "handoff" .}}{{end}}
- {{if eq .View "detail"}}{{template "detail" .}}{{end}}
+    {{if eq .View "handoff"}}{{template "handoff" .}}{{end}}
+    {{if eq .View "detail"}}{{template "detail" .}}{{end}}
     {{if eq .View "metrics"}}{{template "metrics" .}}{{end}}
     {{if eq .View "settings"}}{{template "settings" .}}{{end}}
     {{if eq .View "accounts"}}{{template "accounts" .}}{{end}}
@@ -47,10 +64,10 @@
     {{if eq .View "join"}}{{template "join" .}}{{end}}
     {{if eq .View "reset"}}{{template "reset" .}}{{end}}
     {{if eq .View "member-profile"}}{{template "member-profile" .}}{{end}}
-{{if eq .View "account"}}{{template "account" .}}{{end}}
+    {{if eq .View "account"}}{{template "account" .}}{{end}}
     {{if eq .View "about"}}{{template "about" .}}{{end}}
     {{if eq .View "problem"}}{{template "problem" .}}{{end}}
   </main>
-  <footer class="foot"><span>{{.Settings.Name}}{{if and .Settings.ShowVersion .Version}} · {{.Version}}{{end}} · Good music, from your people.</span><a href="/about">About &amp; house rules</a>{{if .Settings.SourceURL}}<a href="{{.Settings.SourceURL}}" rel="noreferrer">Source code</a>{{end}}{{if .User}}<a href="/account/export" hx-boost="false">Export your history</a>{{end}}<a href="https://comfyware.org/" rel="noreferrer">Part of Comfyware</a></footer>
+  <footer class="foot"><span>{{.Settings.Name}}{{if and .Settings.ShowVersion .Version}} · {{.Version}}{{end}} · Good music, from your people.</span><a href="/about">About &amp; house rules</a>{{if .Settings.SourceURL}}<a href="{{.Settings.SourceURL}}" rel="noreferrer">Source code</a>{{end}}<a href="https://comfyware.org/" rel="noreferrer">Part of Comfyware</a></footer>
 </body>
 </html>{{end}}

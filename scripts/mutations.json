@@ -782,5 +782,13 @@
     "after": "http.Error(w, \"form too large\", 413)",
     "package": "./internal/web",
     "run": "^TestFormProblemsUseTheStyledPage$"
+  },
+  {
+    "name": "invitations keep one home for owners",
+    "file": "internal/web/templates/layout.html",
+    "before": "<a href=\"/admin/settings\">Admin</a>{{else if .User.CanInvite}}",
+    "after": "<a href=\"/admin/settings\">Admin</a>{{end}}{{if or (eq .User.Role \"owner\") .User.CanInvite}}",
+    "package": "./internal/web",
+    "run": "^TestNavigationGivesEachDestinationOneHome$"
   }
 ]
