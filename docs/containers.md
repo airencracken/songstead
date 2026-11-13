@@ -1,6 +1,6 @@
 # Run Songstead with Docker
 
-Images are published at `ghcr.io/airencracken/songstead:v0.17.0` for Linux
+Images are published at `ghcr.io/airencracken/songstead:v0.17.1` for Linux
 amd64 and arm64. They hold the same static binary as the native release, plus
 CA certificates, timezone data and zstd for automatic backups.
 
@@ -30,11 +30,11 @@ The healthcheck probes `/healthz` on the port in `SONGSTEAD_ADDR`.
 Pin a version or digest in `.env`:
 
 ```dotenv
-SONGSTEAD_IMAGE="ghcr.io/airencracken/songstead:v0.17.0"
+SONGSTEAD_IMAGE="ghcr.io/airencracken/songstead:v0.17.1"
 ```
 
 For a digest, use the multi-platform index digest from
-`docker buildx imagetools inspect ghcr.io/airencracken/songstead:v0.17.0`.
+`docker buildx imagetools inspect ghcr.io/airencracken/songstead:v0.17.1`.
 There is no `latest` or moving minor tag, so a pull never starts a database
 migration you did not choose.
 
@@ -78,7 +78,7 @@ deleting the old volume. Only restore backups you trust.
 ## Build locally
 
 ```sh
-VERSION=0.17.0 docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
+VERSION=0.17.1 docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
 ```
 
 This builds `songstead:local` from source. Published images use
@@ -95,6 +95,6 @@ never overwritten; ship runtime security fixes as a new patch release.
 
 ```sh
 make test-containers
-docker build --build-arg VERSION=0.17.0 -t songstead:local .
-make test-container-lifecycle VERSION=0.17.0
+docker build --build-arg VERSION=0.17.1 -t songstead:local .
+make test-container-lifecycle VERSION=0.17.1
 ```

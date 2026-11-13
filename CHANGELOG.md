@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.17.1
+
+- Color palettes change colors without changing Songstead's fonts or heading weights.
+- Uses Comfylib 0.7.2. No database migration is needed.
+
 ## 0.17.0
 
 - A calmer shelf and recommendation page: shorter explanations, one link for

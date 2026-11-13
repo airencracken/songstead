@@ -10,7 +10,7 @@ and talk about it if you like. There is no feed to keep up with.
 Songstead is part of [Comfyware](https://comfyware.org/): software for a small
 community, run by the people who use it.
 
-Current release: 0.17.0. See the [changelog](CHANGELOG.md).
+Current release: 0.17.1. See the [changelog](CHANGELOG.md).
 
 ## What members can do
 

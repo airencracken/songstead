@@ -13,6 +13,8 @@
   --comfy-accent: light-dark(#245eb6, #8ab8ff);
   --comfy-accent-text: light-dark(#fff, #0b1220);
   --comfy-danger: light-dark(#a82c3b, #ff929c);
+  --comfy-heading-font: var(--comfy-font);
+  --comfy-heading-weight: 650;
   --comfy-font: ui-sans-serif, system-ui, sans-serif;
   --comfy-radius: 10px;
   --comfy-radius-small: 8px;
