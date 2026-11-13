@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/airencracken/comfylib/brandimage"
+	"github.com/airencracken/comfylib/ui"
 	"github.com/airencracken/songstead/internal/store"
 )
 
@@ -56,7 +57,7 @@ func (a *App) saveProfilePicture(w http.ResponseWriter, r *http.Request) {
 	}
 	err := a.store.SetPicture(r.Context(), state(r).User.ID, data)
 	if errors.Is(err, store.ErrInvalid) {
-		a.showAccount(w, r, 422, page{Error: "Choose a PNG, JPEG or GIF up to 2 MB and 512 by 512 pixels. Animated GIFs can have up to 64 frames."})
+		a.showAccount(w, r, 422, page{Error: "Choose a PNG, JPEG or GIF up to " + ui.Size(brandimage.MaxBytes) + " and 512 by 512 pixels. Animated GIFs can have up to 64 frames."})
 		return
 	}
 	if err != nil {

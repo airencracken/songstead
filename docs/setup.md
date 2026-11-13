@@ -27,8 +27,9 @@ sudo songstead set-password --username yourname
 Both ask for the password twice with echo off. For automation, use
 `--password-stdin` or `--password-file /private/path/password` (a private
 regular file). `--data-dir DIRECTORY` selects a portable instance. Passwords
-need at least 12 characters and at most 72 bytes. `create-owner` never changes
-an existing account. `set-password` signs the account out everywhere.
+need at least 12 characters and must fit in 72 bytes, so long passwords with
+accented letters may be refused. `create-owner` never changes an existing
+account. `set-password` signs the account out everywhere.
 
 Run `songstead help setup` for options. Invitations and instance settings are
 in **Admin** after you sign in; see [administration](administration.md).

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/brandimage"
+	"github.com/airencracken/comfylib/ui"
 	"github.com/airencracken/songstead/internal/store"
 	"golang.org/x/crypto/bcrypt"
 	"io"
@@ -46,7 +47,7 @@ func (a *App) adminRoutes(mux *http.ServeMux) {
 func (a *App) owner(next http.HandlerFunc) http.HandlerFunc {
 	return a.signedIn(func(w http.ResponseWriter, r *http.Request) {
 		if state(r).User.Role != "owner" {
-			a.problem(w, r, 403, problemForbidden)
+			a.problem(w, r, 403, "")
 			return
 		}
 		next(w, r)
@@ -56,11 +57,11 @@ func (a *App) inviter(next http.HandlerFunc) http.HandlerFunc {
 	return a.signedIn(func(w http.ResponseWriter, r *http.Request) {
 		u := state(r).User
 		if u.Role != "owner" && !u.CanInvite {
-			a.problem(w, r, 403, problemForbidden)
+			a.problem(w, r, 403, "")
 			return
 		}
 		if strings.HasPrefix(r.URL.Path, "/admin/") && u.Role != "owner" {
-			a.problem(w, r, 403, problemForbidden)
+			a.problem(w, r, 403, "")
 			return
 		}
 		next(w, r)
@@ -255,8 +256,12 @@ func (a *App) join(w http.ResponseWriter, r *http.Request) {
 	raw := r.PostForm.Get("invite")
 	name := strings.TrimSpace(r.PostForm.Get("username"))
 	password := r.PostForm.Get("password")
-	if password != r.PostForm.Get("confirmation") || store.ValidateUsername(name) != nil || store.ValidatePassword(password) != nil {
-		a.render(w, r, 422, page{View: "join", Title: "Join", Secret: raw, Username: name, Status: "available", Error: "Choose a username of 3 to 24 letters, numbers, underscores or dashes, and enter the same password twice. Passwords need 12 to 72 characters."})
+	problem := newPasswordProblem(password, r.PostForm.Get("confirmation"))
+	if store.ValidateUsername(name) != nil {
+		problem = "Choose a username of 3 to 24 letters, numbers, underscores or dashes."
+	}
+	if problem != "" {
+		a.render(w, r, 422, page{View: "join", Title: "Join", Secret: raw, Username: name, Status: "available", Error: problem})
 		return
 	}
 	_, err := a.store.Join(r.Context(), raw, name, password)
@@ -289,8 +294,8 @@ func (a *App) resetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 	raw := r.PostForm.Get("token")
 	password := r.PostForm.Get("password")
-	if password != r.PostForm.Get("confirmation") || store.ValidatePassword(password) != nil {
-		a.render(w, r, 422, page{View: "reset", Title: "Reset password", Secret: raw, Status: "available", Error: "Enter the same password twice. Passwords need 12 to 72 characters."})
+	if problem := newPasswordProblem(password, r.PostForm.Get("confirmation")); problem != "" {
+		a.render(w, r, 422, page{View: "reset", Title: "Reset password", Secret: raw, Status: "available", Error: problem})
 		return
 	}
 	if err := a.store.ResetPassword(r.Context(), raw, password); err != nil {
@@ -314,8 +319,12 @@ func (a *App) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	password := r.PostForm.Get("password")
-	if u.ID != state(r).User.ID || bcrypt.CompareHashAndPassword([]byte(hash), []byte(r.PostForm.Get("current_password"))) != nil || password != r.PostForm.Get("confirmation") || store.ValidatePassword(password) != nil {
-		a.showAccount(w, r, 422, page{Error: "Check your current password, then enter the same new password twice. Passwords need 12 to 72 characters."})
+	if u.ID != state(r).User.ID || bcrypt.CompareHashAndPassword([]byte(hash), []byte(r.PostForm.Get("current_password"))) != nil {
+		a.showAccount(w, r, 422, page{Error: "Your current password didn't match."})
+		return
+	}
+	if problem := newPasswordProblem(password, r.PostForm.Get("confirmation")); problem != "" {
+		a.showAccount(w, r, 422, page{Error: problem})
 		return
 	}
 	if err := a.store.ChangePassword(r.Context(), u.ID, hash, password); err != nil {
@@ -356,12 +365,12 @@ func (a *App) saveImages(w http.ResponseWriter, r *http.Request) {
 	removeMascot := r.PostForm.Get("remove_mascot") == "1"
 	removeFavicon := r.PostForm.Get("remove_favicon") == "1"
 	if e1 != nil || e2 != nil || (len(mascot) == 0 && len(favicon) == 0 && !removeMascot && !removeFavicon) {
-		a.render(w, r, 422, page{View: "settings", Title: "Instance settings", Error: "Choose a PNG, JPEG or GIF up to 2 MB and 2048 by 2048 pixels, or tick an image to restore."})
+		a.render(w, r, 422, page{View: "settings", Title: "Instance settings", Error: "Choose a PNG, JPEG or GIF up to " + ui.Size(brandimage.MaxBytes) + " and 2048 by 2048 pixels, or tick an image to restore."})
 		return
 	}
 	err := a.store.SaveBrandingAssets(r.Context(), state(r).User.ID, mascot, favicon, removeMascot, removeFavicon)
 	if errors.Is(err, store.ErrInvalid) {
-		a.render(w, r, 422, page{View: "settings", Title: "Instance settings", Error: "That image couldn't be read. Use a PNG, JPEG or GIF up to 2 MB and 2048 by 2048 pixels. Neither image changed."})
+		a.render(w, r, 422, page{View: "settings", Title: "Instance settings", Error: "That image couldn't be read. Use a PNG, JPEG or GIF up to " + ui.Size(brandimage.MaxBytes) + " and 2048 by 2048 pixels. Neither image changed."})
 		return
 	}
 	if err != nil {

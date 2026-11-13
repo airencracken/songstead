@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/displaytime"
+	"github.com/airencracken/comfylib/password"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -176,12 +177,9 @@ func ValidateUsername(name string) error {
 	return nil
 }
 
-func ValidatePassword(password string) error {
-	if !utf8.ValidString(password) || utf8.RuneCountInString(password) < 12 || len(password) > 72 {
-		return errors.New("password needs at least 12 characters and at most 72 bytes")
-	}
-	return nil
-}
+// ValidatePassword applies the shared Comfyware rule for new passwords. Its
+// errors are plain sentences: password.ErrTooShort, ErrTooLong or ErrInvalid.
+func ValidatePassword(value string) error { return password.Validate(value) }
 
 func (s *Store) CreateUser(ctx context.Context, name, password string) (int64, error) {
 	return s.createAccount(ctx, name, password, "member")

@@ -13,8 +13,10 @@ import (
 	"github.com/airencracken/comfylib/admin"
 	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/autobackup"
+	"github.com/airencracken/comfylib/brandimage"
 	"github.com/airencracken/comfylib/displaytime"
 	"github.com/airencracken/comfylib/password"
+	"github.com/airencracken/comfylib/problem"
 	"github.com/airencracken/comfylib/ratelimit"
 	"github.com/airencracken/comfylib/suite"
 	"html/template"
@@ -62,6 +64,7 @@ type App struct {
 	logins       *ratelimit.Window
 	previews     *ratelimit.Window
 	monitor      *analytics.Monitor
+	problems     problem.Writer
 }
 type requestState struct {
 	User          *store.User
@@ -141,6 +144,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		}
 	}
 	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"timezonePreference": displaytime.RenderPreference,
+		"imageLimit": func() string { return ui.Size(brandimage.MaxBytes) },
 		"paletteAttrs": func(setting string) template.HTMLAttr {
 			return ui.PaletteAttrs(ui.SiteDefault(setting, DefaultPalette))
 		},
@@ -173,6 +177,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		return nil, err
 	}
 	a := &App{store: s, config: cfg, templates: bound, dummyHash: dummy, logins: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 20, Interval: 15 * time.Minute, Capacity: 10000}), previews: ratelimit.NewWindow(ratelimit.WindowConfig{Attempts: 6, Interval: time.Minute, Capacity: 10000})}
+	a.problems = problem.Writer{Layout: a.problemLayout}
 	mux := http.NewServeMux()
 	static, err := fs.Sub(assets, "static")
 	if err != nil {
@@ -240,6 +245,18 @@ func New(s *store.Store, cfg Config) (*App, error) {
 }
 
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) { a.handler.ServeHTTP(w, r) }
+
+// newPasswordProblem explains, in a plain sentence, why a newly chosen
+// password can't be saved, or returns "".
+func newPasswordProblem(secret, confirmation string) string {
+	if secret != confirmation {
+		return "The two passwords don't match."
+	}
+	if err := password.Validate(secret); err != nil {
+		return err.Error()
+	}
+	return ""
+}
 
 // Flush writes request counts still held in memory. Call it on shutdown.
 func (a *App) Flush(ctx context.Context) error { return a.monitor.Flush(ctx) }
@@ -344,7 +361,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 			if err := parseErr; err != nil {
 				var tooLarge *http.MaxBytesError
 				if errors.As(err, &tooLarge) {
-					a.problem(w, r, 413, problemTooLarge)
+					a.problem(w, r, 413, "")
 				} else {
 					a.problem(w, r, 400, problemForm)
 				}
@@ -364,8 +381,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 				provided = header
 			}
 			if provided == "" || !token.Equal(provided, st.CSRF) {
-				w.Header().Set("HX-Refresh", "true")
-				a.problem(w, r, 403, problemExpired)
+				a.problems.Expired(w, r)
 				return
 			}
 		}
@@ -384,6 +400,14 @@ func (a *App) signedIn(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page) {
+	if err := a.renderPage(w, r, status, p); err != nil {
+		a.fail(w, r, err)
+	}
+}
+
+// renderPage writes p inside the layout, or returns the template error
+// without writing anything.
+func (a *App) renderPage(w http.ResponseWriter, r *http.Request, status int, p page) error {
 	if state(r).User != nil && state(r).User.Role == "owner" && (p.View == "settings" || p.View == "metrics") {
 		p.Overview = admin.WithOperations(p.Overview, a.config.Version, a.config.Backups.Status(), "SONGSTEAD_")
 	}
@@ -416,30 +440,26 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 	}
 	var buf bytes.Buffer
 	if err := a.templates.ExecuteTemplate(&buf, preferredTimezone(r), "layout", p); err != nil {
-		a.fail(w, r, err)
-		return
+		return err
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if r.Method != http.MethodHead {
 		_, _ = w.Write(buf.Bytes())
 	}
+	return nil
 }
 func (a *App) fail(w http.ResponseWriter, r *http.Request, err error) {
-	if errors.Is(err, store.ErrForbidden) {
-		a.problem(w, r, 403, problemForbidden)
-		return
+	switch {
+	case errors.Is(err, store.ErrForbidden):
+		a.problem(w, r, 403, "")
+	case errors.Is(err, store.ErrMissing):
+		a.problem(w, r, 404, "")
+	case errors.Is(err, store.ErrInvalid):
+		a.problem(w, r, 422, "")
+	default:
+		a.problems.Write(w, r, 500, "", err)
 	}
-	if errors.Is(err, store.ErrMissing) {
-		a.problem(w, r, 404, problemMissing)
-		return
-	}
-	if errors.Is(err, store.ErrInvalid) {
-		a.problem(w, r, 422, problemInvalid)
-		return
-	}
-	slog.Error("request failed", "path", r.URL.Path, "error", err)
-	a.problem(w, r, 500, problemServer)
 }
 
 func (a *App) loginForm(w http.ResponseWriter, r *http.Request) {

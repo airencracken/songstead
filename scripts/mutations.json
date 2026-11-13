@@ -762,15 +762,15 @@
   {
     "name": "errors render the styled page",
     "file": "internal/web/problem.go",
-    "before": "a.render(w, r, status, page{View: \"problem\", Title: title, Problem: message})",
-    "after": "http.Error(w, message, status)",
+    "before": "return a.renderPage(w, r, shown.Status, page{View: \"problem\", Title: shown.Title, Problem: shown.Message})",
+    "after": "return errNoRequestState",
     "package": "./internal/web",
     "run": "^TestProblemsUseTheStyledPage$"
   },
   {
     "name": "form errors render the styled page",
     "file": "internal/web/web.go",
-    "before": "a.problem(w, r, 413, problemTooLarge)",
+    "before": "a.problem(w, r, 413, \"\")",
     "after": "http.Error(w, \"form too large\", 413)",
     "package": "./internal/web",
     "run": "^TestFormProblemsUseTheStyledPage$"
@@ -838,5 +838,21 @@
     "after": "",
     "package": "./internal/web",
     "run": "^TestOwnerPicksTheSitePalette$"
+  },
+  {
+    "name": "mismatched passwords are explained",
+    "file": "internal/web/web.go",
+    "before": "\tif secret != confirmation {",
+    "after": "\tif false {",
+    "package": "./internal/web",
+    "run": "^TestNewPasswordsGetPlainReasons$"
+  },
+  {
+    "name": "backup page shows only the summary",
+    "file": "internal/web/templates/admin.html",
+    "before": "{{with .Backups.Summary}}<p role=\"alert\" class=\"comfy-notice comfy-notice-error\">{{.}}</p>{{end}}",
+    "after": "{{if .Backups.LastError}}<p role=\"alert\" class=\"comfy-notice comfy-notice-error\">{{.Backups.LastError}}</p>{{end}}",
+    "package": "./internal/web",
+    "run": "^TestBackupFailuresShowOnlyTheSummary$"
   }
 ]
