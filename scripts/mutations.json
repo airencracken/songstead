@@ -826,8 +826,8 @@
   {
     "name": "site palette is validated",
     "file": "internal/store/settings.go",
-    "before": "\tif v.Palette != \"\" {\n\t\tif _, err := ui.ParsePalette(v.Palette); err != nil {\n\t\t\treturn ErrInvalid\n\t\t}\n\t}\n",
-    "after": "",
+    "before": "if _, err := ui.ParsePalette(v.Palette); err != nil {\n\t\t\treturn ErrInvalid",
+    "after": "if _, err := ui.ParsePalette(v.Palette); err == nil && false {\n\t\t\treturn ErrInvalid",
     "package": "./internal/web",
     "run": "^TestOwnerPicksTheSitePalette$"
   },
