@@ -1,0 +1,5 @@
+{{define "problem"}}<section class="panel problem" aria-labelledby="problem-title">
+  <h1 id="problem-title">{{.Title}}</h1>
+  <p>{{.Problem}}</p>
+  <p>{{if .User}}<a href="/shelf">Back to your shelf</a>{{else}}<a href="/login">Sign in</a>{{end}}</p>
+</section>{{end}}

@@ -143,7 +143,7 @@ func (a *App) annotationPreference(w http.ResponseWriter, r *http.Request) {
 func (a *App) discussion(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)
 	if err == nil && r.PostForm.Get("discussion_state") != "" && !suite.CheckDiscussion(r.PostForm.Get("discussion_state"), "/recommendations/"+strconv.FormatInt(id, 10), state(r).Session, r.PostForm.Get("url"), state(r).Settings.WitmootURL) {
-		http.Error(w, "This discussion return expired. Prepare a new draft.", 400)
+		a.problem(w, r, 400, "This discussion link expired. Prepare a new Witmoot draft.")
 		return
 	}
 	if err == nil {
@@ -205,7 +205,7 @@ func (a *App) discussionReturn(w http.ResponseWriter, r *http.Request) {
 	path := "/recommendations/" + strconv.FormatInt(id, 10)
 	q := r.URL.Query()
 	if len(q["state"]) != 1 || len(q["thread"]) != 1 || !suite.CheckDiscussion(q.Get("state"), path, state(r).Session, q.Get("thread"), state(r).Settings.WitmootURL) {
-		http.Error(w, "This discussion return expired. Prepare a new draft.", 400)
+		a.problem(w, r, 400, "This discussion link expired. Prepare a new Witmoot draft.")
 		return
 	}
 	suite.RenderDiscussion(w, path+"/discussion", path, q.Get("thread"), q.Get("state"), "csrf", state(r).CSRF, "/static/comfyware/components.css")

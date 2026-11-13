@@ -49,6 +49,7 @@
     {{if eq .View "member-profile"}}{{template "member-profile" .}}{{end}}
 {{if eq .View "account"}}{{template "account" .}}{{end}}
     {{if eq .View "about"}}{{template "about" .}}{{end}}
+    {{if eq .View "problem"}}{{template "problem" .}}{{end}}
   </main>
   <footer class="foot"><span>{{.Settings.Name}}{{if and .Settings.ShowVersion .Version}} · {{.Version}}{{end}} · Good music, from your people.</span><a href="/about">About &amp; house rules</a>{{if .Settings.SourceURL}}<a href="{{.Settings.SourceURL}}" rel="noreferrer">Source code</a>{{end}}{{if .User}}<a href="/account/export" hx-boost="false">Export your history</a>{{end}}<a href="https://comfyware.org/" rel="noreferrer">Part of Comfyware</a></footer>
 </body>

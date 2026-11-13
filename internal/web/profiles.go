@@ -56,7 +56,7 @@ func (a *App) saveProfilePicture(w http.ResponseWriter, r *http.Request) {
 	}
 	err := a.store.SetPicture(r.Context(), state(r).User.ID, data)
 	if errors.Is(err, store.ErrInvalid) {
-		a.showAccount(w, r, 422, page{Error: "Choose a PNG, JPEG or GIF up to 2 MiB and 512 by 512 pixels. GIFs may have up to 64 frames."})
+		a.showAccount(w, r, 422, page{Error: "Choose a PNG, JPEG or GIF up to 2 MB and 512 by 512 pixels. Animated GIFs can have up to 64 frames."})
 		return
 	}
 	if err != nil {

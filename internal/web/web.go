@@ -108,7 +108,7 @@ type page struct {
 	Recordings                                                                          []store.Recording
 	Discussions                                                                         []string
 	Reveal                                                                              bool
-	View, Title, Error, CSRF, URL, Note, Username, Status                               string
+	View, Title, Error, Problem, CSRF, URL, Note, Username, Status                      string
 	User                                                                                *store.User
 	Users                                                                               []store.User
 	Items                                                                               []store.Recommendation
@@ -312,7 +312,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 					defer r.MultipartForm.RemoveAll()
 					for _, files := range r.MultipartForm.File {
 						if len(files) != 1 {
-							http.Error(w, "duplicate upload fields", 400)
+							a.problem(w, r, 400, problemForm)
 							return
 						}
 					}
@@ -321,9 +321,9 @@ func (a *App) middleware(next http.Handler) http.Handler {
 			if err := parseErr; err != nil {
 				var tooLarge *http.MaxBytesError
 				if errors.As(err, &tooLarge) {
-					http.Error(w, "form too large", 413)
+					a.problem(w, r, 413, problemTooLarge)
 				} else {
-					http.Error(w, "invalid form", 400)
+					a.problem(w, r, 400, problemForm)
 				}
 				return
 			}
@@ -332,7 +332,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 					continue
 				}
 				if len(values) != 1 {
-					http.Error(w, "duplicate form fields", 400)
+					a.problem(w, r, 400, problemForm)
 					return
 				}
 			}
@@ -342,7 +342,7 @@ func (a *App) middleware(next http.Handler) http.Handler {
 			}
 			if provided == "" || !token.Equal(provided, st.CSRF) {
 				w.Header().Set("HX-Refresh", "true")
-				http.Error(w, "refresh the page before submitting", 403)
+				a.problem(w, r, 403, problemExpired)
 				return
 			}
 		}
@@ -404,19 +404,19 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 }
 func (a *App) fail(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.Is(err, store.ErrForbidden) {
-		http.Error(w, "permission denied", 403)
+		a.problem(w, r, 403, problemForbidden)
 		return
 	}
 	if errors.Is(err, store.ErrMissing) {
-		http.NotFound(w, r)
+		a.problem(w, r, 404, problemMissing)
 		return
 	}
 	if errors.Is(err, store.ErrInvalid) {
-		http.Error(w, "invalid input", 422)
+		a.problem(w, r, 422, problemInvalid)
 		return
 	}
 	slog.Error("request failed", "path", r.URL.Path, "error", err)
-	http.Error(w, "Something went wrong. Please try again.", 500)
+	a.problem(w, r, 500, problemServer)
 }
 
 func (a *App) loginForm(w http.ResponseWriter, r *http.Request) {
@@ -430,7 +430,7 @@ func (a *App) allowLogin(r *http.Request) bool {
 func (a *App) login(w http.ResponseWriter, r *http.Request) {
 	if !a.allowLogin(r) {
 		w.Header().Set("Retry-After", "900")
-		http.Error(w, "too many sign-in attempts; try again in 15 minutes", 429)
+		a.problem(w, r, 429, problemSignIns)
 		return
 	}
 	name, password := strings.TrimSpace(r.PostForm.Get("username")), r.PostForm.Get("password")
@@ -478,7 +478,7 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		layout = "chips"
 	}
 	if layout != "chips" && layout != "tiles" {
-		http.Error(w, "invalid layout", 400)
+		a.problem(w, r, 400, problemView)
 		return
 	}
 	discovery := r.URL.Query().Get("discovery")
@@ -486,7 +486,7 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		discovery = "preferences"
 	}
 	if discovery != "preferences" && discovery != "all" {
-		http.Error(w, "invalid discovery mode", 400)
+		a.problem(w, r, 400, problemView)
 		return
 	}
 	genre, tag := r.URL.Query().Get("genre"), r.URL.Query().Get("tag")
@@ -495,14 +495,14 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		var err error
 		offset, err = strconv.Atoi(v)
 		if err != nil || offset < 0 || offset > 1000000 {
-			http.Error(w, "invalid page", 400)
+			a.problem(w, r, 400, problemView)
 			return
 		}
 	}
 	status := r.URL.Query().Get("status")
 	liked := r.URL.Query().Get("liked")
 	if len(r.URL.Query()["liked"]) > 1 || liked != "" && liked != "0" && liked != "1" {
-		http.Error(w, "invalid likes filter", 400)
+		a.problem(w, r, 400, problemView)
 		return
 	}
 	person, _ := strconv.ParseInt(r.URL.Query().Get("person"), 10, 64)
@@ -511,14 +511,14 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		if raw := r.URL.Query().Get(key); raw != "" {
 			n, err := strconv.ParseInt(raw, 10, 64)
 			if err != nil || n < 0 {
-				http.Error(w, "invalid filter", 400)
+				a.problem(w, r, 400, problemView)
 				return
 			}
 		}
 	}
 	kind := r.URL.Query().Get("kind")
 	if kind != "" && kind != "track" && kind != "album" && kind != "artist" && kind != "link" {
-		http.Error(w, "invalid music kind", 400)
+		a.problem(w, r, 400, problemView)
 		return
 	}
 	perspective := r.URL.Query().Get("view")
@@ -526,7 +526,7 @@ func (a *App) list(w http.ResponseWriter, r *http.Request, history, recent bool)
 		perspective = "music"
 	}
 	if perspective != "music" && perspective != "person" && perspective != "group" && perspective != "recommendations" {
-		http.Error(w, "invalid view", 400)
+		a.problem(w, r, 400, problemView)
 		return
 	}
 	items, err := a.store.Browse(r.Context(), state(r).User.ID, history, store.Filter{Recent: recent, Liked: liked == "1", Status: status, Person: person, Group: group, Kind: kind, Genre: genre, Tag: tag, UsePreferences: recent && discovery == "preferences", GroupByMusic: perspective == "music"}, 51, offset)

@@ -14,12 +14,12 @@ func (a *App) memberProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Robots-Tag", "noindex, nofollow")
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id <= 0 {
-		http.NotFound(w, r)
+		a.problem(w, r, 404, problemMissing)
 		return
 	}
 	p, err := a.store.MemberProfile(r.Context(), id)
 	if errors.Is(err, store.ErrMissing) {
-		http.NotFound(w, r)
+		a.problem(w, r, 404, problemMissing)
 		return
 	}
 	if err != nil {

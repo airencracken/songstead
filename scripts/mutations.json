@@ -766,5 +766,21 @@
     "after": "version > currentSchema-1 {",
     "package": "./internal/store",
     "run": "^TestSnapshotAcceptsSchema12$"
+  },
+  {
+    "name": "errors render the styled page",
+    "file": "internal/web/problem.go",
+    "before": "a.render(w, r, status, page{View: \"problem\", Title: title, Problem: message})",
+    "after": "http.Error(w, message, status)",
+    "package": "./internal/web",
+    "run": "^TestProblemsUseTheStyledPage$"
+  },
+  {
+    "name": "form errors render the styled page",
+    "file": "internal/web/web.go",
+    "before": "a.problem(w, r, 413, problemTooLarge)",
+    "after": "http.Error(w, \"form too large\", 413)",
+    "package": "./internal/web",
+    "run": "^TestFormProblemsUseTheStyledPage$"
   }
 ]
