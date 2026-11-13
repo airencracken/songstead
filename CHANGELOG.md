@@ -8,7 +8,7 @@
   choose the site palette under **Site colors**: Sage (the default) or Slate.
 - Errors now show a plain page inside Songstead instead of bare text.
 - Password and upload messages say what to change ("Use a shorter password.",
-  "up to 2.1 MB") instead of naming bytes.
+  "up to 2 MiB").
 - Invitation and recovery links get a Copy link button.
 
 ### For owners and operators
@@ -22,7 +22,7 @@
   keep it for a downgrade.
 - A failed automatic backup shows a short notice on the dashboard; the details
   stay in the server log.
-- Uses Comfylib 0.7.0 for metrics, palettes, theme script, error pages, the
+- Uses Comfylib 0.7.1 for metrics, palettes, theme script, error pages, the
   password rule and copy buttons. `make check` also runs `check-docs`.
 
 ## 0.16.0

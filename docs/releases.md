@@ -38,7 +38,7 @@ emerge --ask =www-apps/songstead-0.17.0::comfyware
 
 ## Build the published source
 
-Source builds need Go 1.26.11 or newer and use the published Comfylib v0.7.0:
+Source builds need Go 1.26.11 or newer and use the published Comfylib v0.7.1:
 
 ```sh
 git clone --branch v0.17.0 https://github.com/airencracken/songstead.git

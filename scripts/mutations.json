@@ -854,5 +854,13 @@
     "after": "{{if .Backups.LastError}}<p role=\"alert\" class=\"comfy-notice comfy-notice-error\">{{.Backups.LastError}}</p>{{end}}",
     "package": "./internal/web",
     "run": "^TestBackupFailuresShowOnlyTheSummary$"
+  },
+  {
+    "name": "upload copy names the binary limit",
+    "file": "internal/web/web.go",
+    "before": "return ui.Size(brandimage.MaxBytes) },",
+    "after": "return \"2.1 MB\" },",
+    "package": "./internal/web",
+    "run": "^TestUploadLimitCopyMatchesTheLimit$"
   }
 ]

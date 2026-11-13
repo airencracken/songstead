@@ -100,7 +100,7 @@ fetched by the server and cached, so your browser never contacts the music
 service for images. Missing artwork shows the jukebox. The optional YouTube
 player loads only when you open it.
 
-Profile pictures can be PNG, JPEG or GIF, up to 2.1 MB and 512 by 512 pixels,
+Profile pictures can be PNG, JPEG or GIF, up to 2 MiB and 512 by 512 pixels,
 with up to 64 frames for animated GIFs. Members see them only when signed in.
 Turn off animation in Your settings; browsers that prefer reduced motion get the
 still version.

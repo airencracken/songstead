@@ -5,11 +5,14 @@ import (
 	"bytes"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/airencracken/comfylib/autobackup"
+	"github.com/airencracken/comfylib/brandimage"
+	"github.com/airencracken/comfylib/ui"
 	"github.com/airencracken/songstead/internal/store"
 )
 
@@ -71,12 +74,29 @@ func TestBackupFailuresShowOnlyTheSummary(t *testing.T) {
 	}
 }
 
-func TestUploadLimitsUseDecimalUnits(t *testing.T) {
+// Upload limits are binary values, and the copy names them in IEC units from
+// the same constant, so the two cannot drift apart.
+func TestUploadLimitCopyMatchesTheLimit(t *testing.T) {
+	if brandimage.MaxBytes != 2<<20 {
+		t.Fatalf("image limit is %d bytes, want 2 MiB", brandimage.MaxBytes)
+	}
+	if got := ui.Size(brandimage.MaxBytes); got != "2 MiB" {
+		t.Fatalf("limit formats as %q", got)
+	}
 	_, _, owner := ownerBrowser(t)
 	for _, path := range []string{"/admin/settings", "/account"} {
 		body := owner.request("GET", path, nil).Body.String()
-		if !strings.Contains(body, "up to 2.1 MB") || strings.Contains(body, "MiB") {
-			t.Fatalf("%s: upload limit copy", path)
+		if !strings.Contains(body, "up to 2 MiB and") || regexp.MustCompile(`\d MB\b`).MatchString(body) {
+			t.Fatalf("%s: upload limit copy disagrees with the limit", path)
+		}
+	}
+	for _, doc := range []string{"../../docs/administration.md", "../../docs/quiet-inbox.md"} {
+		data, err := os.ReadFile(doc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(data), "up to 2 MiB and") || regexp.MustCompile(`\d(\.\d)? MB\b`).Match(data) {
+			t.Fatalf("%s: upload limit copy disagrees with the limit", doc)
 		}
 	}
 }
