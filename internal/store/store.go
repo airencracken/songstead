@@ -121,14 +121,14 @@ func (s *Store) migrate(currentOnly bool) error {
 	if err := tx.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 11 {
+	if version > currentSchema {
 		return fmt.Errorf("database schema %d is newer than this binary", version)
 	}
-	if currentOnly && version != 11 {
+	if currentOnly && version != currentSchema {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
-	for next := version + 1; next <= 11; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql", 10: "migrations/010_post_edits.sql", 11: "migrations/011_search_index.sql"}[next]
+	for next := version + 1; next <= currentSchema; next++ {
+		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql", 10: "migrations/010_post_edits.sql", 11: "migrations/011_search_index.sql", 12: "migrations/012_operational_metrics.sql"}[next]
 		data, err := migrations.ReadFile(file)
 		if err != nil {
 			return err
@@ -138,6 +138,11 @@ func (s *Store) migrate(currentOnly bool) error {
 		}
 		if next == 2 {
 			if err := migrateMusic(tx); err != nil {
+				return err
+			}
+		}
+		if next == 12 {
+			if err := forgetActivity(tx); err != nil {
 				return err
 			}
 		}
@@ -151,6 +156,24 @@ func (s *Store) migrate(currentOnly bool) error {
 		}
 	}
 	return tx.Commit()
+}
+
+// currentSchema is the newest application migration this binary applies.
+const currentSchema = 12
+
+// forgetActivity removes per-account and per-item analytics rows recorded by
+// earlier releases. Metrics describe operational health only. The shared
+// table is created after application migrations, so a new database has none.
+func forgetActivity(tx *sql.Tx) error {
+	var tables int
+	if err := tx.QueryRow("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='comfy_analytics_activity'").Scan(&tables); err != nil {
+		return err
+	}
+	if tables == 0 {
+		return nil
+	}
+	_, err := tx.Exec("DELETE FROM comfy_analytics_activity")
+	return err
 }
 
 var username = regexp.MustCompile(`^[A-Za-z0-9_-]{3,24}$`)
@@ -277,9 +300,6 @@ func (s *Store) NewSession(ctx context.Context, user int64, verifiedHash string)
 		return "", err
 	}
 	if err := mutationResult(result, nil); err != nil {
-		return "", err
-	}
-	if err := analytics.RecordLogin(ctx, tx, analytics.MemberID(user), time.Now()); err != nil {
 		return "", err
 	}
 	return secret, tx.Commit()

@@ -201,7 +201,7 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("POST /account/profile", a.signedIn(a.saveMemberProfile))
 	mux.HandleFunc("POST /account/picture", a.signedIn(a.saveProfilePicture))
 	mux.HandleFunc("POST /account/animation", a.signedIn(a.saveAnimationPreference))
-	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.trackOpen(analytics.Recommendation, a.detail)))
+	mux.HandleFunc("GET /recommendations/{id}", a.signedIn(a.detail))
 	mux.HandleFunc("GET /recommendations/{id}/edit", a.signedIn(a.editRecommendation))
 	mux.HandleFunc("POST /recommendations/{id}/edit", a.signedIn(a.editRecommendation))
 	mux.HandleFunc("GET /recommendations/{id}/delete", a.signedIn(a.deleteRecommendation))

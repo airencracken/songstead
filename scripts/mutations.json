@@ -66,8 +66,8 @@
   {
     "name": "newer schema rejection",
     "file": "internal/store/store.go",
-    "before": "if version > 11 {",
-    "after": "if version > 12 {",
+    "before": "if version > currentSchema {",
+    "after": "if version > currentSchema+1 {",
     "package": "./internal/store",
     "run": "^TestMigrationRepeatabilityAndNewerSchema$"
   },
@@ -226,8 +226,8 @@
   {
     "name": "existing account commands do not migrate",
     "file": "internal/store/store.go",
-    "before": "if currentOnly && version != 11 {",
-    "after": "if false && currentOnly && version != 11 {",
+    "before": "if currentOnly && version != currentSchema {",
+    "after": "if false && currentOnly && version != currentSchema {",
     "package": "./internal/store",
     "run": "^TestOwnerMigrationAndLegacySnapshots$"
   },
@@ -728,22 +728,6 @@
     "run": "^TestOwnerMetricsTotalsPermissionsAndFailure$"
   },
   {
-    "name": "successful authentication is recorded",
-    "file": "internal/store/store.go",
-    "before": "analytics.RecordLogin(ctx, tx, analytics.MemberID(user), time.Now())",
-    "after": "analytics.Prune(ctx, tx, time.Now())",
-    "package": "./internal/web",
-    "run": "^TestActivityCountsAuthorizedOpensAndSuccessfulLogins$"
-  },
-  {
-    "name": "recommendation opens reach the shared collector",
-    "file": "internal/web/web.go",
-    "before": "a.signedIn(a.trackOpen(analytics.Recommendation, a.detail))",
-    "after": "a.signedIn(a.detail)",
-    "package": "./internal/web",
-    "run": "^TestActivityCountsAuthorizedOpensAndSuccessfulLogins$"
-  },
-  {
     "name": "reader timezone reaches native rendering",
     "file": "internal/web/display_timezone.go",
     "before": "return displaytime.New(u.Timezone).Name()",
@@ -758,5 +742,29 @@
     "after": "AND suspended IN (0,1)",
     "package": "./internal/web",
     "run": "^TestDisplayTimezoneAccountRoutesAndRendering$"
+  },
+  {
+    "name": "schema 12 deletes stored activity",
+    "file": "internal/store/store.go",
+    "before": "_, err := tx.Exec(\"DELETE FROM comfy_analytics_activity\")",
+    "after": "_, err := tx.Exec(\"SELECT 1\")",
+    "package": "./internal/store",
+    "run": "^TestSchema12DeletesStoredActivityRows$"
+  },
+  {
+    "name": "schema 12 tolerates a missing shared table",
+    "file": "internal/store/store.go",
+    "before": "\tif tables == 0 {\n\t\treturn nil\n\t}\n",
+    "after": "",
+    "package": "./internal/store",
+    "run": "^TestSchema12MigratesWithoutSharedActivityTable$"
+  },
+  {
+    "name": "snapshots accept the current schema",
+    "file": "internal/store/snapshot.go",
+    "before": "version > currentSchema {",
+    "after": "version > currentSchema-1 {",
+    "package": "./internal/store",
+    "run": "^TestSnapshotAcceptsSchema12$"
   }
 ]

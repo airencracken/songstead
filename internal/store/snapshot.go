@@ -25,9 +25,9 @@ func ValidateSnapshot(ctx context.Context, path string) error {
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
-	// Previous releases used schemas 3 and 4. Restore them unchanged; the
-	// server applies forward migrations on its next start.
-	if version != 3 && version != 4 && version != 5 && version != 6 && version != 7 && version != 8 && version != 9 && version != 10 && version != 11 {
+	// Restore older schemas unchanged; the server applies forward migrations
+	// on its next start.
+	if version < 3 || version > currentSchema {
 		return errors.New("snapshot schema does not match this binary")
 	}
 	var integrity string

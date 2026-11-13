@@ -1,3 +1,9 @@
+## Unreleased
+
+- Keep instance metrics to operational health. Sign-ins and recommendation opens
+  are no longer recorded per account or per item. Schema 12 deletes the records
+  kept by 0.15 and 0.16. Back up the stopped data directory before upgrading.
+
 ## 0.16.0
 
 Account settings now offer the same **Times and dates** control used across the

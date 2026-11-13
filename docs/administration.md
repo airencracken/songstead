@@ -91,6 +91,14 @@ revokes all sessions and consumes the link in one transaction. A local password
 change or suspension also invalidates outstanding recovery links. Members can
 change their own passwords from their account page using their current password.
 
+## Instance metrics
+
+**Admin → Metrics** shows operational health: member, recommendation, music link
+and comment totals, new recommendations in the past seven days, database size,
+backup status and configured connections. Songstead does not record who signs in
+or which recommendations people open, and it keeps no per-member or per-item
+rankings. Schema 12 deletes the sign-in and view records kept by 0.15 and 0.16.
+
 ## Identity and shared code
 
 Instance settings includes the site name, welcome message, house rules,

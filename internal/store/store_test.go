@@ -190,7 +190,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	if err != nil || user.ID != id {
 		t.Fatal("migration changed data")
 	}
-	if _, err := s.db.Exec("PRAGMA user_version=12"); err != nil {
+	if _, err := s.db.Exec("PRAGMA user_version=13"); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()
@@ -204,7 +204,7 @@ func TestMigrationRepeatabilityAndNewerSchema(t *testing.T) {
 	defer db.Close()
 	var version int
 	db.QueryRow("PRAGMA user_version").Scan(&version)
-	if version != 12 {
+	if version != 13 {
 		t.Fatal("modified newer schema")
 	}
 }

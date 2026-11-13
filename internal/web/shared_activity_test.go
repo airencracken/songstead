@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-func TestSharedSignInRecordsOnlySuccessfulActiveAccounts(t *testing.T) {
+func TestSharedSignInRecordsNoPerAccountActivity(t *testing.T) {
 	a, users := fixture(t)
 	request := httptest.NewRequest("GET", "http://example.test/auth/shared/callback", nil)
 	if _, err := a.sharedSignIn(httptest.NewRecorder(), request, users[0]); err != nil {
 		t.Fatal(err)
 	}
 	report, err := a.store.Analytics(t.Context(), time.Now())
-	if err != nil || report.Logins != 1 {
+	if err != nil || report.Logins != 0 || len(report.LoginsByAccount) != 0 {
 		t.Fatal(report, err)
 	}
 	if _, err = a.store.AnalyticsDB().Exec("UPDATE users SET suspended=1 WHERE id=?", users[0]); err != nil {
@@ -28,7 +28,7 @@ func TestSharedSignInRecordsOnlySuccessfulActiveAccounts(t *testing.T) {
 		t.Fatal("inactive account received a session")
 	}
 	report, err = a.store.Analytics(t.Context(), time.Now())
-	if err != nil || report.Logins != 1 {
+	if err != nil || report.Logins != 0 {
 		t.Fatal("inactive sign-in counted", report, err)
 	}
 }
