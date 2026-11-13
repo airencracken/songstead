@@ -1,5 +1,5 @@
 {{define "admin-nav"}}<nav class="admin-nav" aria-label="Administration"><a href="/admin/metrics">Metrics</a><a href="/admin/settings">Instance settings</a><a href="/admin/users">Accounts</a><a href="/invites">Invitations</a></nav>{{end}}
-{{define "secret-link"}}{{if .SecretURL}}<section class="comfy-admin-section panel secret-link" role="status"><h2>Copy this link now</h2><p>This is the only time it appears. Send it privately to the person it is for.</p><label>Private link<input type="text" readonly value="{{.SecretURL}}" autocomplete="off" data-comfy-copy></label></section>{{end}}{{end}}
+{{define "secret-link"}}{{if .SecretURL}}<section class="comfy-admin-section panel secret-link" role="status"><h2>Copy this link now</h2><p>This is the only time it appears. Send it privately to the person it is for.</p><label for="secret-link">Private link</label><input id="secret-link" type="text" readonly value="{{.SecretURL}}" autocomplete="off" data-comfy-copy></section>{{end}}{{end}}
 {{define "settings"}}{{template "admin-nav" .}}<h1>Instance settings</h1><p class="intro">Name your place, choose how people join and connect Witmoot. Changes apply when you save.</p>
 
 <section class="comfy-admin-section panel stack" aria-labelledby="backup-heading"><h2 id="backup-heading">Automatic backups</h2>

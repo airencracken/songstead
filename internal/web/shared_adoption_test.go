@@ -3,7 +3,9 @@ package web
 
 import (
 	"bytes"
+	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -42,11 +44,18 @@ func TestPasswordFormsExplainTheRule(t *testing.T) {
 	}
 }
 
+// suite.js moves a copy input into its own row, so each one needs an explicit
+// label, not a wrapping one.
 func TestOneTimeLinksGetCopyButtons(t *testing.T) {
-	_, _, owner := ownerBrowser(t)
+	_, users, owner := ownerBrowser(t)
+	copyInput := regexp.MustCompile(`<input id="([a-z-]+)"[^>]*data-comfy-copy`)
 	w := owner.request("POST", "/invites", url.Values{"max_uses": {"1"}, "days": {"7"}})
-	if !strings.Contains(w.Body.String(), `id="invitation-link" readonly`) || !strings.Contains(w.Body.String(), "data-comfy-copy") {
-		t.Fatal("invitation link has no copy button")
+	reset := owner.request("POST", fmt.Sprintf("/admin/users/%d/reset", users[1]), nil)
+	for name, body := range map[string]string{"invitation": w.Body.String(), "recovery": reset.Body.String()} {
+		match := copyInput.FindStringSubmatch(body)
+		if match == nil || !strings.Contains(body, `<label for="`+match[1]+`">`) {
+			t.Fatalf("%s link lacks a labelled copy input", name)
+		}
 	}
 }
 
