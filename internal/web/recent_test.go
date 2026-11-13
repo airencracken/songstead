@@ -23,7 +23,7 @@ func TestRecentAudienceBrowserFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := alice.request("GET", "/recommendations/new", nil)
-	for _, text := range []string{`name="audience"`, `value="members" selected`, `value="person:` + strconv.FormatInt(u[1], 10) + `"`, `value="group:` + strconv.FormatInt(group, 10) + `"`, "never appear in Recent"} {
+	for _, text := range []string{`name="audience"`, `value="members" selected`, `value="person:` + strconv.FormatInt(u[1], 10) + `"`, `value="group:` + strconv.FormatInt(group, 10) + `"`, "stays out of Recent"} {
 		if w.Code != 200 || !strings.Contains(w.Body.String(), text) {
 			t.Fatal("native audience form missing choice/help", text, w.Code, w.Body.String())
 		}
@@ -54,7 +54,7 @@ func TestRecentAudienceBrowserFlow(t *testing.T) {
 			}
 		}
 	}
-	if w := carol.request("GET", sharedPath, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "shared this with everyone here") || !strings.Contains(w.Body.String(), "Comments are visible to everyone signed in here") {
+	if w := carol.request("GET", sharedPath, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "shared this with everyone here") || !strings.Contains(w.Body.String(), "Everyone signed in here can read these comments") {
 		t.Fatal("shared discussion audience unclear", w.Code, w.Body.String())
 	}
 	if w := carol.request("POST", sharedPath+"/comments", url.Values{"body": {"A shared comment"}}); w.Code != 303 {

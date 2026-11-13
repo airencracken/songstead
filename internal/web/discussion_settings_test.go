@@ -40,7 +40,7 @@ func TestDiscussionLocationHTTPContractsAndHistory(t *testing.T) {
 		if strings.Contains(body, `>Add comment</button>`) != (mode != "witmoot") || strings.Contains(body, `>Prepare a Witmoot discussion</button>`) != (mode != "songstead") {
 			t.Fatal("wrong discussion actions", mode, body)
 		}
-		if mode != "songstead" && (!strings.Contains(body, "separate Witmoot account") || !strings.Contains(body, "Ask your host for an invitation")) {
+		if mode != "songstead" && (!strings.Contains(body, "Witmoot needs its own account") || !strings.Contains(body, "Ask your host for an invitation")) {
 			t.Fatal("account requirement missing", mode)
 		}
 		w = member.request("POST", path+"/comments", url.Values{"body": {"A member without a Witmoot account"}})
@@ -56,7 +56,7 @@ func TestDiscussionLocationHTTPContractsAndHistory(t *testing.T) {
 		if mode == "songstead" {
 			want = http.StatusForbidden
 		}
-		if w.Code != want || (mode != "songstead" && (strings.Contains(w.Body.String(), "Private recommendation provenance") || !strings.Contains(w.Body.String(), "A separate Witmoot account is required"))) {
+		if w.Code != want || (mode != "songstead" && (strings.Contains(w.Body.String(), "Private recommendation provenance") || !strings.Contains(w.Body.String(), "Witmoot needs its own account"))) {
 			t.Fatal("handoff mode or privacy", mode, w.Code, w.Body.String())
 		}
 		// Policy cannot grant a member access to someone else's private discussion.

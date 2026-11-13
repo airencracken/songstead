@@ -36,10 +36,6 @@
 - Replace the local OpenID Connect protocol adapter with the separately versioned
   Comfylib OIDC module 0.1.0. Existing local session and permission hooks remain
   application-owned.
-- Run service configuration, deployment, release, artifact scanning, mutation and
-  container checks directly from the pinned shared module. Retain application
-  configuration and both existing backup/restore lifecycle profiles.
-- Add integration tests that verify shared asset routes and exact published bytes.
 
 This maintenance release adds no application database migration or new default
 integration. Back up your data before upgrading. When upgrading from older
@@ -48,8 +44,7 @@ versions, follow the earlier release notes for any migrations you have not run.
 ## 0.13.1
 
 - Forward optional app navigation and community sign-in settings through OpenRC
-  and Docker Compose. Native templates document disabled defaults. Regression
-  tests check literal values and reject missing service exports.
+  and Docker Compose. Native templates document disabled defaults.
 
 ## 0.13.0
 
@@ -70,9 +65,8 @@ versions, follow the earlier release notes for any migrations you have not run.
 
 Read [Suite integration](docs/suite.md) for configuration and security boundaries.
 Back up the stopped data directory before upgrading. Shared sign-in creates an
-additive identity-binding table when configured. Keep the pre-upgrade backup;
-use it when returning to older binaries rather than opening a migrated database
-with an older application. Publishing a release does not change running services.
+additive identity-binding table when configured. Keep the pre-upgrade backup
+for a downgrade.
 
 This release applies schema 11 (`011_search_index.sql`) at startup. Allow time
 for the initial search index build on large libraries. Account export format 6
@@ -83,8 +77,6 @@ and existing song likes, listening history, comments and audiences are preserved
 - Standardize shipped service configs and documented environment examples on
   `KEY="value"`, including numbers, booleans, and empty values.
 - Identify the service manager and installed config path in every template.
-- Check source and generated package configs, literal quoting, and OpenRC
-  environment inheritance during `make check`.
 - Pass ordinary backup override assignments to the OpenRC service process.
 
 Existing configuration values remain supported and local files are preserved.
@@ -102,8 +94,6 @@ No database migration is introduced.
 ## 0.11.3
 
 - Use published Comfylib v0.1.7 for invitation/account styles and availability.
-- Share invitation browser checks with the companion apps.
-- Verify shared static routes, stylesheet order, and inclusive invitation expiry.
 - Wrap long backup directory names on mobile settings pages.
 - Preserve schema 10 and account export format 6.
 
@@ -112,15 +102,12 @@ No database migration is introduced.
 - Align invitation and account screens with Imvault and Witmoot.
 - Remove decorative eyebrow labels and retain sharing context as ordinary text.
 - Show invitation availability and preserve drafts after validation errors.
-- Add responsive, accessibility, keyboard, and no-JavaScript regression checks.
-- Prime module dependencies before running offline design mutations.
 - Preserve schema 10 and account export format 6.
 
 ## 0.11.1
 
 - Publish tested amd64 and arm64 images to GitHub Container Registry.
 - Add a non-root container, hardened Compose setup, and upgrade/restore guide.
-- Gate publication on native image lifecycle and registry atomicity tests.
 - Preserve schema 10 and account export format 6.
 
 ## 0.11.0
@@ -222,7 +209,6 @@ See [automatic backups](docs/automatic-backups.md). No new schema migration.
 ## 0.2.1
 
 - Disable terminal echo before displaying either password prompt using Comfylib 0.1.3.
-- Verify prompt-time terminal state and terminal restoration with real pseudo-terminal tests.
 
 ## 0.2.0
 
@@ -234,7 +220,6 @@ See [automatic backups](docs/automatic-backups.md). No new schema migration.
 - Add explicit local `set-role` for upgrading an existing member to owner.
 - Share password confirmation, image normalization and the mutation engine through Comfylib 0.1.2.
 - Preserve schema 3/4 backups, existing accounts and sessions, and all music privacy boundaries.
-- Verify administration with store, HTTP, schema, property, atomicity, adversarial, mutation and Chromium accessibility tests.
 
 ## 0.1.2
 
@@ -249,7 +234,6 @@ See [automatic backups](docs/automatic-backups.md). No new schema migration.
 - Add `songstead sandbox` and `sandbox --check` using Comfylib's Bubblewrap service policy.
 - Add OpenRC opt-in configuration and a systemd drop-in. Sandbox failures stop startup.
 - Keep only the private data directory writable on the host, strip unrelated inherited settings, and disable nested user namespaces.
-- Require real sandbox lifecycle and filesystem boundary tests in CI and release validation.
 
 ## 0.1.0
 

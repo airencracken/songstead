@@ -1,14 +1,13 @@
 # Run Songstead with Docker
 
-Published images are available at `ghcr.io/airencracken/songstead:v0.14.0` for
-Linux amd64 and arm64. Docker selects the matching architecture. Images contain
-the same version-stamped static binary as the native release, CA certificates,
-timezone data, and zstd for automatic backups.
+Images are published at `ghcr.io/airencracken/songstead:v0.16.0` for Linux
+amd64 and arm64. They hold the same static binary as the native release, plus
+CA certificates, timezone data and zstd for automatic backups.
 
 ## Start an instance
 
-Download `docker-compose.yml` from the matching release's source archive or
-repository tag, then run from its directory:
+Download `docker-compose.yml` from the release's source archive or tag, then
+run from its directory:
 
 ```sh
 docker compose pull
@@ -16,39 +15,34 @@ docker compose up -d
 docker compose exec songstead create-owner --username owner --password-prompt
 ```
 
-Open `http://localhost:8083`. The example publishes only on host loopback.
-For access from another computer, configure a reverse proxy and set
-`SONGSTEAD_BASE_URL` to your public HTTPS origin. HTTPS base URLs enable secure
-cookies. Trust only the proxy's actual container or host network address in
-`SONGSTEAD_TRUSTED_PROXIES`; loopback inside a container refers to that container.
-Each app runs independently; companion app URLs are optional.
+Open `http://localhost:8083`. The example listens only on host loopback. To
+reach it from another computer, put a reverse proxy in front and set
+`SONGSTEAD_BASE_URL` to your public HTTPS address; HTTPS addresses turn on
+secure cookies. List the proxy's container or host address in
+`SONGSTEAD_TRUSTED_PROXIES`. Loopback inside a container means that container.
 
-The process runs as UID/GID `10001:10001`, with a read-only root filesystem,
-no Linux capabilities, and bounded writable `/tmp`. The named data volume is
-private, mode `0700`, and survives container replacement. Bind mounts require
-you to create the directory with ownership `10001:10001` and mode `0700` first.
-Do not use `docker compose down -v` unless you intend to delete the data.
-The image healthcheck probes `/healthz` using the port in `SONGSTEAD_ADDR`.
-Override the probe if you bind to a specific non-loopback address.
+The process runs as UID/GID `10001:10001` with a read-only root filesystem and
+no Linux capabilities. The named data volume is private and survives container
+replacement. For a bind mount, create the directory first with owner
+`10001:10001` and mode `0700`. `docker compose down -v` deletes your data.
+The healthcheck probes `/healthz` on the port in `SONGSTEAD_ADDR`.
 
-Set `SONGSTEAD_IMAGE` in `.env` to choose an explicit version or digest:
+Pin a version or digest in `.env`:
 
 ```dotenv
-SONGSTEAD_IMAGE="ghcr.io/airencracken/songstead:v0.14.0"
+SONGSTEAD_IMAGE="ghcr.io/airencracken/songstead:v0.16.0"
 ```
 
-For a digest pin, use the registry's full multi-platform index digest, such as
-`ghcr.io/airencracken/songstead@sha256:...`, obtained with
-`docker buildx imagetools inspect ghcr.io/airencracken/songstead:v0.14.0`.
-Exact version tags are preserved. We publish no moving `latest`, major, or minor
-aliases, so pulling an image never opts you into a later database migration.
+For a digest, use the multi-platform index digest from
+`docker buildx imagetools inspect ghcr.io/airencracken/songstead:v0.16.0`.
+There is no `latest` or moving minor tag, so a pull never starts a database
+migration you did not choose.
 
-## Back up, upgrade, and restore
+## Back up, upgrade and restore
 
-Automatic compressed backups live under `/data/backups` with bounded retention;
-see [automatic backups](automatic-backups.md). Copy backups off the Docker host.
-The following full-volume backup also preserves keys, uploaded files, and
-scheduling state. Stop the server before taking it:
+Automatic backups live under `/data/backups`; see
+[automatic backups](automatic-backups.md). Copy them off the host. For a
+full-volume backup, stop the server first:
 
 ```sh
 umask 077
@@ -56,15 +50,13 @@ docker compose stop songstead
 docker compose run --rm --no-deps -T --entrypoint tar songstead -C /data -cf - . > songstead-before-upgrade.tar
 ```
 
-Check that the backup command succeeded and keep the file private. Read the new
-release's migration notes, change `SONGSTEAD_IMAGE` to the desired exact version,
-then run `docker compose pull` and `docker compose up -d`. Check
-`docker compose ps` and `docker compose logs songstead` before resuming use.
+Check that it succeeded and keep the file private. Read the release notes, set
+`SONGSTEAD_IMAGE` to the new version, then run `docker compose pull` and
+`docker compose up -d`. Check `docker compose ps` and
+`docker compose logs songstead` before using it.
 
-A downgrade requires the matching pre-upgrade data backup as well as the old
-image. Startup migrations are forward-only. To restore without destroying the
-current volume, stop the service and select a **new** named volume in a Compose
-override file:
+Migrations only go forward. To downgrade, you need the pre-upgrade backup and
+the old image. Restore into a **new** named volume with an override file:
 
 ```yaml
 # docker-compose.restore.yml
@@ -73,60 +65,36 @@ volumes:
     name: songstead-restored
 ```
 
-Choose the image version matching the backup in `.env`. From the same project
-directory, run:
+Set the image version that matches the backup in `.env`, then run:
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.restore.yml run --rm --no-deps -T --entrypoint tar songstead -C /data -xf - < songstead-before-upgrade.tar
 docker compose -f docker-compose.yml -f docker-compose.restore.yml up -d
 ```
 
-The destination volume must be new and empty. Keep using that override for
-subsequent Compose commands. Verify health, sign-in, and your data before deleting
-the original volume. Treat backup files as trusted private inputs.
+Keep using the override afterwards. Check health, sign-in and your data before
+deleting the old volume. Only restore backups you trust.
 
 ## Build locally
 
-A source checkout supports an explicit developer build:
-
 ```sh
-VERSION=0.14.0 docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
+VERSION=0.16.0 docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
 ```
 
-The override builds `songstead:local`; it does not fetch the published app image.
-Published images use `Dockerfile.release`, which packages verified native release
-artifacts. It does not compile source again.
+This builds `songstead:local` from source. Published images use
+`Dockerfile.release`, which packages the verified native release binaries.
 
 ## Release maintenance
 
-The release workflow builds native archives first. Both amd64 and arm64 images
-are tested on native runners for startup, routes, health checks, non-root volume
-permissions, graceful shutdown, compressed backups, restart persistence, a
-previous-release upgrade, full-volume restore, rollback with the old data, and
-adversarial configuration. Unit and mutation tests cover archive checksums,
-unsafe archives, metadata, and interrupted publication. Only after these checks
-pass does the workflow publish the exact saved images and assemble one combined
-version tag. PR and branch builds never publish.
-
-Publication uses the repository's `GITHUB_TOKEN` with `packages: write` only in
-the publisher. On the first release, GHCR initially creates a private package:
-open the account's **Packages → songstead → Package settings → Change visibility**
-and make it public. This is separate from repository visibility. The publisher
-verifies access with an empty Docker credential directory and fails until
-anonymous access works. Retry that failed publisher job after changing visibility;
-its saved artifacts are retained for seven days. Re-running the same artifacts is
-idempotent; a different image cannot overwrite an existing version tag.
-
-Update the pinned multi-platform Alpine and Go base digests through reviewed
-changes. Refresh runtime packages and run the lifecycle tests for each release.
-Security fixes to the runtime need a new patch version; do not replace an old
-tag. Candidate architecture tags support publication and are not deployment
-references. Keep the combined release tag and digest available for existing users.
-
-Local checks:
+For maintainers: the release workflow tests both architectures before it
+publishes the exact tested images under one version tag. Branch and pull request
+builds never publish. On the first release, GitHub creates a private package.
+Open **Packages → songstead → Package settings → Change visibility**, make it
+public, then rerun the failed publisher job within seven days. A version tag is
+never overwritten; ship runtime security fixes as a new patch release.
 
 ```sh
 make test-containers
-docker build --build-arg VERSION=0.14.0 -t songstead:local .
-make test-container-lifecycle VERSION=0.14.0
+docker build --build-arg VERSION=0.16.0 -t songstead:local .
+make test-container-lifecycle VERSION=0.16.0
 ```

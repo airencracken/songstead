@@ -231,7 +231,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     } else {
       await act(bobby.getByRole('button',{name:'Prepare a Witmoot discussion',exact:true}), 'click');
       await bobby.getByRole('heading',{name:'A discussion, if you like',exact:true}).waitFor();
-      check((await bobby.locator('main').innerText()).includes('A separate Witmoot account is required'),'Draft review explains separate identity');
+      check((await bobby.locator('main').innerText()).includes('Witmoot needs its own account'),'Draft review explains separate identity');
       check((await bobby.getByRole('link',{name:'Continue to Witmoot',exact:true}).getAttribute('href')).startsWith('https://boards.example.org/forum/share?'),'Handoff respects the configured Witmoot path');
     }
   }

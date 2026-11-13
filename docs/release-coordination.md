@@ -1,51 +1,33 @@
 # Coordinated suite releases
 
-These releases use the published Comfylib module and independent application
-accounts, databases and services. Configure the optional integrations only when
-wanted; upgrading does not enable shared sign-in or add app links automatically.
+This page is for maintainers releasing Songstead alongside the other Comfyware
+apps. Each app has its own accounts, database and service. Upgrading never turns
+on shared sign-in or adds app links; operators configure those in
+[Comfyware connections](suite.md).
 
-| Component | Version | Release |
-| --- | --- | --- |
-| Comfylib | 0.2.0 | [Shared library](https://github.com/airencracken/comfylib/releases/tag/v0.2.0) |
-| Songstead | 0.13.1 | [Binaries and source](https://github.com/airencracken/songstead/releases/tag/v0.13.1) |
-| Witmoot | 0.20.1 | [Binaries, Debian packages and source](https://github.com/airencracken/witmoot/releases/tag/v0.20.1) |
-| Imvault | 0.22.1 | [Binaries, Debian packages and source](https://github.com/airencracken/imvault/releases/tag/v0.22.1) |
-| Folkweave | 0.3.1 | [Binaries, Debian packages and source](https://github.com/airencracken/folkweave/releases/tag/v0.3.1) |
-| Tidings | 0.5.1 | [Binaries, Debian packages and source](https://github.com/airencracken/tidings/releases/tag/v0.5.1) |
+All five apps pin published Comfylib and Comfylib OIDC versions with checksum
+verification and `GOWORK=off`. Release builds never use a `go.work` file or
+local `replace` directives. For local work on Comfylib, use an untracked
+`go.work` with a sibling Comfylib worktree and keep it out of commits.
 
-All five apps pin Comfylib v0.2.0 with checksum database verification and
-`GOWORK=off`, without local replacements. Comfylib remains standard-library-only.
-Source builds require Go 1.26.11 or newer. Release workflows scan source and
-packaged executables and verify native artifacts before publication. Multi-platform
-container images must pass installation, upgrade, backup and restore checks before
-publication, including anonymous registry access.
+## Order of publication
 
-Shared controls preserve each app's palette. App menus use explicitly configured
-URLs. Community sign-in requires an existing local account to connect an identity;
-there is no automatic provisioning or email matching. Applications retain their
-own roles and permissions. See [suite integration](suite.md).
+1. Publish Comfylib.
+2. Publish each app's native release, then its container images. Images must
+   be pullable anonymously before the release is announced.
+3. Update the Comfyware Gentoo overlay from the published source archives.
+4. Update the website release catalog. Deploying the website is a separate step
+   on its host.
 
-Discussion returns preserve the author's source and destination audience checks.
-A source app saves a discussion link only after its signed-in author confirms a
-normal CSRF-protected form. Preparing a draft creates no thread, and posting a
-thread does not change an album or recommendation audience.
+Publishing changes no running service, DNS, proxy or user data.
 
-Back up the stopped data directory before upgrading. Songstead applies schema 11
-for the search index; large libraries need time for the first index build. Shared
-sign-in creates an additive identity-binding table when configured. Restore the
-matching pre-upgrade backup when downgrading. Account export format 6 is unchanged.
+## Upgrade notes for operators
 
-## Gentoo and website
+Back up the stopped data directory before upgrading. The current Songstead
+schema is 12. Schema 11 builds a search index on first start, which takes a
+while on large libraries. Schema 12 deletes per-account and per-item activity
+records. To downgrade, restore the matching pre-upgrade backup. Account export
+format 6 is unchanged.
 
-The Comfyware overlay uses each app's real published source archive and immutable
-Go dependency bundles. Manifests record the bytes of published distfiles. New
-recipes are published after their upstream application releases are available.
-The website release catalog is updated only after native releases and anonymously
-pullable container images are published.
-
-Repository publication does not change running services, DNS, proxies or user data.
-The website has a separate host deployment procedure (`git pull`, then
-`make deploy`); repository updates do not deploy it.
-
-Follow [installation](releases.md), [containers](containers.md), and
-[deployment](deployment.md) for the supported installation and upgrade procedures.
+See [installation](releases.md), [containers](containers.md) and
+[deployment](deployment.md).

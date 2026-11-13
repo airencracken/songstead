@@ -83,7 +83,7 @@ func (a *App) saveSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := a.store.SaveSettings(r.Context(), state(r).User.ID, &v); err != nil {
 		if errors.Is(err, store.ErrInvalid) {
-			a.render(w, r, 422, page{View: "settings", Title: "Instance settings", SettingsDraft: &v, Error: "Check the field lengths, joining mode, discussion location and HTTP(S) URLs. Witmoot or Both requires both app addresses. The Songstead address must be an origin without a path; URLs cannot contain credentials, a query or a fragment."})
+			a.render(w, r, 422, page{View: "settings", Title: "Instance settings", SettingsDraft: &v, Error: "Some settings need another look. Witmoot and Both need both addresses. The Songstead address cannot include a path, and no address can include a login, query or fragment."})
 			return
 		}
 		a.fail(w, r, err)

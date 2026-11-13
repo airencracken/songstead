@@ -1,22 +1,19 @@
 # Automatic backups
 
-Starting with Songstead 0.9.0, the running service creates a verified,
-compressed backup every 24 hours. No cron job or timer is required. The first
-attempt starts one minute after startup; later attempts use the last successful
-backup time, including across restarts. Failed attempts retry after 15 minutes.
-Shutdown cancels the worker and joins it before closing the database.
+The running service makes a verified, compressed backup every 24 hours. You do
+not need cron or a timer. The first attempt starts one minute after startup.
+Later attempts follow the last successful backup, across restarts. A failed
+attempt retries after 15 minutes.
 
-Backups live in the private `backups/` subdirectory of the configured data
-directory. Each completed snapshot directory contains `manifest.json` and
-`snapshot.tar.zst` when `zstd` is on the service's PATH, otherwise
-`snapshot.tar.gz`. Gzip is built into the app. Install zstd to use it in native
-or Bubblewrap services. A zstd execution failure is reported rather than
-silently substituting another compressor. Compression uses one worker thread.
+Backups go in `backups/` inside the data directory. Each snapshot directory holds
+`manifest.json` and `snapshot.tar.zst` when `zstd` is on the service's PATH, or
+`snapshot.tar.gz` otherwise. If zstd is installed but fails, the backup fails;
+Songstead does not switch to gzip.
 
-## Limits and scheduling
+## Limits
 
-Set these in `/etc/conf.d/songstead` for OpenRC or `/etc/songstead/songstead.env`
-for systemd, then restart the service:
+Set these in `/etc/conf.d/songstead` (OpenRC) or `/etc/songstead/songstead.env`
+(systemd), then restart:
 
 ```sh
 SONGSTEAD_BACKUP_INTERVAL="24h"
@@ -25,59 +22,35 @@ SONGSTEAD_BACKUP_MAX_BYTES="10737418240"
 SONGSTEAD_BACKUP_COPY_MAX_BYTES="5368709120"
 ```
 
-- Interval: 1 hour through 365 days; `0` disables automatic backups.
-- Copy count: 1 through 30, default 7.
-- Retained compressed archive data: default 10 GiB per app.
-- One uncompressed snapshot: default 5 GiB, checked before database copying
-  and while copying additional files. Oversized collections require a larger
-  explicit copy cap.
+- Interval: 1 hour to 365 days. `0` turns automatic backups off.
+- Copies kept: 1 to 30, default 7.
+- Total compressed archives: default 10 GiB.
+- One uncompressed snapshot: default 5 GiB.
 
-Rotation applies both count and archive byte limits and always keeps the
-snapshot just completed, even if the system clock moved backwards. A snapshot
-that cannot fit the archive cap is rejected without deleting existing backups.
-Manual backups, other apps' backups and pre-migration snapshots are untouched.
-A failed copy or compression leaves no completed snapshot and does not rotate
-older copies. After a crash, the next running service removes its reserved
-interrupted staging directories before creating another copy.
+Rotation keeps the newest snapshot and removes older ones to stay within both
+limits. A snapshot too large for the archive limit is rejected and nothing is
+deleted. Manual backups and pre-migration snapshots are never rotated. A failed
+backup leaves older copies alone. Leave free space for one uncompressed snapshot
+and its archive while a backup runs.
 
-The retained archive cap excludes small manifests and scheduling state. During
-a backup, allow additional disk space for one uncompressed snapshot and its
-new compressed archive; rotation happens after the new snapshot is complete.
-The copy cap is not a cap on the live app's storage. SQLite size is checked
-before snapshotting and the finished snapshot is checked again.
-
-Owners see enabled status, destination, caps, latest successful backup, latest
-error and next attempt on the existing instance settings page. Errors also go
-to the service log. Backup status and files are never public web routes.
-Automatic backups do not include service configuration or outside credentials;
-preserve those separately.
+Owners see the status, destination, limits, last success, last error and next
+attempt in **Admin → Instance settings**. Errors also go to the service log.
+Backups do not include service configuration; keep that separately.
 
 ## Recovery
 
-Keep a protected copy of completed snapshot directories on another machine.
-Local backups protect against mistakes, but share the live disk's failure
-risk. They contain passwords and private data.
+Copy completed snapshots to another machine. Local copies do not survive a lost
+disk, and they contain password hashes and private data.
 
-For a restore drill, compare the archive's `sha256sum` with the hash in
-`manifest.json`, create a new private extraction directory, and extract there:
+To test a restore, compare the archive's `sha256sum` with `manifest.json`, then
+extract into a new private directory:
 
 ```sh
 umask 077
 mkdir /private/restore-drill
 tar -xf /private/backups/SNAPSHOT/snapshot.tar.zst -C /private/restore-drill
-```
-
-Use `snapshot.tar.gz` for gzip copies. Extraction of zstd copies needs zstd
-installed. Extract only your trusted backups, and never over a running data
-directory.
-
-The database includes accounts, avatars, invitations, settings, music, private
-preferences, reactions and comments. Thumbnail artwork is a refetchable cache.
-Restore the extracted database with the existing command:
-
-```sh
 songstead restore --input /private/restore-drill/songstead.db --data-dir /private/songstead-restored
 ```
 
-The new data directory must be empty. Manual `backup --output FILE` remains
-available and is never rotated by the automatic worker.
+Use `snapshot.tar.gz` for gzip copies. Never extract over a running data
+directory. The restore target must be empty.

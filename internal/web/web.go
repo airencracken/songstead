@@ -704,7 +704,7 @@ func (a *App) recommend(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Validate before storage; unknown database failures stay server errors.
 		if errors.Is(err, store.ErrInvalid) {
-			p.Error = "Keep your note within 2,000 characters, title and artist within 160, genre within 80, and each of up to 20 tags within 40. Genre and tags use single-line names."
+			p.Error = "Keep your note under 2,000 characters, the title and artist under 160, the genre under 80, and up to 20 tags under 40 each, all on one line."
 		} else {
 			if _, parseErr := media.Parse(p.URL); parseErr != nil {
 				p.Error = parseErr.Error()
@@ -828,7 +828,7 @@ func (a *App) comment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !state(r).Settings.LocalComments() {
-		a.showDetail(w, r, id, http.StatusForbidden, "New comments are posted in Witmoot. A separate Witmoot account is required; ask your host for an invitation.")
+		a.showDetail(w, r, id, http.StatusForbidden, "New comments go to Witmoot, which needs its own account. Ask your host for an invitation.")
 		return
 	}
 	track, parseErr := parseOptionalID(r.PostForm.Get("recording"))

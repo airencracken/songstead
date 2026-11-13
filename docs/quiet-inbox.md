@@ -1,208 +1,110 @@
-# Music left for your people
+# How the inbox works
 
-Recommendations are gifts. There are no deadlines, streaks, completion counts,
-read receipts or reminders. The shelf uses arrival
-order and defaults to a music view. Person, group and individual recommendation
-views are filters over the same recommendations, not separate copies.
+Recommendations are gifts. There are no deadlines, streaks, unread counts, read
+receipts, reminders or rankings.
 
-A group creator chooses members and can change that membership. Current members
-can recommend music to the group and see its recommendations and comments;
-removal revokes that access. Joining grants access to the group's earlier music.
-Direct recommendations remain visible only to their sender and recipient.
+## Shelf, Recent and History
 
-Recent is the instance's shared shelf, newest first. The audience selector offers
-everyone here, one friend privately, or a group privately. Everyone here means
-accounts signed in on this installation; there is no anonymous feed. A shared
-recommendation's music, note and conversation are visible to those accounts.
-Private friend and group recommendations never appear in Recent, even for their
-participants, and a shared duplicate never reveals a private recommendation's
-note or conversation. Existing recommendations keep their audience on upgrade.
-Older forms that omit the new audience field still send privately.
+**Shelf** (`/shelf`) holds music friends and groups sent you, in the order it
+arrived. Old `/inbox` links still work.
 
-Shared posts do not fan out into personal shelves. Your history includes your direct and
-group gifts, shared posts you wrote, and shared music you chose to organize or
-comment on. Merely opening a shared recommendation records no participation.
-Recent defaults to one card per matching music URL, keeping a dated entry for
-every recommendation with its sender, note, audience and conversation link.
-The shelf and history use the same music view; **Each recommendation** remains
-available under More filters. There are no badges, unread
-counts, automatic refresh, reminders or ranking.
+**Recent** shows posts shared with everyone on this instance, newest first. Only
+signed-in members can see it. A shared post's music, note and conversation are
+visible to all of them. Private sends never appear in Recent, and a shared copy
+of the same song never reveals a private send's note or conversation.
 
-The personal view is Your shelf at `/shelf`. Existing `/inbox` links and filters
-remain supported, with the same audience rules, but new navigation uses Shelf.
+**History** holds your direct and group gifts, shared posts you wrote, and
+shared music you organized or commented on. Opening a shared post does not add
+it.
 
-Music identity is conservative: recognized YouTube video IDs and Spotify
-track/album/artist IDs are shared across their provider URL variants. Other URLs
-share identity only when their normalized URLs match; fragments are ignored.
-Songstead does not guess that recordings on different providers are identical.
-Each recommendation retains its original URL, sender, note and group context.
-The default music view paginates music identities and retains all matching
-recommendation contexts for each displayed identity.
+When sharing, choose everyone here, one friend or a group. Group members can
+share with the group and see its music and comments, including music from before
+they joined. Removing someone ends their access. Direct sends stay between the
+sender and recipient.
 
-Saved, explored, listened and dismissed are optional, private organization.
-Unheard and revisit remain accepted for existing clients. Organization applies
-to a person's music identity; personal notes stay with each recommendation.
-Nobody else's state appears in a recipient's view.
+## Browsing
 
-**Like song** and **Unlike song** change your private song like across matching
-URLs. **Liked songs** filters your shelf, Recent or history; your shelf's liked
-view also includes shared songs you liked. Likes have no public counts, rankings
-or notifications and do not change listening status. Saving notes or reposting
-a song preserves its like. Schema 9 carries over existing feedback: the latest
-private recommendation rating determines the initial song like, with positive
-ratings becoming liked songs. Original ratings and notes remain in account
-exports; export format 6 also records your song likes.
-Posting a recommendation marks that music as listened for its sender, including
-when it was already saved under another recommendation or provider URL variant.
-Recipients keep their own status, and ratings and personal notes stay unchanged.
-You can change your listening status again after posting. A failed post leaves
-your status unchanged.
+Every list starts in the music view: one card per song, with each
+recommendation's sender, note and date underneath. **More filters** lets you
+view by person, group or each recommendation, and filter by kind, person, group
+or listening status. Choose **List** or **Tiles**; both show artwork. Genre and
+tag buttons match exact names, ignoring case. Pages keep your filters.
 
-# Timestamp annotations
+Songstead treats links as the same song when they share a YouTube video ID or
+Spotify track, album or artist ID, or when the cleaned-up URLs match. It never
+guesses that recordings on different services are the same.
 
-Comments recognize complete `m:ss` and `h:mm:ss` tokens, with seconds and the
-middle minutes in the range 00–59. Multiple references are stored individually
-as recording IDs, second offsets and byte spans. Invalid tokens stay prose;
-positions beyond a known duration do not become markers. Unknown durations allow
-references up to 24 hours. Clock times may be ambiguous: timestamps belong to
-the recording selected for the comment, rather than being inferred from prose.
+## Your own listening
 
-A recognized track has an automatic recording. Identify an album track by its
-URL and title, optionally entering its duration, then select that recording
-when commenting. Album or artist comments with valid timestamp tokens and no
-recording are rejected rather than linked to an arbitrary track. One comment's
-references belong to its selected recording; use separate comments when
-referring to several album tracks. Changes cannot shorten a duration below an
-already stored reference. A known duration yields a proportional interactive
-SVG timeline; offset links also work without JavaScript or a known duration.
+Listening status (saved, explored, listened, dismissed, unheard, revisit later)
+is private and follows the song across recommendations. Personal notes stay
+with one recommendation. Posting a recommendation marks it listened for you;
+you can change that afterwards.
 
-Choose **Your settings → Spoiler preferences** to set the account-wide mode:
-immediate, spoiler-free or hidden. The same selector on a recommendation updates
-this global preference, and both forms confirm a successful save.
-Spoiler-free comments appear only after your manually indicated position reaches
-all their references. Hidden comments require an explicit reveal for that view.
-Concealed comment bodies are excluded from the HTML, not hidden with CSS.
-Unmarked prose remains visible in every mode. References are not inferred as
-spoilers for an album when the recording was never identified.
+**Like song** saves a private like that follows the song across matching links.
+**Liked songs** filters your shelf, Recent or History. Likes have no counts and
+do not change your listening status.
 
-Playback links and the optional YouTube iframe have no position reporting.
-Setting a position never marks music listened or reports your position to
-another account. There is no streaming account connection or playback telemetry.
+## Genres, tags and discovery
 
-# Explicit Witmoot discussions
+The sender can add a genre (up to 80 characters) and up to 20 comma-separated
+tags (up to 40 characters each), when sharing or later from **Genre & tags**.
+Labels follow the recommendation's audience; labels on a private send stay with
+that send.
 
-Owners choose Songstead, Witmoot or Both under **Admin → Instance settings →
-Discussion location**. Songstead and Both allow local comments without a Witmoot
-account. Witmoot replaces the comment form while preserving earlier comments;
-new comment writes are blocked in the same transaction as timestamp writes.
-Witmoot posting requires a separate account and no API key.
+In **Your settings → Discovery preferences**, list genres and tags to hide from
+Recent or bring to the top. Hiding wins over favorites. Unlabeled music stays
+visible. **For you** applies your preferences; **All music** shows everything.
+Preferences never hide anything from your shelf or history.
 
-Owners set the public Songstead origin (for example `https://music.example.org`)
-and optional Witmoot address in **Admin → Instance settings**. Changes apply
-immediately. Witmoot may use a path prefix; the public Songstead address is an
-origin without a path. URLs cannot contain credentials, queries or fragments.
-`SONGSTEAD_BASE_URL` and `SONGSTEAD_WITMOOT_URL` remain service defaults; restart
-after changing those defaults. Saved settings take precedence, including the discussion mode. Choose Songstead to disable handoffs and clear
-the Witmoot address.
+## Timestamped comments
 
-Prepare a discussion from a recommendation. A local review page leads to
-Witmoot's `/share` draft chooser, where you select a board or existing topic.
-The handoff carries the music title, artist, provider link and source link;
-friend notes, group provenance and private reactions are not copied. Witmoot
-requires sign-in and its normal CSRF-protected posting action. Sign in to
-Witmoot first, or reopen the source handoff after signing in.
+Comments recognize `m:ss` and `h:mm:ss` times, such as `2:43`. A track has a
+recording automatically. For an album, identify the track by its link and title,
+optionally with its duration, and choose it when commenting. Use one comment per
+album track. A known duration adds a clickable timeline; timestamp links work
+without it.
 
-You can also paste a recommendation URL into any existing Witmoot message.
-Witmoot displays a small source reference, and plain links work even in older
-Witmoot versions. The Songstead source still requires its own sign-in and
-recommendation permission. Songstead never exposes an unauthenticated metadata
-endpoint and never automatically creates a discussion.
+**Your settings → Spoiler preferences** sets one mode for everything. The
+**Spoiler settings** disclosure on a recommendation changes the same setting.
 
-Keep an existing discussion URL from the recommendation page. Links are private
-to the person saving them, shared across that person's matching music. They
-are not fetched or verified; an unavailable discussion leaves the music usable.
-To remove a link, choose Remove beside it. An unavailable Witmoot instance has
-no effect on Songstead startup, comments, listening links or organization.
+- **Show immediately**: all comments appear.
+- **Spoiler-free**: a timestamped comment appears once the position you set
+  passes its latest timestamp.
+- **Hidden**: timestamped comments appear when you choose to reveal them.
 
-# Labels, artwork and discovery
+Hidden comments are left out of the page entirely. Comments without timestamps
+always show. Songstead never tracks playback, and setting a position tells
+nobody else anything.
 
-A sender can add a freeform genre (80 characters) and up to 20 comma-separated
-tags (40 characters each), during sharing or from **Genre & tags** on their
-recommendation. Names are single-line, trimmed and deduplicated without case
-sensitivity. Descriptions follow each recommendation's audience and only its
-sender can edit them. Labels on a private send stay within that send, including
-when the same provider recording appears in another recommendation.
+## Witmoot discussions
 
-Recent defaults to **List** with compact covers. Choose **Tiles** for larger artwork cards;
-filters, audiences, grouping and pagination work in either layout. Shelf and
-History also offer both layouts. Genre and tag filters match exact names without
-case sensitivity. Pagination preserves the current layout and filters.
+Depending on the owner's setting, you comment here, in Witmoot, or either.
+Posting in Witmoot needs a separate Witmoot account.
 
-In **Your settings → Discovery preferences**, list genres and tags to exclude or
-prefer. These preferences are private, persisted per account and included in
-your export. They apply to Recent: an exclusion hides a matching recommendation
-from that view, even when another label is a favorite. Remaining favorites come
-first, then other music; each tier uses newest-first order. Unlabeled music stays
-visible. A preference neither changes access nor removes music from your shelf
-or history. Choose **All music** to temporarily bypass exclusions
-and favorites; clear preference fields and save to remove them permanently.
+**Prepare a Witmoot discussion** opens a review page, then Witmoot's draft
+chooser, where you pick a board or topic. The draft carries the title, artist,
+music link and a link back here. Friends' notes, group names and your listening
+notes stay in Songstead. Sign in to Witmoot first if it asks.
 
-YouTube, Spotify track/album/artist links and SoundCloud track/set links use
-public oEmbed metadata without account credentials. Provider HTML is ignored.
-The worker only contacts fixed provider/CDN hosts, validates DNS answers and
-refuses redirects and private destinations. Small PNG/JPEG/GIF images are
-normalized by Comfylib and cached as PNG inside the database. Thumbnail routes
-require the recommendation's current access permissions. No provider image
-request comes from the listener's browser. The optional YouTube player remains
-a separate, explicit provider embed.
+You can paste a recommendation link into any Witmoot message; opening it still
+needs Songstead access. Save a discussion link on a recommendation to find it
+later. Saved links are private to you, are never fetched, and you can remove
+them at any time. Songstead keeps working when Witmoot is down.
 
-Missing artwork has a jukebox fallback. Text survives artwork failures, which
-retry at most three times. Unsupported links are saved without fetching them.
-Upgrading to schema 6 queues existing supported links for artwork; manual titles
-and artists stay intact. Back up before upgrading; an older binary cannot use
-the new schema.
+## Previews, artwork and pictures
 
-Listening saves confirm beside the form and keep invalid drafts for correction.
-Export format 3 adds accessible labels and the exporting user's own discovery
-preferences. It never includes another user's preferences or private feedback.
+Pasting a YouTube, Spotify or SoundCloud link previews its title, artist and
+artwork. You can always edit the details or share without a preview. Artwork is
+fetched by the server and cached, so your browser never contacts the music
+service for images. Missing artwork shows the jukebox. The optional YouTube
+player loads only when you open it.
 
-## Browsing controls and your settings
+Profile pictures can be PNG, JPEG or GIF, up to 2 MB and 512 by 512 pixels,
+with up to 64 frames for animated GIFs. Members see them only when signed in.
+Turn off animation in Your settings; browsers that prefer reduced motion get the
+still version.
 
-Choose List or Tiles to change the layout immediately; both include locally cached
-artwork. For you uses your private exclusions and favorites, while All music
-browses everything shared here in newest-first order. Genre and tag buttons
-filter immediately. Open More filters to choose music kind, person, group or
-listening status, then Apply filters. These controls preserve applied choices.
-
-Open **Your settings** in the top navigation, or visit `/account`. Shortcuts on
-that page lead to your profile picture and animation preference, spoilers,
-genre/tag discovery preferences, password and history export. Instance owners
-configure their service separately through Admin.
-
-## Link previews and profile pictures
-
-The authenticated compose form previews YouTube, Spotify and SoundCloud links
-after a short pause. Provider responses supply text and locally normalized PNG
-bytes; provider HTML is never rendered. A failed or unsupported preview leaves
-sharing available. Manual title and artist edits take precedence. After saving,
-artwork refreshes without reloading the listening or comment forms. A retry
-button requeues an accessible supported link. Preview requests and retries are
-limited per account; fetch destinations retain their fixed provider allowlist.
-
-Schema 7 stores account pictures and a viewer animation preference. Upgrading
-also requeues supported links with missing artwork, leaving cached artwork alone.
-PNG, JPEG and GIF uploads are limited to 2 MiB and 512 by 512 pixels; animated GIFs
-are limited to 64 frames. Comfylib re-encodes both GIF animation and a PNG still.
-Pictures are visible only to signed-in members. Disabling animation makes the
-authenticated picture route serve PNG; reduced-motion browsers request PNG too.
-Account export format 4 includes only the exporting user's picture and preference.
-
-Public Open Graph metadata describes the instance, not a particular song, note or
-person. Signal and Slack preview the login page after following an unauthenticated
-recommendation redirect. Set the public base URL in Admin for stable absolute
-artwork URLs; otherwise the card uses the request origin. A song-specific public
-card would require a separate explicit public-sharing feature.
-
-The optional YouTube player uses `strict-origin-when-cross-origin` on the iframe
-so YouTube receives the instance origin, but never the recommendation path.
-Ordinary external music links still suppress their referrer and open a new tab.
+Links shared to chat apps show the instance name and jukebox, never a song,
+note or person. Music links open in a new tab without sending where you came
+from.

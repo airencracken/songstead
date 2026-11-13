@@ -18,15 +18,15 @@ import (
 )
 
 var commandDescriptions = map[string]string{
-	"setup":        "Show the private setup key for the browser first-owner page.",
-	"sandbox":      "Start the server confined by Bubblewrap, or verify isolation with --check.",
-	"serve":        "Start the HTTP server. Configuration uses SONGSTEAD_* environment variables.",
-	"create-owner": "Create a new owner locally. Existing accounts are never promoted or changed.",
-	"create-user":  "Create a new member locally. Existing accounts are never changed.",
-	"set-password": "Replace an account's password and revoke all its sessions.",
-	"set-role":     "Explicitly change an existing account role; keep at least one active owner.",
-	"list-users":   "List local account IDs, usernames, and roles. Password hashes are never shown.",
-	"backup":       "Save a consistent SQLite snapshot to a new file.",
+	"setup":        "Print the private key for the first-owner setup page.",
+	"sandbox":      "Start the server inside Bubblewrap, or test the confinement with --check.",
+	"serve":        "Start the server. Settings come from SONGSTEAD_* environment variables.",
+	"create-owner": "Create a new owner. Existing accounts are never changed.",
+	"create-user":  "Create a new member. Existing accounts are never changed.",
+	"set-password": "Set a new password and sign the account out everywhere.",
+	"set-role":     "Change an account's role. At least one active owner must remain.",
+	"list-users":   "List account IDs, usernames and roles.",
+	"backup":       "Save a snapshot of the database to a new file.",
 	"restore":      "Restore a snapshot into a new, empty data directory.",
 }
 

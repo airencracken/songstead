@@ -62,18 +62,17 @@ Usage:
   songstead --version
   songstead help [COMMAND]
 
-With no command, starts the server. Joining is invitation-only by default; owners configure it in /admin/settings.
-Password commands use a hidden, confirmed terminal prompt or read one line from stdin.
-create-owner creates a new owner; existing accounts are never promoted or changed.
-set-password revokes all sessions. list-users prints account IDs, names, and roles.
-Account and backup commands discover the installed service's data directory unless
---data-dir or SONGSTEAD_DATA_DIR is set. Root invocations run as the service user.
+With no command, starts the server.
+Password commands prompt twice without echo, or read one line from stdin or a file.
+Account and backup commands find the installed service's data directory unless
+--data-dir or SONGSTEAD_DATA_DIR is set. Run as root, they switch to the service user.
 Service settings: /etc/conf.d/songstead (OpenRC), /etc/songstead/songstead.env (systemd).
-Built-in backups: SONGSTEAD_BACKUP_INTERVAL (24h; 0 disables), SONGSTEAD_BACKUP_KEEP (7),
-SONGSTEAD_BACKUP_MAX_BYTES (10 GiB), SONGSTEAD_BACKUP_COPY_MAX_BYTES (5 GiB).
-Environment: SONGSTEAD_DATA_DIR, SONGSTEAD_ADDR, SONGSTEAD_SECURE_COOKIES,
-SONGSTEAD_TRUSTED_PROXIES (comma-separated proxy IPs or CIDRs),
-SONGSTEAD_BASE_URL, SONGSTEAD_WITMOOT_URL (optional discussion handoffs), SONGSTEAD_BWRAP.
+
+Environment:
+  SONGSTEAD_DATA_DIR, SONGSTEAD_ADDR, SONGSTEAD_BASE_URL, SONGSTEAD_WITMOOT_URL,
+  SONGSTEAD_SECURE_COOKIES, SONGSTEAD_TRUSTED_PROXIES (proxy IPs or CIDRs), SONGSTEAD_BWRAP
+  SONGSTEAD_BACKUP_INTERVAL (24h; 0 disables), SONGSTEAD_BACKUP_KEEP (7),
+  SONGSTEAD_BACKUP_MAX_BYTES (10 GiB), SONGSTEAD_BACKUP_COPY_MAX_BYTES (5 GiB)
 `
 
 func envDefault(key, fallback string) string {

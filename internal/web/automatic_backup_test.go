@@ -19,7 +19,7 @@ func TestBackupStatusIsOwnerOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := owner.request("GET", "/admin/settings", nil)
-	if w.Code != 200 || !strings.Contains(w.Body.String(), "Automatic backups") || !strings.Contains(w.Body.String(), cfg.Directory) || !strings.Contains(w.Body.String(), "No automatic backup has succeeded") {
+	if w.Code != 200 || !strings.Contains(w.Body.String(), "Automatic backups") || !strings.Contains(w.Body.String(), cfg.Directory) || !strings.Contains(w.Body.String(), "No backup has finished yet") {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	member := login(t, a, "alice")
