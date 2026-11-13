@@ -1,10 +1,29 @@
 # Changelog
 
-## Unreleased
+## 0.17.0
 
-- Keep instance metrics to operational health. Sign-ins and recommendation opens
-  are no longer recorded per account or per item. Schema 12 deletes the records
-  kept by 0.15 and 0.16. Back up the stopped data directory before upgrading.
+- A calmer shelf and recommendation page: shorter explanations, one link for
+  each place, spoiler settings tucked away, and pages that keep every filter.
+- Pick System, Light or Dark and a color palette from the Account menu. Owners
+  choose the site palette under **Site colors**: Sage (the default) or Slate.
+- Errors now show a plain page inside Songstead instead of bare text.
+- Password and upload messages say what to change ("Use a shorter password.",
+  "up to 2.1 MB") instead of naming bytes.
+- Invitation and recovery links get a Copy link button.
+
+### For owners and operators
+
+- **Admin → Metrics** shows site health only: requests, error rate, response
+  times per route, data served, failed sign-ins, refused attempts and rejected
+  links. Songstead no longer records who signs in or which recommendations
+  people open.
+- Schema 12 deletes the per-account sign-in and per-recommendation view records
+  kept by 0.15 and 0.16. Back up the stopped data directory before upgrading and
+  keep it for a downgrade.
+- A failed automatic backup shows a short notice on the dashboard; the details
+  stay in the server log.
+- Uses Comfylib 0.7.0 for metrics, palettes, theme script, error pages, the
+  password rule and copy buttons. `make check` also runs `check-docs`.
 
 ## 0.16.0
 
