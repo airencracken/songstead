@@ -859,7 +859,7 @@
     "name": "upload copy names the binary limit",
     "file": "internal/web/web.go",
     "before": "return ui.Size(brandimage.MaxBytes) },",
-    "after": "return \"2.1 MB\" },",
+    "after": "return ui.Size(brandimage.MaxBytes / 2) },",
     "package": "./internal/web",
     "run": "^TestUploadLimitCopyMatchesTheLimit$"
   }
