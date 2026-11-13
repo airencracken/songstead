@@ -66,22 +66,26 @@ func TestStylesheetHasNoPatchedOverrides(t *testing.T) {
 	}
 }
 
-// Comfylib's shared pages read --comfy-* tokens. Songstead defines them with a
-// selector that outranks the defaults in components.css.
-func TestStylesheetDefinesSharedTokens(t *testing.T) {
+// Songstead maps its theme to the shared --comfy-* tokens once and reads them
+// directly. Defining the older names Comfylib still falls back to (--bg,
+// --panel, --text and so on) would loop through the deprecated fallback.
+func TestStylesheetMapsSharedTokensOnce(t *testing.T) {
 	css := stylesheet(t)
-	block := regexp.MustCompile(`(?s):root\[data-comfy-app="songstead"\]\s*\{(.*?)\}`).FindStringSubmatch(css)
+	block := regexp.MustCompile(`(?s)\n:root\s*\{(.*?)\}`).FindStringSubmatch(css)
 	if block == nil {
-		t.Fatal("missing scoped Comfylib tokens")
+		t.Fatal("missing :root tokens")
 	}
-	for _, token := range []string{"--comfy-ink", "--comfy-panel", "--comfy-line", "--comfy-accent", "--comfy-radius"} {
+	for _, token := range []string{"--comfy-surface", "--comfy-raised", "--comfy-border", "--comfy-control-border", "--comfy-text", "--comfy-muted", "--comfy-accent", "--comfy-accent-text", "--comfy-danger", "--comfy-font", "--comfy-radius"} {
 		if !strings.Contains(block[1], token+":") {
 			t.Errorf("missing %s", token)
 		}
 	}
-	for _, selector := range []string{`[data-comfy-app="songstead"] .invitation-header h1`, `[data-comfy-app="songstead"] .invitation-page h2`} {
-		if !strings.Contains(css, selector) {
-			t.Errorf("missing invitation override %s", selector)
+	for _, old := range []string{"--background", "--bg", "--bg-elev", "--panel", "--paper", "--border", "--line", "--text", "--ink", "--muted", "--accent", "--green", "--button-text", "--danger", "--radius", "--comfy-ink", "--comfy-panel", "--comfy-line"} {
+		if regexp.MustCompile(`(?m)^\s*`+regexp.QuoteMeta(old)+`\s*:`).MatchString(css) || strings.Contains(css, "var("+old+")") {
+			t.Errorf("stylesheet still uses %s", old)
 		}
+	}
+	if strings.Contains(css, ".invitation-") {
+		t.Error("shared invitation pages read the tokens; app overrides are redundant")
 	}
 }

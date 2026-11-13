@@ -48,6 +48,10 @@ type Config struct {
 	SecureCookies                bool
 	TrustedProxies               []netip.Prefix
 }
+
+// DefaultPalette is the site palette until an owner picks another.
+const DefaultPalette = ui.Sage
+
 type App struct {
 	store        *store.Store
 	config       Config
@@ -136,7 +140,12 @@ func New(s *store.Store, cfg Config) (*App, error) {
 			}
 		}
 	}
-	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"timezonePreference": displaytime.RenderPreference, "adminSummary": admin.Render, "linkNumber": func(i int) int { return i + 1 },
+	tmpl, err := template.New("pages").Funcs(suiteFuncs).Funcs(template.FuncMap{"timezonePreference": displaytime.RenderPreference,
+		"paletteAttrs": func(setting string) template.HTMLAttr {
+			return ui.PaletteAttrs(ui.SiteDefault(setting, DefaultPalette))
+		},
+		"themePicker": func() template.HTML { return ui.ThemePicker(true) },
+		"palettes":    ui.Palettes, "adminSummary": admin.Render, "linkNumber": func(i int) int { return i + 1 },
 		"supportsMetadata": media.SupportsMetadata,
 		"invitationStatus": invitationStatus,
 		"browseURL":        browseURL,

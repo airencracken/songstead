@@ -1,6 +1,5 @@
-{{define "theme-picker"}}<span class="theme-picker" hidden><label class="sr-only" for="theme">Color theme</label><select id="theme" data-theme-select><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></span>{{end}}
 {{define "layout"}}<!doctype html>
-<html lang="en" data-comfy-app="songstead">
+<html lang="en" data-comfy-app="songstead" data-theme-key="songstead-theme" {{paletteAttrs .Settings.Palette}}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,10 +11,11 @@
   <meta property="og:title" content="{{.Settings.Name}}">
   <meta property="og:description" content="Good music, from your people. Sign in to see recommendations shared with you.">
   {{if .SocialImage}}<meta property="og:image" content="{{.SocialImage}}"><meta property="og:image:alt" content="Songstead jukebox"><meta name="twitter:card" content="summary">{{end}}
-  <script src="/static/theme.js"></script>
+  <script src="/static/comfyware/theme.js"></script>
   <link rel="stylesheet" href="/static/app.css">
   <link rel="stylesheet" href="/static/comfyware/accounts.css">
   <link rel="stylesheet" href="/static/comfyware/components.css">
+  <link rel="stylesheet" href="/static/comfyware/palettes.css">
   <script src="/static/comfyware/suite.js"></script>
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/feedback.js" defer></script>
@@ -39,10 +39,10 @@
         <a href="/groups" {{if eq .View "groups"}}aria-current="page"{{end}}>Groups</a>
         {{if eq .User.Role "owner"}}<a href="/admin/settings">Admin</a>{{else if .User.CanInvite}}<a href="/invites" {{if eq .View "invites"}}aria-current="page"{{end}}>Invitations</a>{{end}}
         {{if sharedSignIn}}<a href="/auth/shared/manage" hx-boost="false">Community sign-in</a>{{end}}
-        {{template "theme-picker"}}
+        {{themePicker}}
         <hr><form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="link" type="submit">Sign out</button></form>
       </div></details>
-      {{else}}{{template "theme-picker"}}{{end}}
+      {{else}}{{themePicker}}{{end}}
     </nav>
   </header>
   <main id="main" class="page" tabindex="-1">

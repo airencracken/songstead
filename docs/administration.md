@@ -90,6 +90,9 @@ records kept by 0.15 and 0.16.
 
 Instance settings holds the site name, welcome message, house rules, owner
 contact, source code link and whether the footer shows the running version.
+**Site colors** sets the palette everyone sees first: Sage (the default) or
+Slate. Members can pick System, Light or Dark and their own palette from the
+Account menu; that choice stays in their browser.
 Upload a mascot or favicon as PNG, JPEG or GIF, up to 2 MB and 2048 by 2048
 pixels. Songstead saves it as a still PNG. If either image is invalid, neither
 changes.

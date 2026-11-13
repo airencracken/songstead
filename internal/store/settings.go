@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/airencracken/comfylib/reference"
+	"github.com/airencracken/comfylib/ui"
 	"net/url"
 	"strings"
 )
@@ -20,6 +21,8 @@ type Settings struct {
 	BaseURL, WitmootURL, JoinMode, DiscussionMode                        string
 	ShowVersion                                                          bool
 	Mascot, Favicon                                                      bool
+	// Palette is the owner's site palette; empty means Songstead's default.
+	Palette string `json:",omitempty"`
 }
 
 func DefaultSettings(base, witmoot string) Settings {
@@ -86,6 +89,11 @@ func ValidateSettings(v Settings) error {
 	}
 	if v.JoinMode != "closed" && v.JoinMode != "invite" && v.JoinMode != "open" {
 		return ErrInvalid
+	}
+	if v.Palette != "" {
+		if _, err := ui.ParsePalette(v.Palette); err != nil {
+			return ErrInvalid
+		}
 	}
 	for _, raw := range []string{v.BaseURL, v.WitmootURL, v.SourceURL} {
 		if raw == "" {

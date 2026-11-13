@@ -784,12 +784,12 @@
     "run": "^TestNavigationGivesEachDestinationOneHome$"
   },
   {
-    "name": "shared tokens outrank Comfylib defaults",
+    "name": "tokens are mapped once",
     "file": "internal/web/static/app.css",
-    "before": ":root[data-comfy-app=\"songstead\"] {",
-    "after": ":root {",
+    "before": "  --comfy-surface: light-dark(#f3f5f9, #101216);",
+    "after": "  --bg: light-dark(#f3f5f9, #101216);",
     "package": "./internal/web",
-    "run": "^TestStylesheetDefinesSharedTokens$"
+    "run": "^TestStylesheetMapsSharedTokensOnce$"
   },
   {
     "name": "meta text keeps a 12px floor",
@@ -822,5 +822,21 @@
     "after": "\t\tw.Header().Set(\"Retry-After\", \"900\")",
     "package": "./internal/web",
     "run": "^TestRefusedAttemptsAreCounted$"
+  },
+  {
+    "name": "site palette is validated",
+    "file": "internal/store/settings.go",
+    "before": "\tif v.Palette != \"\" {\n\t\tif _, err := ui.ParsePalette(v.Palette); err != nil {\n\t\t\treturn ErrInvalid\n\t\t}\n\t}\n",
+    "after": "",
+    "package": "./internal/web",
+    "run": "^TestOwnerPicksTheSitePalette$"
+  },
+  {
+    "name": "older settings forms keep the palette",
+    "file": "internal/web/admin.go",
+    "before": "\t\tv.Palette = state(r).Settings.Palette\n",
+    "after": "",
+    "package": "./internal/web",
+    "run": "^TestOwnerPicksTheSitePalette$"
   }
 ]

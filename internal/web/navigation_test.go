@@ -43,7 +43,7 @@ func TestNavigationGivesEachDestinationOneHome(t *testing.T) {
 		if (name == "owner") != strings.Contains(header, `href="/admin/settings"`) {
 			t.Errorf("%s: wrong Admin link", name)
 		}
-		if strings.Count(header, `id="theme"`) != 1 {
+		if strings.Count(header, `data-theme-select`) != 1 {
 			t.Errorf("%s: theme picker repeated", name)
 		}
 		if footer := section(t, body, `<footer`, `</footer>`); strings.Contains(footer, "/account/export") {

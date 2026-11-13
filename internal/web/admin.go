@@ -74,13 +74,16 @@ func (a *App) settingsForm(w http.ResponseWriter, r *http.Request) {
 	a.render(w, r, 200, p)
 }
 func (a *App) saveSettings(w http.ResponseWriter, r *http.Request) {
-	v := store.Settings{Name: strings.TrimSpace(r.PostForm.Get("name")), WelcomeTitle: strings.TrimSpace(r.PostForm.Get("welcome_title")), WelcomeText: r.PostForm.Get("welcome_text"), HouseRules: r.PostForm.Get("house_rules"), OwnerContact: r.PostForm.Get("owner_contact"), SourceURL: strings.TrimSpace(r.PostForm.Get("source_url")), BaseURL: strings.TrimSpace(r.PostForm.Get("base_url")), WitmootURL: strings.TrimSpace(r.PostForm.Get("witmoot_url")), JoinMode: r.PostForm.Get("join_mode"), DiscussionMode: r.PostForm.Get("discussion_mode"), ShowVersion: r.PostForm.Get("show_version") == "1"}
+	v := store.Settings{Name: strings.TrimSpace(r.PostForm.Get("name")), WelcomeTitle: strings.TrimSpace(r.PostForm.Get("welcome_title")), WelcomeText: r.PostForm.Get("welcome_text"), HouseRules: r.PostForm.Get("house_rules"), OwnerContact: r.PostForm.Get("owner_contact"), SourceURL: strings.TrimSpace(r.PostForm.Get("source_url")), BaseURL: strings.TrimSpace(r.PostForm.Get("base_url")), WitmootURL: strings.TrimSpace(r.PostForm.Get("witmoot_url")), JoinMode: r.PostForm.Get("join_mode"), DiscussionMode: r.PostForm.Get("discussion_mode"), ShowVersion: r.PostForm.Get("show_version") == "1", Palette: r.PostForm.Get("palette")}
 	// Older forms preserve the current policy. An explicitly empty or repeated
 	// field is invalid, rather than silently changing where comments go.
 	if values, present := r.PostForm["discussion_mode"]; !present {
 		v.DiscussionMode = state(r).Settings.DiscussionMode
 	} else if len(values) != 1 {
 		v.DiscussionMode = "invalid"
+	}
+	if _, present := r.PostForm["palette"]; !present {
+		v.Palette = state(r).Settings.Palette
 	}
 	if err := a.store.SaveSettings(r.Context(), state(r).User.ID, &v); err != nil {
 		if errors.Is(err, store.ErrInvalid) {

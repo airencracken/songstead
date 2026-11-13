@@ -162,7 +162,7 @@ func TestRouteAndHTTPContracts(t *testing.T) {
 			t.Fatal("missing security headers")
 		}
 	}
-	for _, path := range []string{"/static/app.css", "/static/theme.js", "/static/htmx.min.js", "/static/jukebox.png", "/healthz"} {
+	for _, path := range []string{"/static/app.css", "/static/comfyware/theme.js", "/static/comfyware/palettes.css", "/static/htmx.min.js", "/static/jukebox.png", "/healthz"} {
 		if w := b.request("GET", path, nil); w.Code != 200 {
 			t.Fatal("asset route missing", path, w.Code)
 		}
