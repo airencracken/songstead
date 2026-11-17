@@ -135,7 +135,7 @@ func (a *App) annotationPreference(w http.ResponseWriter, r *http.Request) {
 		err = a.store.SetAnnotationMode(r.Context(), state(r).User.ID, r.PostForm.Get("mode"))
 	}
 	if err == nil {
-		http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10)+"?saved=annotations#annotation-preferences", 303)
+		redirectDetail(w, r, id, "annotations", "annotation-preferences")
 		return
 	}
 	a.finishDetail(w, r, id, err)

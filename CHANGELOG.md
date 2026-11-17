@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.2
+
+- Recommendations link back to the originating shelf, Recent, history, or search view with its filters intact.
+- The Filters and display disclosure groups secondary controls. The Recent view identifies member-selected discovery settings as Your preferences.
+- Uses Comfylib 0.7.3. No database migration is needed.
+
 ## 0.17.1
 
 - Color palettes change colors without changing Songstead's fonts or heading weights.

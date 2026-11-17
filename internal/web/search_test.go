@@ -55,7 +55,7 @@ func TestSearchRoutesPrivacySpoilersAndPagination(t *testing.T) {
 	}
 	w = b.request("GET", "/search?kind=comments&q=needle&reveal=1", nil)
 	body = w.Body.String()
-	if w.Code != 200 || strings.Contains(body, "SECRET") || strings.Contains(body, "private comment") || !strings.Contains(body, "&lt;script&gt;visible&lt;/script&gt;") || !strings.Contains(body, fmt.Sprintf("/recommendations/%d#comment-", shared)) || w.Header().Get("Cache-Control") != "no-store" {
+	if w.Code != 200 || strings.Contains(body, "SECRET") || strings.Contains(body, "private comment") || !strings.Contains(body, "&lt;script&gt;visible&lt;/script&gt;") || !strings.Contains(body, fmt.Sprintf("/recommendations/%d?return_to=%s#comment-", shared, url.QueryEscape("/search?kind=comments&q=needle&reveal=1"))) || w.Header().Get("Cache-Control") != "no-store" {
 		t.Fatal("comment search contract", w.Code, body)
 	}
 	for _, raw := range []string{"q=a&q=b", "kind=x", "kind=music&kind=comments", "before=0", "before=-1", "before=1&before=2", "before=x", "before=9223372036854775808", "q=%ZZ", "q=a%00b", "q=" + url.QueryEscape(strings.Repeat("界", 201))} {

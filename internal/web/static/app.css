@@ -210,6 +210,7 @@ section.panel > p > a { overflow-wrap: anywhere; }
 .view-switch [aria-current], .label-picker [aria-current] { background: var(--comfy-accent); border-color: var(--comfy-accent); color: var(--comfy-accent-text); }
 .browse-settings { margin-bottom: .4rem; font-size: .9rem; }
 .browse-options { padding-top: .65rem; border-top: 1px solid var(--comfy-border); }
+.browse-options[open] > .browse-toolbar { margin-block: .8rem; }
 .browse-options summary { width: fit-content; color: var(--comfy-accent); cursor: pointer; }
 .browse-options > button { padding: .4rem .8rem; font-size: .9rem; }
 .browse-hint { margin-bottom: 1.25rem; font-size: .85rem; }

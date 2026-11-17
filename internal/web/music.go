@@ -47,7 +47,7 @@ func (a *App) saveLabels(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10)+"?saved=labels#music-labels", 303)
+	redirectDetail(w, r, id, "labels", "music-labels")
 }
 
 func (a *App) accountAnnotations(w http.ResponseWriter, r *http.Request) {

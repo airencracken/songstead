@@ -25,7 +25,7 @@ sender and recipient.
 ## Browsing
 
 Every list starts in the music view: one card per song, with each
-recommendation's sender, note and date underneath. **More filters** lets you
+recommendation's sender, note and date underneath. **Filters and display** lets you
 view by person, group or each recommendation, and filter by kind, person, group
 or listening status. Choose **List** or **Tiles**; both show artwork. Genre and
 tag buttons match exact names, ignoring case. Pages keep your filters.
@@ -54,7 +54,7 @@ that send.
 
 In **Your settings → Discovery preferences**, list genres and tags to hide from
 Recent or bring to the top. Hiding wins over favorites. Unlabeled music stays
-visible. **For you** applies your preferences; **All music** shows everything.
+visible. **Your preferences** applies your preferences; **All music** shows everything.
 Preferences never hide anything from your shelf or history.
 
 ## Timestamped comments

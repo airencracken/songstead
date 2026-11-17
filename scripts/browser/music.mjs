@@ -48,7 +48,16 @@ try {
     return page;
   }
   const alice = await session('alice'), bobby = await session('bobby');
-  await checkSuiteControls(bobby, { apps: true, density: true });
+  await checkSuiteControls(bobby, { apps: true });
+  const spacing = bobby.locator('[data-density-controls]');
+  check(!await spacing.isVisible(), 'Reading spacing starts in the closed disclosure');
+  await act(spacing.locator('[data-density-choice="compact"]'), 'click');
+  check(await bobby.locator('html').getAttribute('data-density') === 'compact', 'Compact spacing applies');
+  await bobby.reload();
+  check(await bobby.locator('html').getAttribute('data-density') === 'compact', 'Compact spacing survives reload');
+  check(await spacing.locator('[data-density-choice="compact"]').getAttribute('aria-pressed') === 'true', 'Selected spacing is announced');
+  await act(spacing.locator('[data-density-choice="comfortable"]'), 'click');
+  await bobby.getByText('Filters and display', {exact:true}).click();
   async function share(title, genre, tags, audience='members', raw=title.toLowerCase().replaceAll(' ','-'), kind='') {
     await alice.goto(`${base}/recommendations/new`);
     check(await alice.locator('details.comfy-disclosure').getAttribute('open') === null, 'Optional music fields start collapsed');
@@ -102,18 +111,19 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   check(await bobby.locator('.list-artwork').evaluateAll(holders=>holders.every(el=>{ const r=el.getBoundingClientRect(); return r.width===112 && r.height===84; })),'List covers stay compact');
   check(await bobby.locator('.artwork-placeholder').count()===1,'List has a missing-artwork fallback');
   check(await bobby.locator('.filter-grid:visible').count()===0,'Advanced dropdowns start collapsed');
-  await bobby.getByText('More filters',{exact:true}).click();
+  await bobby.getByText('Filters and display',{exact:true}).click();
   await act(bobby.getByRole('combobox',{name:'Music kind',exact:true}), 'selectOption', 'track');
   await act(bobby.getByRole('button',{name:'Apply filters',exact:true}), 'click');
   await bobby.waitForURL('**/recent?**kind=track**');
   await bobby.getByRole('heading',{name:'A quiet shelf.',exact:true}).waitFor();
   check(await bobby.locator('.list-artwork').count()===0,'Advanced kind filter excludes non-track links');
-  await bobby.getByText('More filters',{exact:true}).click();
+  await bobby.getByText('Filters and display',{exact:true}).click();
   await act(bobby.getByRole('combobox',{name:'Music kind',exact:true}), 'selectOption', '');
   await act(bobby.getByRole('button',{name:'Apply filters',exact:true}), 'click');
   await bobby.locator('.list-artwork').first().waitFor();
   check(await bobby.locator('.list-artwork').count()===4,'Clearing advanced filters restores list thumbnails');
   check(new URL(bobby.url()).searchParams.get('discovery')==='preferences','Advanced filters preserve discovery mode');
+  if (!await bobby.locator('.browse-options').evaluate(node => node.open)) await bobby.getByText('Filters and display',{exact:true}).click();
   await act(bobby.getByRole('link',{name:'Tiles',exact:true}), 'click');
   await bobby.waitForURL('**/recent?**');
   await bobby.locator('.recommendations.tiles').waitFor();
@@ -182,11 +192,13 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
   await bobby.waitForURL('**/recent?**tag=Acoustic**');
   check(await bobby.locator('.recommendations.tiles').count()===1,'Tag picker preserves tile layout');
   check(await bobby.locator('.recommendation-copy').count()===1,'Tag picker filters immediately');
+  if (!await bobby.locator('.browse-options').evaluate(node => node.open)) await bobby.getByText('Filters and display',{exact:true}).click();
   await act(bobby.getByRole('link',{name:'List',exact:true}), 'click');
   await bobby.locator('.recommendations.chips').waitFor();
   check(new URL(bobby.url()).searchParams.get('tag')==='Acoustic','Layout switch preserves tag filter');
   const native = await session('bobby',false);
   await native.goto(`${base}/recent?discovery=all`);
+  if (!await native.locator('.browse-options').evaluate(node => node.open)) await native.getByText('Filters and display',{exact:true}).click();
   await act(native.getByRole('link',{name:'Tiles',exact:true}), 'click');
   await native.locator('.recommendations.tiles').waitFor();
   check(await native.locator('.tile-artwork').count()===4,'Native layout switch needs no Browse click');
@@ -350,7 +362,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     await act(member.getByRole('link',{name:'Newest comments',exact:true}), 'click');
     await member.waitForURL('**/recent/comments');
     await act(member.getByRole('link',{name:'View comment & conversation',exact:true}).first(), 'click');
-    await member.waitForURL(/\/recommendations\/\d+#comment-\d+$/);
+    await member.waitForURL(/\/recommendations\/\d+\?return_to=[^#]+#comment-\d+$/);
     const target=new URL(member.url()).hash;
     check((await member.locator(target).innerText()).includes('Visible feed reaction 26'),'Feed links reach the exact conversation comment');
   }
@@ -478,7 +490,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
       check(await bobby.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`No overflow on ${route} at ${width}`);
       if (route==='/recent') {
         check(await bobby.locator('.list-artwork').evaluateAll(holders=>holders.every(el=>el.getBoundingClientRect().width===(innerWidth<=760?72:112))),`List covers adapt at ${width}`);
-        await bobby.getByText('More filters',{exact:true}).click();
+        await bobby.getByText('Filters and display',{exact:true}).click();
         check(await bobby.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Expanded filters fit at ${width}`);
       }
       const result=await new AxeBuilder({page:bobby}).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
@@ -493,7 +505,7 @@ with sqlite3.connect(Path(sys.argv[1])/'songstead.db') as db:
     await bobby.screenshot({path:resolve(process.env.SONGSTEAD_SCREENSHOT_DIR,'recent-list-mobile.png'),fullPage:true});
     await bobby.setViewportSize({width:1280,height:1000});
     await act(bobby.getByLabel('Color theme',{exact:true}), 'selectOption', 'light');
-    await bobby.getByText('More filters',{exact:true}).click();
+    await bobby.getByText('Filters and display',{exact:true}).click();
     await bobby.screenshot({path:resolve(process.env.SONGSTEAD_SCREENSHOT_DIR,'recent-list-desktop.png'),fullPage:true});
     await bobby.goto(`${base}/recent?layout=tiles&discovery=all`);
     await bobby.screenshot({path:resolve(process.env.SONGSTEAD_SCREENSHOT_DIR,'recent-tiles-desktop.png'),fullPage:true});

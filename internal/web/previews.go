@@ -107,5 +107,5 @@ func (a *App) retryPreview(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10), 303)
+	redirectDetail(w, r, id, "", "")
 }

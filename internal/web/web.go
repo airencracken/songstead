@@ -107,7 +107,7 @@ type page struct {
 	Audience                                                                            string
 	Recent                                                                              bool
 	Liked                                                                               bool
-	ReturnTo                                                                            string
+	ReturnTo, ReturnLabel                                                               string
 	LikeNotice                                                                          string
 	CommentDraft                                                                        string
 	Bundles                                                                             []bundle
@@ -150,10 +150,11 @@ func New(s *store.Store, cfg Config) (*App, error) {
 		},
 		"themePicker": func() template.HTML { return ui.ThemePicker(true) },
 		"palettes":    ui.Palettes, "adminSummary": admin.Render, "linkNumber": func(i int) int { return i + 1 },
-		"supportsMetadata": media.SupportsMetadata,
-		"invitationStatus": invitationStatus,
-		"browseURL":        browseURL,
-		"joinLabels":       func(values []string) string { return strings.Join(values, ", ") },
+		"supportsMetadata":   media.SupportsMetadata,
+		"invitationStatus":   invitationStatus,
+		"browseURL":          browseURL,
+		"recommendationLink": recommendationLink,
+		"joinLabels":         func(values []string) string { return strings.Join(values, ", ") },
 		"labelLink": func(kind, value string) string {
 			return "/recent?" + url.Values{kind: {value}, "discovery": {"all"}}.Encode()
 		},
@@ -808,6 +809,7 @@ func (a *App) showDetail(w http.ResponseWriter, r *http.Request, id int64, statu
 		return
 	}
 	p := page{View: "detail", Title: item.Title, Item: item, Comments: comments, Recordings: tracks, AnnotationMode: mode, Reveal: reveal, Discussions: links, Error: message, Handoff: state(r).Settings.WitmootURL, CommentDraft: r.PostForm.Get("body"), Genre: item.Genre, Tags: strings.Join(item.Tags, ", ")}
+	p.ReturnTo, p.ReturnLabel = detailReturn(r)
 	if !state(r).Settings.WitmootDiscussions() {
 		p.Handoff = ""
 	}
@@ -860,7 +862,7 @@ func (a *App) react(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10)+"?saved=feedback#listening-notes", 303)
+	redirectDetail(w, r, id, "feedback", "listening-notes")
 }
 func (a *App) comment(w http.ResponseWriter, r *http.Request) {
 	id, err := recommendationID(r)
@@ -890,7 +892,7 @@ func (a *App) comment(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	http.Redirect(w, r, "/recommendations/"+strconv.FormatInt(id, 10), 303)
+	redirectDetail(w, r, id, "", "")
 }
 func (a *App) export(w http.ResponseWriter, r *http.Request) {
 	archive, err := a.store.Export(r.Context(), *state(r).User)

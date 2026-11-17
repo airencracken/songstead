@@ -126,7 +126,7 @@ func TestLabelsDiscoveryAndLayoutHTTPContracts(t *testing.T) {
 		if (layout == "chips") != strings.Contains(w.Body.String(), `class="list-artwork"`) || !strings.Contains(w.Body.String(), `data-artwork-holder`) || !strings.Contains(w.Body.String(), `class="artwork-placeholder"`) {
 			t.Fatal("list artwork or fallback missing", layout)
 		}
-		for _, want := range []string{`class="browse-toolbar"`, `class="filter-grid"`, `>Apply filters</button>`, `>For you</a>`, `>All music</a>`, `href="/account#discovery-preferences"`} {
+		for _, want := range []string{`class="browse-toolbar"`, `class="filter-grid"`, `>Apply filters</button>`, `>Your preferences</a>`, `>All music</a>`, `href="/account#discovery-preferences"`} {
 			if !strings.Contains(w.Body.String(), want) {
 				t.Fatal("browse controls missing", want)
 			}

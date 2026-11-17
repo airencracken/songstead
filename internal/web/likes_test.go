@@ -131,7 +131,7 @@ func TestDefaultSongDeduplicationKeepsDatedProvenance(t *testing.T) {
 		if w.Code != 200 || strings.Count(body, "data-song-id=") != 1 || strings.Count(body, "data-music-title") != 1 || strings.Count(body, ">Like song</button>") != 1 || strings.Count(body, "<time datetime=") != 2 {
 			t.Fatal("duplicate song card or lost dates", layout, w.Code, body)
 		}
-		for _, text := range []string{"From alice", "From carol", "Alice&#39;s recommendation", "Carol&#39;s recommendation", fmt.Sprintf("href=\"/recommendations/%d\"", first), fmt.Sprintf("href=\"/recommendations/%d\"", second)} {
+		for _, text := range []string{"From alice", "From carol", "Alice&#39;s recommendation", "Carol&#39;s recommendation", fmt.Sprintf("href=\"/recommendations/%d?return_to=%%2Frecent%%3Flayout%%3D%s\"", first, layout), fmt.Sprintf("href=\"/recommendations/%d?return_to=%%2Frecent%%3Flayout%%3D%s\"", second, layout)} {
 			if !strings.Contains(body, text) {
 				t.Fatal("missing recommendation provenance", text, body)
 			}

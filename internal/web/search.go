@@ -68,5 +68,6 @@ func (a *App) search(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
+	p.ReturnTo = r.URL.RequestURI()
 	a.render(w, r, 200, p)
 }

@@ -3,8 +3,6 @@ package web
 
 import (
 	"net/http"
-	"net/url"
-	"strconv"
 )
 
 func (a *App) likeSong(w http.ResponseWriter, r *http.Request) {
@@ -22,14 +20,10 @@ func (a *App) likeSong(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	target := "/recommendations/" + strconv.FormatInt(id, 10) + "?saved=like#song-like"
-	// Only return to our browse pages, preserving their filters and page.
-	if back, err := url.Parse(r.PostForm.Get("return_to")); err == nil && !back.IsAbs() && back.Host == "" && back.Opaque == "" {
-		switch back.Path {
-		case "/shelf", "/inbox", "/recent", "/history":
-			back.Fragment = ""
-			target = back.String()
-		}
+	// Likes submitted from a list go directly back to its saved view.
+	if back, _ := browseReturn(r.PostForm.Get("return_to")); back != "" {
+		http.Redirect(w, r, back, http.StatusSeeOther)
+		return
 	}
-	http.Redirect(w, r, target, http.StatusSeeOther)
+	redirectDetail(w, r, id, "like", "song-like")
 }

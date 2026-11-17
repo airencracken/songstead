@@ -362,8 +362,8 @@
   {
     "name": "feedback save notice",
     "file": "internal/web/web.go",
-    "before": "+\"?saved=feedback#listening-notes\"",
-    "after": "+\"#listening-notes\"",
+    "before": "redirectDetail(w, r, id, \"feedback\", \"listening-notes\")",
+    "after": "redirectDetail(w, r, id, \"\", \"listening-notes\")",
     "package": "./internal/web",
     "run": "^TestAccountSpoilerPreferencesAndFeedbackNotice$"
   },
@@ -514,8 +514,8 @@
   {
     "name": "recent comments exact anchor",
     "file": "internal/web/templates/recent_comments.html",
-    "before": "<a href=\"/recommendations/{{.RecommendationID}}#comment-{{.ID}}\">View comment &amp; conversation</a>",
-    "after": "<a href=\"/recommendations/{{.RecommendationID}}\">View comment &amp; conversation</a>",
+    "before": "<a href=\"{{recommendationLink .RecommendationID $.ReturnTo (printf \"comment-%d\" .ID)}}\">View comment &amp; conversation</a>",
+    "after": "<a href=\"{{recommendationLink .RecommendationID $.ReturnTo}}\">View comment &amp; conversation</a>",
     "package": "./internal/web",
     "run": "^TestRecentCommentsRoutesPrivacySpoilersAndPagination$"
   },

@@ -38,5 +38,6 @@ func (a *App) recentComments(w http.ResponseWriter, r *http.Request) {
 		p.RecentComments = comments[:recentCommentsPageSize]
 		p.CommentsNext = p.RecentComments[len(p.RecentComments)-1].ID
 	}
+	p.ReturnTo = r.URL.RequestURI()
 	a.render(w, r, 200, p)
 }

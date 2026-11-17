@@ -107,7 +107,7 @@ func TestRecentCommentsRoutesPrivacySpoilersAndPagination(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := fmt.Sprintf("/recommendations/%d#comment-%d", shared, comments[len(comments)-1].ID)
+	path := fmt.Sprintf("/recommendations/%d?return_to=%%2Frecent%%2Fcomments#comment-%d", shared, comments[len(comments)-1].ID)
 	if !strings.Contains(body, `href="`+path+`">View comment &amp; conversation</a>`) {
 		t.Fatal("missing exact comment link")
 	}
