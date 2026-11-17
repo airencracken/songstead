@@ -203,18 +203,23 @@ printf 'command <%s> args <%s> user <%s> umask <%s>\\n' "$command" "$command_arg
         subprocess.run(["sh","-n",str(ROOT/"scripts/release/prepare.sh")],check=True)
 
     def test_release_guides_and_library_pin_are_self_contained(self):
+        version = (ROOT / "VERSION").read_text().strip()
         guide = (ROOT / "docs/releases.md").read_text()
-        for requirement in ("songstead_0.17.2_linux_amd64.tar.gz", "songstead_0.17.2_checksums.txt",
+        for requirement in (f"songstead_{version}_linux_amd64.tar.gz", f"songstead_{version}_checksums.txt",
                             "sha256sum --check --ignore-missing", "GOWORK=off make check build",
-                            "=www-apps/songstead-0.17.2::comfyware"):
+                            f"=www-apps/songstead-{version}::comfyware"):
             self.assertIn(requirement, guide)
         module = (ROOT / "go.mod").read_text()
-        self.assertIn("github.com/airencracken/comfylib v0.7.3", module)
+        library = "github.com/airencracken/comfylib"
+        pin = re.search(r"(?m)^\s*" + re.escape(library) + r" (v[0-9]+\.[0-9]+\.[0-9]+)$", module)
+        self.assertIsNotNone(pin)
+        self.assertIn(f"published Comfylib {pin[1]}", guide)
         self.assertIn("github.com/airencracken/comfylib/oidc v0.1.0", module)
         self.assertNotIn("replace ", module)
         sums = (ROOT / "go.sum").read_text()
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.7\.2 h1:[A-Za-z0-9+/]{43}=$")
-        self.assertRegex(sums, r"(?m)^github.com/airencracken/comfylib v0\.7\.2/go\.mod h1:[A-Za-z0-9+/]{43}=$")
+        for accession in (pin[1], pin[1] + "/go.mod"):
+            prefix = re.escape(f"{library} {accession}")
+            self.assertRegex(sums, rf"(?m)^{prefix} h1:[A-Za-z0-9+/]{{43}}=$")
 
     def test_release_artifact_check_step_points_to_existing_application_validation(self):
         workflow = (ROOT / '.github/workflows/release.yml').read_text()

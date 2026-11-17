@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.17.2
+## 0.17.3
 
 - Recommendations link back to the originating shelf, Recent, history, or search view with its filters intact.
 - The Filters and display disclosure groups secondary controls. The Recent view identifies member-selected discovery settings as Your preferences.
