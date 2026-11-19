@@ -12,6 +12,7 @@ import (
 	"github.com/airencracken/comfylib/analytics"
 	"github.com/airencracken/comfylib/displaytime"
 	"github.com/airencracken/comfylib/password"
+	"github.com/airencracken/comfylib/twofactor"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -129,13 +130,27 @@ func (s *Store) migrate(currentOnly bool) error {
 		return fmt.Errorf("database schema %d needs migration; restart the updated Songstead server before running account or backup commands", version)
 	}
 	for next := version + 1; next <= currentSchema; next++ {
-		file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql", 10: "migrations/010_post_edits.sql", 11: "migrations/011_search_index.sql", 12: "migrations/012_operational_metrics.sql"}[next]
-		data, err := migrations.ReadFile(file)
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(string(data)); err != nil {
-			return err
+		if next == 13 {
+			if err := twofactor.Install(context.Background(), tx); err != nil {
+				return err
+			}
+			if _, err := tx.ExecContext(context.Background(), `CREATE TRIGGER IF NOT EXISTS twofactor_invalidated_login AFTER UPDATE OF password_hash,suspended ON users
+WHEN OLD.password_hash IS NOT NEW.password_hash OR OLD.suspended IS NOT NEW.suspended
+BEGIN
+ DELETE FROM twofactor_challenges WHERE user_id=NEW.id;
+ DELETE FROM twofactor_secrets WHERE user_id=NEW.id AND last_step IS NULL;
+END;`); err != nil {
+				return err
+			}
+		} else {
+			file := map[int]string{1: "migrations/001_initial.sql", 2: "migrations/002_quiet_inbox.sql", 3: "migrations/003_recent.sql", 4: "migrations/004_owners.sql", 5: "migrations/005_administration.sql", 6: "migrations/006_music_browsing.sql", 7: "migrations/007_profiles.sql", 8: "migrations/008_member_profiles.sql", 9: "migrations/009_song_likes.sql", 10: "migrations/010_post_edits.sql", 11: "migrations/011_search_index.sql", 12: "migrations/012_operational_metrics.sql"}[next]
+			data, err := migrations.ReadFile(file)
+			if err != nil {
+				return err
+			}
+			if _, err := tx.Exec(string(data)); err != nil {
+				return err
+			}
 		}
 		if next == 2 {
 			if err := migrateMusic(tx); err != nil {
@@ -160,7 +175,7 @@ func (s *Store) migrate(currentOnly bool) error {
 }
 
 // currentSchema is the newest application migration this binary applies.
-const currentSchema = 12
+const currentSchema = 13
 
 // forgetActivity removes the per-account and per-item analytics table kept by
 // 0.15 and 0.16. Metrics describe operational health only.

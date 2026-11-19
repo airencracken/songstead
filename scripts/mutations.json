@@ -1,5 +1,13 @@
 [
   {
+    "name": "password sign-in requires the enrolled authenticator",
+    "file": "internal/web/web.go",
+    "before": "if a.finishFirstFactor(w, r, u.ID, hash) {",
+    "after": "if false && a.finishFirstFactor(w, r, u.ID, hash) {",
+    "package": "./internal/web",
+    "run": "^TestAuthenticatorSignIn$"
+  },
+  {
     "name": "post author ownership",
     "file": "internal/store/posts.go",
     "before": "AND r.sender_id=? AND EXISTS",

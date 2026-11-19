@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.18.0
+
+- Optional authenticator-app sign-in is available on the account page after
+  the operator sets `SONGSTEAD_TOTP_KEY`. Members can enroll, save recovery
+  codes, and choose whether to use the feature.
+- An enrolled account needs an authenticator or recovery code after password
+  or community sign-in. Enabling it signs out the account's other sessions.
+
+Back up the data directory before upgrading. This release adds a database
+migration for encrypted authenticator secrets and sign-in challenges.
+
 ## 0.17.3
 
 - Recommendations link back to the originating shelf, Recent, history, or search view with its filters intact.

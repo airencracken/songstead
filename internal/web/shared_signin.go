@@ -47,6 +47,9 @@ func (a *App) sharedSignIn(w http.ResponseWriter, r *http.Request, id int64) (st
 	if err != nil || u.Suspended {
 		return "", fmt.Errorf("account unavailable")
 	}
+	if target, handled, err := a.factor.Start(w, r, id, ""); handled {
+		return target, err
+	}
 	raw, err := a.store.NewSession(r.Context(), id, hash)
 	if err != nil {
 		return "", err

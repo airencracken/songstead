@@ -64,6 +64,7 @@
     {{if eq .View "join"}}{{template "join" .}}{{end}}
     {{if eq .View "reset"}}{{template "reset" .}}{{end}}
     {{if eq .View "member-profile"}}{{template "member-profile" .}}{{end}}
+    {{if eq .View "two-factor"}}<section class="panel"><h1>{{.Title}}</h1>{{.FactorContent}}</section>{{end}}
     {{if eq .View "account"}}{{template "account" .}}{{end}}
     {{if eq .View "about"}}{{template "about" .}}{{end}}
     {{if eq .View "problem"}}{{template "problem" .}}{{end}}

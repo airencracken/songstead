@@ -19,6 +19,7 @@ import (
 	"github.com/airencracken/comfylib/problem"
 	"github.com/airencracken/comfylib/ratelimit"
 	"github.com/airencracken/comfylib/suite"
+	"github.com/airencracken/comfylib/twofactor"
 	"html/template"
 	"io/fs"
 	"log/slog"
@@ -55,6 +56,7 @@ type Config struct {
 const DefaultPalette = ui.Sage
 
 type App struct {
+	factor       *twofactor.HTTP
 	store        *store.Store
 	config       Config
 	templates    *displaytime.Templates
@@ -81,6 +83,8 @@ type bundle struct {
 	Items   []recommendationCard
 }
 type page struct {
+	FactorEnabled                 bool
+	FactorContent                 template.HTML
 	TimezoneControl               displaytime.Preference
 	TimezoneInput                 *string
 	TimezoneError, TimezoneNotice string
@@ -237,6 +241,9 @@ func New(s *store.Store, cfg Config) (*App, error) {
 	mux.HandleFunc("GET /recommendations/{id}/discussion-return", a.signedIn(a.discussionReturn))
 	mux.HandleFunc("POST /recommendations/{id}/share", a.signedIn(a.share))
 	mux.HandleFunc("GET /account/export", a.signedIn(a.export))
+	if err = a.registerTwoFactor(mux); err != nil {
+		return nil, err
+	}
 	if err = a.registerSharedSignIn(mux); err != nil {
 		return nil, err
 	}
@@ -409,6 +416,7 @@ func (a *App) render(w http.ResponseWriter, r *http.Request, status int, p page)
 // renderPage writes p inside the layout, or returns the template error
 // without writing anything.
 func (a *App) renderPage(w http.ResponseWriter, r *http.Request, status int, p page) error {
+	p.FactorEnabled = a.factor.Enabled()
 	if state(r).User != nil && state(r).User.Role == "owner" && (p.View == "settings" || p.View == "metrics") {
 		p.Overview = admin.WithOperations(p.Overview, a.config.Version, a.config.Backups.Status(), "SONGSTEAD_")
 	}
@@ -491,6 +499,9 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 	if err != nil || check != nil || u.Suspended || !password.Fits(secret) {
 		a.security(r, analytics.RecordFailedSignIn)
 		a.render(w, r, 422, page{View: "login", Title: "Welcome back", Username: name, Error: "That username and password did not match."})
+		return
+	}
+	if a.finishFirstFactor(w, r, u.ID, hash) {
 		return
 	}
 	session, err := a.store.NewSession(r.Context(), u.ID, hash)

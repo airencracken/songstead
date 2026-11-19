@@ -4,6 +4,21 @@ This guide is for operators running Songstead as a native service. For release
 downloads, see [installation](releases.md). For Docker, see
 [containers](containers.md).
 
+## Authenticator sign-in
+
+Set `SONGSTEAD_TOTP_KEY` to a unique 32-byte key encoded as hex. You can
+generate one with `openssl rand -hex 32`. Put it in the service's private
+environment configuration, or in the private environment file used by
+Docker Compose, then restart the app.
+
+Members can then open **Two-factor sign-in** from their account page. Add the
+setup key to an authenticator and enter a current code to confirm. Save the
+single-use recovery codes somewhere safe. After enrollment, both password and
+community sign-in ask for an authenticator or recovery code.
+
+Keep the original instance key with your server's private configuration
+backups. A restored database with enrolled accounts requires the same key.
+
 ## Service account and data
 
 Create a `songstead` user and group, install the binary at
