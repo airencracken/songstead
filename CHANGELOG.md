@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.18.0
+## 0.18.1
 
 - Optional authenticator-app sign-in is available on the account page after
   the operator sets `SONGSTEAD_TOTP_KEY`. Members can enroll, save recovery

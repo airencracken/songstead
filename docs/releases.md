@@ -11,12 +11,12 @@ music service account. After installing, create the first owner with
 On amd64, using the GitHub CLI:
 
 ```sh
-gh release download v0.18.0 --repo airencracken/songstead \
-    --pattern songstead_0.18.0_linux_amd64.tar.gz \
-    --pattern songstead_0.18.0_checksums.txt
-sha256sum --check --ignore-missing songstead_0.18.0_checksums.txt
-tar -xzf songstead_0.18.0_linux_amd64.tar.gz
-cd songstead_0.18.0_linux_amd64
+gh release download v0.18.1 --repo airencracken/songstead \
+    --pattern songstead_0.18.1_linux_amd64.tar.gz \
+    --pattern songstead_0.18.1_checksums.txt
+sha256sum --check --ignore-missing songstead_0.18.1_checksums.txt
+tar -xzf songstead_0.18.1_linux_amd64.tar.gz
+cd songstead_0.18.1_linux_amd64
 ./songstead --version
 ```
 
@@ -33,15 +33,15 @@ keywords as the overlay guide describes:
 
 ```sh
 emaint sync -r comfyware
-emerge --ask =www-apps/songstead-0.18.0::comfyware
+emerge --ask =www-apps/songstead-0.18.1::comfyware
 ```
 
 ## Build the published source
 
-Source builds need Go 1.26.11 or newer and use the published Comfylib v0.7.3:
+Source builds need Go 1.26.11 or newer and use the published Comfylib v0.8.0:
 
 ```sh
-git clone --branch v0.18.0 https://github.com/airencracken/songstead.git
+git clone --branch v0.18.1 https://github.com/airencracken/songstead.git
 cd songstead
 GOWORK=off make check build
 ```
